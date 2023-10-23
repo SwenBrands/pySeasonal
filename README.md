@@ -1,5 +1,6 @@
 # pySeasonal
 A Python package to verify seasonal prediction systems against observations
+Author: Swen Brands, brandssf@ifcan.unican.es or swen.brands@gmail.com
 
 This package of Python scripts and functions evaluates the skill of the
 Copernicus Data Store seasonal prediction products against reanalyses 
@@ -15,3 +16,5 @@ provided by Predictia. This script also bring the netCDF variable names
 in the model files to ERA5 standard (e.g. tas -> t2m or pr -> tp)
 
 3. get_skill.py calculated hindcast skill measures and plots maps.
+
+
