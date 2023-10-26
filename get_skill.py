@@ -44,9 +44,9 @@ south_ext_lambert = 0 #extend the southern limit of the box containing the Lambe
 
 #set basic path structure for observations and gcms
 home = os.getenv('HOME')
-path_obs_base = home+'/datos/tareas/pticlima/seasonal/results/obs/regridded'
-path_gcm_base = home+'/datos/tareas/pticlima/seasonal/results/gcm/aggregated'
-path_figures = home+'/datos/tareas/pticlima/seasonal/figures'
+path_obs_base = home+'/datos/tareas/proyectos/pticlima/seasonal/results/obs/regridded'
+path_gcm_base = home+'/datos/tareas/proyectos/pticlima/seasonal/results/gcm/aggregated'
+path_figures = home+'/datos/tareas/proyectos/pticlima/seasonal/figures'
 
 ## EXECUTE #############################################################
 #xr.set_options(file_cache_maxsize=1)

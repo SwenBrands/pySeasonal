@@ -15,7 +15,7 @@ import pandas as pd
 exec(open('functions_seasonal.py').read()) #reads the <functions_seasonal.py> script containing a set of custom functions needed here
 
 #set input parameters for observational datasets to be regridded
-obs = ['era5'] #name of the observational dataset that will be regridded
+obs = ['era5'] #name of the observational / reanalysis dataset that will be regridded
 agg_src = ['mon'] #temporal aggregation of the observational input files, pertains to the <obs> loop indicated with <oo> below
 startyear_file = [1940] #start year of the obs file as indicated in filename
 endyear_file = [2022] #corresponding end year
@@ -40,7 +40,7 @@ lonlim_m = [-20,51]
 #set basic path structure for observations and land-sea masks from the models
 path_obs_base = home+'/datos/OBSData' #base path upon which the final path to the obs data is constructed
 path_gcm_base = home+'/datos/GCMData/seasonal-original-single-levels' #here, the land sea masks of all models and versions thereof are located
-savepath_base = home+'/datos/tareas/pticlima/seasonal/results/obs/regridded' #The nc files generated here, containing observations regridded to the model grid, are stored in this directory
+savepath_base = home+'/datos/tareas/proyectos/pticlima/seasonal/results/obs/regridded' #The nc files generated here, containing observations regridded to the model grid, are stored in this directory
 
 ## EXECUTE #############################################################
 for oo in np.arange(len(obs)):
