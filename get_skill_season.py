@@ -19,22 +19,20 @@ exec(open('functions_seasonal.py').read()) #reads the <functions_seasonal.py> sc
 season_label = ['NDF','DJF']
 season = [[11,12,1],[12,1,2]] #[[12,1,2],[3,4,5],[6,7,8],[9,10,11]]
 lead = [[0,1,2],[1,2,3]] #[[0,1,2],[0,1,2],[0,1,2],[0,1,2]] #number of months between init and start of forecast interval to be verified, e.g. 1 will discard the first month after init, 2 will discard the first two months after init etc.
-model = ['ecmwf'] #interval between meridians and parallels
-version = ['51']
+model = ['ecmwf51'] #interval between meridians and parallels
 obs = ['era5']
 years_model = [[1981,2022]] #years used in label of model netCDF file, refers to the first and the last year of the monthly model inits
 years_obs = [[1981,2022]] #years used in label of obs netCDF file
 variables = ['tp'] #['tp','t2m'] #variables names valid for both observations and GCM. GCM variable names have been set to ERA5 variable names from CDS in <aggregate_hindcast.py>
+corr_outlier = 'no'
 datatype = ['float32'] #['float32','float32']
 aggreg = 'mon' #temporal aggregation of the input files
 domain = 'medcof' #spatial domain
 int_method = 'conservative_normed' #'conservative_normed', interpolation method used in <regrid_obs.py>
 nr_mem = [25] #considered ensemble members
-window = 3 #number of consecutive months considered for calculating the rolling seasonal average values
 
 #options for methods estimating hindcast skill
 testlevel = 0.05
-use_effn = 'yes' #use effective sample size to calculate the p-value of the Pearson and Spearman correlation coefficient.
 detrending = 'no' #yes or no, linear detrending of the gcm and obs time series prior to validation
 
 #visualization options
@@ -44,17 +42,22 @@ south_ext_lambert = 0 #extend the southern limit of the box containing the Lambe
 
 #set basic path structure for observations and gcms
 home = os.getenv('HOME')
+rundir = home+'/datos/tareas/proyectos/pticlima/pyPTIclima/pySeasonal'
 path_obs_base = home+'/datos/tareas/proyectos/pticlima/seasonal/results/obs/regridded'
 path_gcm_base = home+'/datos/tareas/proyectos/pticlima/seasonal/results/gcm/aggregated'
-path_figures = home+'/datos/tareas/proyectos/pticlima/seasonal/figures'
+dir_netcdf = home+'/datos/tareas/proyectos/pticlima/seasonal/results/validation'
 
 ## EXECUTE #############################################################
+#check whether the path to create the output netCDF files exists, create it if not
+if os.path.isdir(dir_netcdf) != True:
+    os.makedirs(dir_netcdf)
+
 lead_label = [str(lead[ll]).replace(',','').replace('[','').replace(']','').replace(' ','') for ll in np.arange(len(lead))]
 #xr.set_options(file_cache_maxsize=1)
 for vv in np.arange(len(variables)):
     print('INFO: validating '+variables[vv])
     for mm in np.arange(len(model)):
-        path_gcm = path_gcm_base+'/'+model[mm]+version[mm]+'/'+variables[vv]+'_'+aggreg+'_'+model[mm]+version[mm]+'_'+str(nr_mem[mm])+'m_'+domain+'_'+str(years_model[mm][0])+'_'+str(years_model[mm][-1])+'.nc'
+        path_gcm = path_gcm_base+'/'+model[mm]+'/'+variables[vv]+'_'+aggreg+'_'+model[mm]+'_'+str(nr_mem[mm])+'m_'+domain+'_'+str(years_model[mm][0])+'_'+str(years_model[mm][-1])+'.nc'
         nc_gcm = xr.open_dataset(path_gcm)
         #nc_gcm = xr.open_dataset(path_gcm, chunks = {'member' : 1})
         nc_gcm[variables[vv]] = nc_gcm[variables[vv]].astype(datatype[vv])
@@ -64,7 +67,7 @@ for vv in np.arange(len(variables)):
         leads = nc_gcm.lead.values
         dates_gcm = pd.DatetimeIndex(nc_gcm.time.values)
         for oo in np.arange(len(obs)):
-            path_obs = path_obs_base+'/'+obs[oo]+'/'+variables[vv]+'_'+aggreg+'_'+obs[oo]+'_on_'+model[mm]+version[mm]+'_grid_'+int_method+'_'+domain+'_'+str(years_obs[oo][0])+'_'+str(years_obs[oo][-1])+'.nc'
+            path_obs = path_obs_base+'/'+obs[oo]+'/'+variables[vv]+'_'+aggreg+'_'+obs[oo]+'_on_'+model[mm]+'_grid_'+int_method+'_'+domain+'_'+str(years_obs[oo][0])+'_'+str(years_obs[oo][-1])+'.nc'
             nc_obs = xr.open_dataset(path_obs)
             nc_obs[variables[vv]] = nc_obs[variables[vv]].astype(datatype[vv])
             dates_obs = pd.DatetimeIndex(nc_obs.time.values)
@@ -105,7 +108,7 @@ for vv in np.arange(len(variables)):
                         #gcm_seas_mn_ensmean_5d = np.zeros((len(dates_isea,len(season),len(lead),len(nc_obs_isea.y),len(nc_obs_isea.x))
                     
                     #and loop through each month of this season to calculate the seasonal mean values in both the model and observations
-                    for mon in np.arange(len(season[sea])):                    
+                    for mon in np.arange(len(season[sea])):
                         print('INFO: get values for month '+str(season[sea][mon])+' and leadtime '+str(lead[ll][mon])+'...')
                         monthind_gcm = np.where(np.isin(dates_gcm.month,season[sea][mon]))[0]
                         monthind_obs = np.where(np.isin(dates_obs.month,season[sea][mon]))[0]
@@ -115,7 +118,8 @@ for vv in np.arange(len(variables)):
                         
                         #select the target months/seasons and work with xarray data arrays and numpy arrays from here on instead of working with xr datasets
                         nc_gcm_mon = nc_gcm[variables[vv]].isel(time=monthind_gcm) #get the requested calendar month from the model
-                        nc_gcm_mon = nc_gcm_mon.sel(lead=lead[sea][mon]) #get the requested lead from the model
+                        #nc_gcm_mon = nc_gcm_mon.sel(lead=lead[sea][mon]) #get the requested lead from the model
+                        nc_gcm_mon = nc_gcm_mon.sel(lead=lead[sea][ll]) #get the requested lead from the model
                         nc_obs_mon = nc_obs[variables[vv]].isel(time=monthind_obs) #get the requested calendar month from the observations / reanalysis, there is no lead time in this case
                         gcm_mon = nc_gcm_mon.values #retain the numpy arrays with in the xr dataarrays
                         obs_mon = nc_obs_mon.values #retain the numpy arrays with in the xr dataarrays
@@ -181,42 +185,35 @@ for vv in np.arange(len(variables)):
             spearman_r = xs.spearman_r(obs_seas_mn_5d,gcm_seas_mn_5d,dim='time',skipna=True).rename('spearman_r')
             spearman_pval = xs.spearman_r_p_value(obs_seas_mn_5d,gcm_seas_mn_5d,dim='time',skipna=True).rename('spearman_pval')
             spearman_pval_effn = xs.spearman_r_eff_p_value(obs_seas_mn_5d,gcm_seas_mn_5d,dim='time',skipna=True).rename('spearman_pval_effn')
-        
+            
+            #add attribures
+            pearson_r.attrs['units'] = 'dimensionless'
+            pearson_pval.attrs['units'] = 'probability'
+            pearson_pval_effn.attrs['units'] = 'probability'
+            spearman_r.attrs['units'] = 'dimensionless'
+            spearman_pval.attrs['units'] = 'probability'
+            spearman_pval_effn.attrs['units'] = 'probability'
+            
+            #join xarray dataArrays containing the verification results into a single xarray dataset, set attributes and save to netCDF format
+            results = xr.merge((pearson_r,pearson_pval,pearson_pval_effn,spearman_r,spearman_pval,spearman_pval_effn)) #merge xr dataarrays into a single xr dataset
+            del results.attrs['units'] #delete global attributge <units>, which is unexpectedly created by xr.merge() in the previous line; <units> are preserved as variable attribute. 
+            #set global and variable attributes
+            start_year = str(dates_isea[0])[0:5].replace('-','') #start year considered in the skill assessment
+            end_year = str(dates_isea[-1])[0:5].replace('-','') #end year considered in the skill assessment
+            results.x['standard_name'] = 'longitude'
+            results.y['standard_name'] = 'latitude'
+            results.attrs['prediction_system'] = model[mm]
+            results.attrs['reference_observations'] = obs[oo]
+            results.attrs['validation_period'] = start_year+' to '+end_year
+            results.attrs['time_series_detrending'] = detrending
+            results.attrs['outlier_correction'] = corr_outlier
+            results.attrs['contact'] = 'Swen Brands, brandssf@ifca.unican.es or swen.brands@gmail.com'
+            #then save to netCDF and close
+            savename_results = dir_netcdf+'/verification_results_season_'+variables[vv]+'_'+model[mm]+'_vs_'+obs[oo]+'_'+domain+'_corroutlier_'+corr_outlier+'_detrended_'+detrending+'_'+start_year+'_'+end_year+'.nc'
+            results.to_netcdf(savename_results)
+            results.close()
+            
         #close nc files containing observations
         nc_obs.close()
     #close nc files containing model data
     nc_gcm.close()
-                   
-                    # #map results
-                    # lons = pearson_r.x.values
-                    # lats = pearson_r.y.values
-                    # # This is the map projection we want to plot *onto*, see https://docs.xarray.dev/en/stable/examples/visualization_gallery.html
-                    # map_proj = ccrs.LambertConformal(central_longitude=lons.mean(), central_latitude=lats.mean())
-                    # titlelabel = 'Temporal correlation for '+model[mm]+version[mm]+' ensmean vs. '+obs[oo]+' '+variables[vv]+' '+str(years_model[mm][0])+'-'+str(years_model[mm][-1])+' '+str(season[sea])
-                    # savelabel = path_figures+'/'+variables[vv]+'/pearson_effn'+'_'+use_effn+'_detrended_'+detrending+'_'+model[mm]+version[mm]+'_ensmean_'+obs[oo]+'_'+variables[vv]+'_'+str(years_model[mm][0])+'_'+str(years_model[mm][-1])+'_'+str(season[sea])+'_constantlead.'+figformat
-                    # cbar_kwargs = {'orientation':'horizontal', 'shrink':0.6, 'aspect':40, 'label':'Hindcast correlation'}
-                    # fig = plt.figure()                
-                    # p = pearson_r.plot(transform=ccrs.PlateCarree(),col='lead',col_wrap=2,subplot_kws={'projection': map_proj},cbar_kwargs=cbar_kwargs)
-                    # xx,yy = np.meshgrid(lons,lats)
-                    # xx = xx.flatten()
-                    # yy = yy.flatten()
-                    # for aa in np.arange(len(p.axs.flat)-1):
-                        # ax = p.axs.flat[aa]
-                        # ax.coastlines()
-                        # #plot significant correlation coefficient, optionally taking into account the effective sample size
-                        # if use_effn == 'yes':
-                            # sigbool = pearson_pval_effn[aa,:,:].values.flatten() >= testlevel
-                        # elif use_effn == 'no':
-                            # sigbool = pearson_pval[aa,:,:].values.flatten() >= testlevel
-                        # else:
-                            # raise Exception('ERROR: unknown entry for '+use_effn+'!')
-                        # ax.plot(xx[sigbool],yy[sigbool], linestyle='None', marker='.', markersize=0.5, transform=ccrs.PlateCarree(), markerfacecolor='black', markeredgecolor='black')
-                        # ax.set_extent([lons.min(), lons.max(), lats.min()-south_ext_lambert, lats.max()])
-                    # plt.title(titlelabel)
-                    # #fig.tight_layout()
-                    # plt.savefig(savelabel,dpi=dpival)
-                    # plt.close('all')
-            # #close all nc files and delete associated workspace varialbe
-            # nc_gcm.close()
-            # nc_obs.close()
-            # del(nc_gcm,nc_obs)

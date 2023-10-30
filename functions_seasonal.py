@@ -64,3 +64,36 @@ def lin_detrend(xr_ar):
     fit = xr.polyval(xr_ar['time'], coeff.polyfit_coefficients)
     xr_ar_detrended = xr_ar - fit
     return(xr_ar_detrended)
+
+def get_fraq_significance(np_arr_f,critval_f):
+    """get the fraction of grid-boxes where significant results are obtained in percentage of all grid-boxes forming the domain; np_arr_f is a 4d numpy array
+    with the dimensions season x lead x lat x lon"""
+    shape_f = np_arr_f.shape
+    np_arr_step_f = np.reshape(np_arr_f,[shape_f[0],shape_f[1],shape_f[2]*shape_f[3]])
+    sigind_f = np_arr_step_f < critval_f
+    spurind_f = np_arr_step_f >= critval_f
+    np_arr_step_f[sigind_f] = 1
+    np_arr_step_f[spurind_f] = 0
+    spatial_sigfraq_f = np.sum(np_arr_step_f,axis=2)/(shape_f[2]*shape_f[3])*100
+    return(spatial_sigfraq_f)
+
+def plot_pcolormesh_seasonal(xr_ar_f,minval_f,maxval_f,savename_f,colormap_f,dpival_f):
+    '''Plots matrix of the verfication results contained in xarray data array <xr_ar_f>, seasons are plotted on the x axis, lead months on the y axis.'''
+    fig = plt.figure()
+    ax = xr_ar_f.plot.pcolormesh(cmap = colormap_f, x = 'season', y = 'lead', vmin = minval_f, vmax = maxval_f, add_colorbar=False)
+    ax.axes.set_yticks(xr_ar_f.lead.values)
+    ax.axes.set_yticklabels(xr_ar_f.lead.values,fontsize=4)
+    ax.axes.set_xticks(xr_ar_f.season.values)
+    ax.axes.set_xticklabels(xr_ar_f.season,fontsize=2, rotation = 45.)
+    ax.axes.set_aspect('auto')
+    plt.xticks(fontsize=5)
+    plt.xlabel(None)
+    plt.ylabel(None)
+    cbar = plt.colorbar(ax,shrink=0.5,label=xr_ar_f.name + ' ('+xr_ar_f.units+')', orientation = 'horizontal')
+    cbar.ax.tick_params(labelsize=6)
+    fig.tight_layout()
+    if figformat == 'pdf': #needed to account for irregular behaviour with the alpha parameter when plotting a pdf file
+       #fig.set_rasterized(True)
+       print('Info: There is a problem with the alpha parameter when generating the figure on my local system. Correct this in future versions !')
+    plt.savefig(savename_f,dpi=dpival_f)
+    plt.close('all')
