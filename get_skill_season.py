@@ -16,16 +16,16 @@ exec(open('functions_seasonal.py').read()) #reads the <functions_seasonal.py> sc
 
 #set input parameters
 #season = ['DJF','MAM','JJA','SON'] #months of the season to be evaluated
-season_label = ['NDF','DJF']
-season = [[11,12,1],[12,1,2]] #[[12,1,2],[3,4,5],[6,7,8],[9,10,11]]
-lead = [[0,1,2],[1,2,3]] #[[0,1,2],[0,1,2],[0,1,2],[0,1,2]] #number of months between init and start of forecast interval to be verified, e.g. 1 will discard the first month after init, 2 will discard the first two months after init etc.
+season_label = ['DJF','JFM','FMA','MAM','AMJ','MJJ','JJA','JAS','ASO','SON','OND','NDF']
+season = [[12,1,2],[1,2,3],[2,3,4],[3,4,5],[4,5,6],[5,6,7],[6,7,8],[7,8,9],[8,9,10],[9,10,11],[10,11,12],[11,12,1]] #[[12,1,2],[3,4,5],[6,7,8],[9,10,11]]
+lead = [[0,1,2],[1,2,3],[2,3,4],[3,4,5],[4,5,6]] #[[0,1,2],[0,1,2],[0,1,2],[0,1,2]] #number of months between init and start of forecast interval to be verified, e.g. 1 will discard the first month after init, 2 will discard the first two months after init etc.
 model = ['ecmwf51'] #interval between meridians and parallels
 obs = ['era5']
 years_model = [[1981,2022]] #years used in label of model netCDF file, refers to the first and the last year of the monthly model inits
 years_obs = [[1981,2022]] #years used in label of obs netCDF file
-variables = ['tp'] #['tp','t2m'] #variables names valid for both observations and GCM. GCM variable names have been set to ERA5 variable names from CDS in <aggregate_hindcast.py>
+variables = ['tp','t2m'] #variables names valid for both observations and GCM. GCM variable names have been set to ERA5 variable names from CDS in <aggregate_hindcast.py>
+datatype = ['float32','float32']
 corr_outlier = 'no'
-datatype = ['float32'] #['float32','float32']
 aggreg = 'mon' #temporal aggregation of the input files
 domain = 'medcof' #spatial domain
 int_method = 'conservative_normed' #'conservative_normed', interpolation method used in <regrid_obs.py>
@@ -33,7 +33,7 @@ nr_mem = [25] #considered ensemble members
 
 #options for methods estimating hindcast skill
 testlevel = 0.05
-detrending = 'no' #yes or no, linear detrending of the gcm and obs time series prior to validation
+detrending = 'yes' #yes or no, linear detrending of the gcm and obs time series prior to validation
 
 #visualization options
 figformat = 'png' #format of output figures, pdf or png
@@ -48,6 +48,14 @@ path_gcm_base = home+'/datos/tareas/proyectos/pticlima/seasonal/results/gcm/aggr
 dir_netcdf = home+'/datos/tareas/proyectos/pticlima/seasonal/results/validation'
 
 ## EXECUTE #############################################################
+#check consistency of some input parameters
+if len(season) != len(season_label):
+    raise Exception('ERROR: the length of the list <season> does not equal the length of the list <season_label> !')
+if len(variables) != len(datatype):
+    raise Exception('ERROR: the length of the list <variables> does not equal the length of the list <datatype> !')
+
+lead_arr = np.arange(np.array(lead).min(),np.array(lead).max()+1)
+
 #check whether the path to create the output netCDF files exists, create it if not
 if os.path.isdir(dir_netcdf) != True:
     os.makedirs(dir_netcdf)
@@ -57,13 +65,15 @@ lead_label = [str(lead[ll]).replace(',','').replace('[','').replace(']','').repl
 for vv in np.arange(len(variables)):
     print('INFO: validating '+variables[vv])
     for mm in np.arange(len(model)):
+        if model[mm] == 'ecmwf51' and lead_arr[-1] > 6: #if leadtime > 6 for ecmwf51, the return an error because the 7th forecast month is composed of a few days only in this gcm
+            raise Exception('ERROR: the maximum lead requested for '+model[mm]+' ('+str(lead_arr[-1])+') is not valid ! Please check the entries of the input parameter <lead>.')        
         path_gcm = path_gcm_base+'/'+model[mm]+'/'+variables[vv]+'_'+aggreg+'_'+model[mm]+'_'+str(nr_mem[mm])+'m_'+domain+'_'+str(years_model[mm][0])+'_'+str(years_model[mm][-1])+'.nc'
         nc_gcm = xr.open_dataset(path_gcm)
         #nc_gcm = xr.open_dataset(path_gcm, chunks = {'member' : 1})
         nc_gcm[variables[vv]] = nc_gcm[variables[vv]].astype(datatype[vv])
         #leads = np.arange(lead[mm])
         members = nc_gcm.member.values
-        nc_gcm = nc_gcm.isel(lead=np.arange(np.array(lead).min(),np.array(lead).max()+1)) #filter out the necessary leads only
+        nc_gcm = nc_gcm.isel(lead=lead_arr) #filter out the necessary leads only
         leads = nc_gcm.lead.values
         dates_gcm = pd.DatetimeIndex(nc_gcm.time.values)
         for oo in np.arange(len(obs)):
@@ -100,12 +110,19 @@ for vv in np.arange(len(variables)):
                     
                     #init numpy array which will be filled with seasonal mean values (time x season x lead x member x lat x lon)
                     if sea == 0 and ll == 0:
-                        #obs_seas_mn_5d = np.zeros((len(dates_isea,len(season),len(lead),len(nc_obs_isea.y),len(nc_obs_isea.x))
-                        obs_seas_mn_5d = np.zeros((len(dates_isea),len(season),len(lead),len(nc_obs_isea.y),len(nc_obs_isea.x)))
+                        nr_years = len(dates_isea) #length of the year-to-year time vector for a specific season
+                        nr_seas = len(season)
+                        nr_leads = len(lead)
+                        nr_mems =  len(nc_gcm['member'])                        
+                        nr_lats = len(nc_gcm['y'])
+                        nr_lons = len(nc_gcm['x'])
+                        obs_seas_mn_5d = np.zeros((nr_years,nr_seas,nr_leads,nr_lats,nr_lons))
                         obs_seas_mn_5d[:] = np.nan
-                        gcm_seas_mn_6d = np.zeros((len(dates_isea),len(season),len(lead),len(members),len(nc_obs_isea.y),len(nc_obs_isea.x)))
+                        gcm_seas_mn_6d = np.zeros((nr_years,nr_seas,nr_leads,nr_mems,nr_lats,nr_lons))
                         gcm_seas_mn_6d[:] = np.nan
-                        #gcm_seas_mn_ensmean_5d = np.zeros((len(dates_isea,len(season),len(lead),len(nc_obs_isea.y),len(nc_obs_isea.x))
+                        #these inits are for the unweighted (uw) seasonal mean values which will be calculated alongside the weighted values below for comparison
+                        obs_seas_mn_5d_nw = np.copy(obs_seas_mn_5d)
+                        gcm_seas_mn_6d_nw = np.copy(gcm_seas_mn_6d)
                     
                     #and loop through each month of this season to calculate the seasonal mean values in both the model and observations
                     for mon in np.arange(len(season[sea])):
@@ -119,7 +136,7 @@ for vv in np.arange(len(variables)):
                         #select the target months/seasons and work with xarray data arrays and numpy arrays from here on instead of working with xr datasets
                         nc_gcm_mon = nc_gcm[variables[vv]].isel(time=monthind_gcm) #get the requested calendar month from the model
                         #nc_gcm_mon = nc_gcm_mon.sel(lead=lead[sea][mon]) #get the requested lead from the model
-                        nc_gcm_mon = nc_gcm_mon.sel(lead=lead[sea][ll]) #get the requested lead from the model
+                        nc_gcm_mon = nc_gcm_mon.sel(lead=lead[ll][mon]) #get the requested lead from the model
                         nc_obs_mon = nc_obs[variables[vv]].isel(time=monthind_obs) #get the requested calendar month from the observations / reanalysis, there is no lead time in this case
                         gcm_mon = nc_gcm_mon.values #retain the numpy arrays with in the xr dataarrays
                         obs_mon = nc_obs_mon.values #retain the numpy arrays with in the xr dataarrays
@@ -150,10 +167,17 @@ for vv in np.arange(len(variables)):
                         #fill the initialized arrays
                         gcm_allmon[:,:,:,:,mon] = gcm_mon
                         obs_allmon[:,:,:,mon] = obs_mon
-                    #calculate seasonal mean values, calculate weighted mean in future versions
-                    obs_seas_mn_5d[:,sea,ll,:,:] = obs_allmon.mean(axis=-1)
-                    gcm_seas_mn_6d[:,sea,ll,:,:,:] = gcm_allmon.mean(axis=-1)
-                    #gcm_seas_mn_ensmean_5d = np.mean(gcm_seas_mn,axis=3) #caculate numpy array with ensemble mean values
+                    #calculate weighted seasonal mean values
+                    weights = nc_obs_isea.time.dt.days_in_month #get number of days per month for all months of all years forming the time series
+                    seasind = np.arange(len(season[sea])) #get index to cut out the n months of the first year, where n is the season length in months, i.e. typically 3
+                    weights = weights[seasind] #cut ot the number of days for these months and replicate to match the dimensions of obs_allmon and gcm_allmon
+                    weights_obs = np.tile(weights,(nr_years,nr_lats,nr_lons,1))
+                    weights_gcm = np.tile(weights,(nr_years,nr_mems,nr_lats,nr_lons,1))
+                    obs_seas_mn_5d[:,sea,ll,:,:] = np.sum(obs_allmon * weights_obs, axis = 3) / weights_obs.sum(axis=3)
+                    gcm_seas_mn_6d[:,sea,ll,:,:] = np.sum(gcm_allmon * weights_gcm, axis = 4) / weights_gcm.sum(axis=4)
+                    #calculate and store unweighted seasonal mean values for comparison
+                    obs_seas_mn_5d_nw[:,sea,ll,:,:] = obs_allmon.mean(axis=-1)
+                    gcm_seas_mn_6d_nw[:,sea,ll,:,:,:] = gcm_allmon.mean(axis=-1)
             
             #generate 6d numpy array with observations replicated along the <member dimension>; will be used as reference for the member-wise GCM verification
             obs_seas_mn_6d = np.expand_dims(obs_seas_mn_5d,axis=3)
@@ -211,7 +235,19 @@ for vv in np.arange(len(variables)):
             #then save to netCDF and close
             savename_results = dir_netcdf+'/verification_results_season_'+variables[vv]+'_'+model[mm]+'_vs_'+obs[oo]+'_'+domain+'_corroutlier_'+corr_outlier+'_detrended_'+detrending+'_'+start_year+'_'+end_year+'.nc'
             results.to_netcdf(savename_results)
+            
+            #close temporary xarray objects
             results.close()
+            pearson_r.close()
+            pearson_pval.close()
+            pearson_pval_effn.close()
+            spearman_r.close()
+            spearman_pval.close()
+            spearman_pval_effn.close()
+            obs_seas_mn_5d.close()
+            obs_seas_mn_6d.close()
+            gcm_seas_mn_5d.close()
+            gcm_seas_mn_6d.close()
             
         #close nc files containing observations
         nc_obs.close()

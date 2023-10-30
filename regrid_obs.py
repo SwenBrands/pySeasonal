@@ -19,7 +19,7 @@ obs = ['era5'] #name of the observational / reanalysis dataset that will be regr
 agg_src = ['mon'] #temporal aggregation of the observational input files, pertains to the <obs> loop indicated with <oo> below
 startyear_file = [1940] #start year of the obs file as indicated in filename
 endyear_file = [2022] #corresponding end year
-variables = ['tp','t2m'] #variables to be regridded
+variables = ['t2m','tp'] #variables to be regridded
 years = [1981,2022] #years to be regridded
 int_method = 'conservative_normed' #'conservative_normed', interpolation method used by xesmf
 
@@ -71,6 +71,10 @@ for oo in np.arange(len(obs)):
             obs_dates = pd.DatetimeIndex(nc_obs_data.time.values)
             yearbool = (obs_dates.year >= years[0]) & (obs_dates.year <= years[1])
             nc_obs_data = nc_obs_data.isel(time=yearbool)
+            #transform the data, depending on the input dataset and variable
+            if obs[oo] == 'era5' and variables[vv] == 'tp':
+                print('INFO: multiplying raw '+variables[vv]+' values from '+obs[oo]+' with the factor 86400 !')
+                nc_obs_data[variables[vv]][:] = nc_obs_data[variables[vv]]*86400
             
             #regrid without mask
             print('INFO: Regridding '+variables[vv]+' from '+obs[oo]+' on '+model[mm]+' '+version[mm]+' grid using '+int_method+' method from xesmf...')
