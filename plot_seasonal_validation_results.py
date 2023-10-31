@@ -80,7 +80,13 @@ for vv in np.arange(len(variables)):
                 minvals_pcolor[vv,dd,sc] = nc_results[scores[sc]].mean(dim='x').mean(dim='y').min().values #minimum of the seasonal areal mean values
                 colormaps.append(colormap_ascend)
             elif scores[sc] in ('pearson_pval','pearson_pval_effn','spearman_pval','spearman_pval_effn'):
-                percent_sig = get_fraq_significance(nc_results[scores[sc]].values,critval)
+                if scores[sc] in ('pearson_pval','pearson_pval_effn'):
+                    score_rho = 'pearson_r'
+                elif scores[sc] in ('spearman_pval','spearman_pval_effn'):
+                    score_rho = 'spearman_r'
+                else:
+                    raise Exception('ERROR: check entry in <scores[sc]> !')
+                percent_sig, sig_arr = get_fraq_significance(nc_results[scores[sc]].values,nc_results[score_rho].values,critval)
                 maxvals_pcolor[vv,dd,sc] = np.max(percent_sig)
                 minvals_pcolor[vv,dd,sc] = 0
                 colormaps.append(colormap_ascend)
@@ -109,24 +115,34 @@ for vv in np.arange(len(variables)):
             filename_results = 'verification_results_season_'+variables[vv]+'_'+model_dataset[dd]+'_vs_'+ref_dataset[dd]+'_'+domain+'_corroutlier_'+corr_outlier+'_detrended_'+detrending+'_'+str(file_years[0])+'_'+str(file_years[1])+'.nc'
         else:
             raise Exception('ERROR: unknown entry for <model_dataset> !')
-        nc_results = xr.open_dataset(dir_netcdf+'/'+filename_results)        
+        nc_results = xr.open_dataset(dir_netcdf+'/'+filename_results)
 
         ##plot matrices of verification results for the distinct score (x-axis = seasons, y-axis = stations and save to <figformat>
         for sc in np.arange(len(scores)):
             print('INFO: plotting '+scores[sc]+'...')
             if scores[sc] in ('pearson_pval','pearson_pval_effn','spearman_pval','spearman_pval_effn'):
                 #areal percentage of significant grid-box scale correlation coefficients is calculated and plotted
+                if scores[sc] in ('pearson_pval','pearson_pval_effn'):
+                    score_rho = 'pearson_r'
+                elif scores[sc] in ('spearman_pval','spearman_pval_effn'):
+                    score_rho = 'spearman_r'
+                else:
+                    raise Exception('ERROR: check entry in <scores[sc]> !')
                 savename = dir_figs+'/sig_gridboxes_'+scores[sc]+'_'+variables[vv]+'_'+model_dataset[dd]+'_vs_'+ref_dataset[dd]+'_corr_outlier_'+corr_outlier+'_detrended_'+detrending+'_testlvl_'+str(round(critval*100))+'.'+figformat
-                plotme = get_fraq_significance(nc_results[scores[sc]].values,critval)
+                plotme, sig_arr = get_fraq_significance(nc_results[scores[sc]].values,nc_results[score_rho].values,critval)
+                units_label = '%'
+                name_label = 'areal fraction of sig. positive '+score_rho
             elif scores[sc] in ('crps_ensemble'):
                 #areal mean score is calculated and plotted
                 savename = dir_figs+'/sig_gridboxes_'+scores[sc]+'_'+variables[vv]+'_'+model_dataset[dd]+'_vs_'+ref_dataset[dd]+'_corr_outlier_'+corr_outlier+'_detrended_'+detrending+'.'+figformat
                 plotme = nc_results[scores[sc]].mean(dim='y').mean(dim='x')
+                units_label = nc_results[scores[sc]].units
+                name_label = nc_results[scores[sc]].name
             else:
                 raise Exception('ERROR: '+scores[sc]+' are currently not supported by plot_seasonal_validation_results.py !')
             #convert to xr dataArray and add metadata necessary for plotting
-            plotme = xr.DataArray(plotme,coords=[np.arange(len(nc_results.season.values)),np.arange(len(nc_results.lead.values))],dims=['season', 'lead'], name=scores[sc])
-            plotme.attrs['units'] = nc_results[scores[sc]].units
+            plotme = xr.DataArray(plotme,coords=[np.arange(len(nc_results.season.values)),np.arange(len(nc_results.lead.values))],dims=['season', 'lead'], name=name_label)
+            plotme.attrs['units'] = units_label
             plotme.attrs['season_label'] = nc_results.season.values
             plotme.attrs['lead_label'] = nc_results.lead.values
             plot_pcolormesh_seasonal(plotme,minvals_pcolor[sc],maxvals_pcolor[sc],savename,colormaps[sc],dpival)
