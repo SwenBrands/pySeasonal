@@ -209,6 +209,7 @@ for vv in np.arange(len(variables)):
             spearman_r = xs.spearman_r(obs_seas_mn_5d,gcm_seas_mn_5d,dim='time',skipna=True).rename('spearman_r')
             spearman_pval = xs.spearman_r_p_value(obs_seas_mn_5d,gcm_seas_mn_5d,dim='time',skipna=True).rename('spearman_pval')
             spearman_pval_effn = xs.spearman_r_eff_p_value(obs_seas_mn_5d,gcm_seas_mn_5d,dim='time',skipna=True).rename('spearman_pval_effn')
+            crps_ensemble = xs.crps_ensemble(obs_seas_mn_5d,gcm_seas_mn_6d,member_weights=None,issorted=False,member_dim='member',dim='time',weights=None,keep_attrs=False).rename('crps_ensemble')
             
             #add attribures
             pearson_r.attrs['units'] = 'dimensionless'
@@ -217,9 +218,11 @@ for vv in np.arange(len(variables)):
             spearman_r.attrs['units'] = 'dimensionless'
             spearman_pval.attrs['units'] = 'probability'
             spearman_pval_effn.attrs['units'] = 'probability'
+            spearman_pval_effn.attrs['units'] = 'probability'
+            crps_ensemble.attrs['units'] = 'cummulative probability error'
             
             #join xarray dataArrays containing the verification results into a single xarray dataset, set attributes and save to netCDF format
-            results = xr.merge((pearson_r,pearson_pval,pearson_pval_effn,spearman_r,spearman_pval,spearman_pval_effn)) #merge xr dataarrays into a single xr dataset
+            results = xr.merge((pearson_r,pearson_pval,pearson_pval_effn,spearman_r,spearman_pval,spearman_pval_effn,crps_ensemble)) #merge xr dataarrays into a single xr dataset
             del results.attrs['units'] #delete global attributge <units>, which is unexpectedly created by xr.merge() in the previous line; <units> are preserved as variable attribute. 
             #set global and variable attributes
             start_year = str(dates_isea[0])[0:5].replace('-','') #start year considered in the skill assessment
@@ -244,6 +247,7 @@ for vv in np.arange(len(variables)):
             spearman_r.close()
             spearman_pval.close()
             spearman_pval_effn.close()
+            crps_ensemble.close()
             obs_seas_mn_5d.close()
             obs_seas_mn_6d.close()
             gcm_seas_mn_5d.close()
