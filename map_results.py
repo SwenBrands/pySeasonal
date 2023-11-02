@@ -73,7 +73,7 @@ for aa in np.arange(len(p.axs.flat)-1):
     #fig.tight_layout()
     plt.savefig(savelabel,dpi=dpival)
     plt.close('all')
-#close all nc files and delete associated workspace varialbe
+#close all nc files and delete associated workspace variable
 nc_gcm.close()
 nc_obs.close()
 del(nc_gcm,nc_obs)

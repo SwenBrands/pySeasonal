@@ -99,3 +99,45 @@ def plot_pcolormesh_seasonal(xr_ar_f,minval_f,maxval_f,savename_f,colormap_f,dpi
        print('Info: There is a problem with the alpha parameter when generating the figure on my local system. Correct this in future versions !')
     plt.savefig(savename_f,dpi=dpival_f)
     plt.close('all')
+
+def get_map_lowfreq_var(pattern_f,xx_f,yy_f,agree_ind_f,minval_f,maxval_f,dpival_f,title_f,savename_f,halfres_f,colormap_f,titlesize_f,cbarlabel_f,origpoint=None):
+    '''Currently used in pyLamb and pySeasonal packages in sligthly differing versions. Plots a pcolormesh contour over a map overlain by dots indicating, e.g. statistical significance'''
+    
+    map_proj = ccrs.PlateCarree()
+    
+    fig = plt.figure()
+    toplayer_x = xx.flatten()[agree_ind_f.flatten()]
+    toplayer_y = yy.flatten()[agree_ind_f.flatten()]
+    maxind = np.argsort(pattern_f.flatten())[-1]
+    max_x = xx_f.flatten()[maxind]
+    max_y = yy_f.flatten()[maxind]
+    minind = np.argsort(pattern_f.flatten())[0]
+    min_x = xx_f.flatten()[minind]
+    min_y = yy_f.flatten()[minind]
+
+    ax = fig.add_subplot(111, projection=map_proj)
+    ax.set_extent([xx_f.min()-halfres, xx_f.max()+halfres_f, yy.min()-halfres_f, yy_f.max()+halfres_f], ccrs.PlateCarree())
+    ax.add_feature(cartopy.feature.COASTLINE, zorder=4, color='black')
+            
+    image = ax.pcolormesh(xx_f, yy_f, pattern_f, vmin=minval_f, vmax=maxval_f, cmap=colormap_f, transform=ccrs.PlateCarree(), shading = 'nearest', zorder=3)
+    #get size of the points indicating significance
+    if halfres_f < 1.:
+        pointsize_f = 0.25
+        marker_f = '+'
+    else:
+        pointsize_f = 0.5
+        marker_f = 'o'
+
+    ax.plot(toplayer_x, toplayer_y, color='blue', marker=marker_f, linestyle='none', markersize=pointsize_f, transform=ccrs.PlateCarree(), zorder=4)
+    if origpoint != None:
+        ax.plot(origpoint[0], origpoint[1], color='blue', marker='X', linestyle='none', markersize=2, transform=ccrs.PlateCarree(), zorder=5)        
+    ##plot parallels and meridians
+    #gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=False, linewidth=0.5, color='blue', alpha=0.5, linestyle='dotted', zorder=6)
+    #gl.xformatter = LONGITUDE_FORMATTER
+    #gl.yformatter = LATITUDE_FORMATTER
+    
+    cbar = plt.colorbar(image,orientation='vertical', shrink = 0.6)
+    cbar.set_label(cbarlabel_f, rotation=270, labelpad=+12, y=0.5, fontsize=titlesize_f)
+    plt.title(title_f, fontsize=titlesize_f-1)
+    plt.savefig(savename_f,dpi=dpival_f)
+    plt.close('all')   
