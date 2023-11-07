@@ -65,7 +65,7 @@ def lin_detrend(xr_ar):
     xr_ar_detrended = xr_ar - fit
     return(xr_ar_detrended)
 
-def get_fraq_significance(np_arr_pval_f,np_arr_rho_f,critval_f):
+def get_frac_significance(np_arr_pval_f,np_arr_rho_f,critval_f):
     """get the fraction of grid-boxes where significant results are obtained in percentage of all grid-boxes forming the domain; np_arr_f is a 4d numpy array
     with the dimensions season x lead x lat x lon"""
     shape_f = np_arr_pval_f.shape
@@ -78,6 +78,18 @@ def get_fraq_significance(np_arr_pval_f,np_arr_rho_f,critval_f):
     np_arr_pval_step_f[spurind_f] = 0
     spatial_sigfraq_f = np.sum(np_arr_pval_step_f,axis=2)/(shape_f[2]*shape_f[3])*100
     return(spatial_sigfraq_f,np_arr_pval_step_f)
+
+def get_frac_above_threshold(np_arr_vals_f,critval_f):
+    """get the fraction of grid-boxes where values i values_f exceed the threshold <critval_f>; np_arr_f is a 4d numpy array with the dimensions season x lead x lat x lon"""
+    shape_f = np_arr_vals_f.shape
+    np_arr_vals_step_f = np.reshape(np_arr_vals_f,[shape_f[0],shape_f[1],shape_f[2]*shape_f[3]])
+    sigind_f = np_arr_vals_step_f > critval_f 
+    spurind_f = np_arr_vals_step_f <= critval_f
+    #spurind_f = sigind_f == False
+    np_arr_vals_step_f[sigind_f] = 1
+    np_arr_vals_step_f[spurind_f] = 0
+    spatial_fraq_f = np.sum(np_arr_vals_step_f,axis=2)/(shape_f[2]*shape_f[3])*100
+    return(spatial_fraq_f,np_arr_vals_step_f)
 
 def plot_pcolormesh_seasonal(xr_ar_f,minval_f,maxval_f,savename_f,colormap_f,dpival_f):
     '''Plots matrix of the verfication results contained in xarray data array <xr_ar_f>, seasons are plotted on the x axis, lead months on the y axis.'''
@@ -130,7 +142,7 @@ def get_map_lowfreq_var(pattern_f,xx_f,yy_f,agree_ind_f,minval_f,maxval_f,dpival
 
     ax.plot(toplayer_x, toplayer_y, color='blue', marker=marker_f, linestyle='none', markersize=pointsize_f, transform=ccrs.PlateCarree(), zorder=4)
     if origpoint != None:
-        ax.plot(origpoint[0], origpoint[1], color='blue', marker='X', linestyle='none', markersize=2, transform=ccrs.PlateCarree(), zorder=5)        
+        ax.plot(origpoint[0], origpoint[1], color='blue', marker='X', linestyle='none', markersize=2, transform=ccrs.PlateCarree(), zorder=5)
     ##plot parallels and meridians
     #gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=False, linewidth=0.5, color='blue', alpha=0.5, linestyle='dotted', zorder=6)
     #gl.xformatter = LONGITUDE_FORMATTER

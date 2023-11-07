@@ -19,14 +19,13 @@ import cartopy.feature as cf
 #exec(open('functions_seasonal.py').read()) #reads the <functions_seasonal.py> script containing a set of custom functions needed here
 
 ##set input parameters for observational datasets to be regridded
-#variables = ['hurs','pr','psl','rsds','sfcWind','tas','tasmax','tasmin'] #variable names in directories and file names
+#variables = ['hurs','pr','psl','rsds','sfcWind','tas','tasmax','tasmin'] #variable names in directories and file names, note that pr and rsds are initially fluxes accumulated over the entire forecast period; these variables are dis-aggregeated to daily accumulations below in this script.
 #variables_nc = ['hurs','pr','msi','rsds','sfcWind','tas','tasmax','tasmin'] #variable names within the netCDF files
 
-variables = ['tas','pr'] #variable names in directories and file names
-variables_nc = ['tas','pr'] #variable names within the netCDF files
-variables_new = ['t2m','tp'] #new variable names; as provided by ERA5 data from CDS
+variables = ['sfcWind','tas','pr','rsds'] #variable names in directories and file names
+variables_nc = ['sfcWind','tas','pr','rsds'] #variable names within the netCDF files
+variables_new = ['si10','t2m','tp','ssrd'] #new variable names; as provided by ERA5 data from CDS
 
-#years = [1981,1982]
 #years = [1981,2016] #years to be regridded
 years = [1981,2022]
 
@@ -74,8 +73,22 @@ for mm in np.arange(len(model)):
                     continue
                 
                 if (variables[vv] == 'tas') & (model[mm] == 'ecmwf') & (version[mm] == '51'):
-                    print('Info: Adding 273.15 Kelvin to '+variables[vv]+' data from '+model[mm]+version[mm]+' to correct Predictia workflow error.')
-                    nc[variables[vv]].values = nc[variables[vv]].values+273.15
+                    print('Info: Adding 2x273.15 to '+variables[vv]+' data from '+model[mm]+version[mm]+' to correct Predictia workflow error and then transform into Kelvin.')
+                    #nc[variables[vv]].values = nc[variables[vv]].values+273.15
+                    nc[variables[vv]][:] = nc[variables[vv]]+273.15+273.15
+                    nc[variables[vv]].attrs['units'] = 'daily mean '+variables_new[vv]+' in Kelvin'
+                elif (variables[vv] in ('pr','rsds')) & (model[mm] == 'ecmwf') & (version[mm] == '51'):
+                    print('Info: Disaggregate '+variables[vv]+' accumulated over the '+str(len(nc.time))+' days forecast period from '+model[mm]+version[mm]+' to daily sums.')
+                    vals_disagg = np.diff(nc[variables[vv]].values,n=1,axis=0)
+                    shape_disagg = vals_disagg.shape
+                    add_day = np.expand_dims(vals_disagg[-1,:,:,:],axis=0) #get last available difference
+                    #add_day = np.zeros((1,shape_disagg[1],shape_disagg[2],shape_disagg[3]))
+                    #add_day[:] = np.nan
+                    vals_disagg = np.concatenate((vals_disagg,add_day),axis=0)
+                    nc[variables[vv]][:] = vals_disagg
+                    nc[variables[vv]].attrs['units'] = 'daily accumulated '+variables_new[vv]+' in '+nc[variables[vv]].attrs['units']
+                else:
+                    print('Info: No data transformation is applied for '+variables[vv]+' data from '+model[mm]+version[mm]+'.')
                 
                 ##select ensemble members. This is done because the ensemble members in the forecast period may be more than in the hindcast period, e.g. 25 vs. 50 in ECWMF 51
                 #print('INFO: Selecting the first '+str(nr_mem[mm])+' ensemble members from a total of '+str(nc.member.shape[0])+' members...') 
@@ -103,7 +116,7 @@ for mm in np.arange(len(model)):
                 data_mon[pos_time,pos_lead,:,:,:] = nc_mon.values
 
                 nc.close()
-                nc_mon.close()                
+                nc_mon.close()
                 del(nc,nc_mon)
                 print(pos_time)
         

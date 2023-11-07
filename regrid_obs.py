@@ -19,7 +19,8 @@ obs = ['era5'] #name of the observational / reanalysis dataset that will be regr
 agg_src = ['mon'] #temporal aggregation of the observational input files, pertains to the <obs> loop indicated with <oo> below
 startyear_file = [1940] #start year of the obs file as indicated in filename
 endyear_file = [2022] #corresponding end year
-variables = ['t2m','tp'] #variables to be regridded
+variables = ['si10','ssrd','t2m','tp'] #variables to be regridded
+#variables = ['t2m'] #variables to be regridded
 years = [1981,2022] #years to be regridded
 int_method = 'conservative_normed' #'conservative_normed', interpolation method used by xesmf
 
@@ -71,10 +72,25 @@ for oo in np.arange(len(obs)):
             obs_dates = pd.DatetimeIndex(nc_obs_data.time.values)
             yearbool = (obs_dates.year >= years[0]) & (obs_dates.year <= years[1])
             nc_obs_data = nc_obs_data.isel(time=yearbool)
+            obs_dates = obs_dates[yearbool]
             #transform the data, depending on the input dataset and variable
             if obs[oo] == 'era5' and variables[vv] == 'tp':
-                print('INFO: multiplying raw '+variables[vv]+' values from '+obs[oo]+' with the factor 86400 !')
-                nc_obs_data[variables[vv]][:] = nc_obs_data[variables[vv]]*86400
+                print('INFO: multiply raw '+variables[vv]+' values from '+obs[oo]+' by 1000 to bring units from '+nc_obs_data[variables[vv]].units+' to mm/day!')
+                nc_obs_data[variables[vv]][:] = nc_obs_data[variables[vv]]*1000 #transform ERA5 pr data from metre/day to mm/day
+                nc_obs_data[variables[vv]].attrs['units'] = 'mm/day'
+            elif obs[oo] == 'era5' and variables[vv] in ('ssrd'):
+                print('INFO: Divide raw '+variables[vv]+' values from '+obs[oo]+' by the number of seconds per month to bring units from '+nc_obs_data[variables[vv]].units+' accumulated over the month to W/m2!')
+                days_in_month = obs_dates.days_in_month.values
+                obs_shape = nc_obs_data[variables[vv]].shape
+                ##<days in month> is most probably not needed because the raw ssrd values from ERA5 are most probably daily accumulated fluxes in W/m2 and therefore just need to be divided by 86400, see below
+                #days_in_month = np.expand_dims(np.expand_dims(days_in_month,axis=-1),axis=-1)
+                #days_in_month = np.tile(days_in_month,(1,obs_shape[1],obs_shape[2]))
+                #nc_obs_data[variables[vv]][:] = nc_obs_data[variables[vv]]/(days_in_month*86400)
+                nc_obs_data[variables[vv]][:] = nc_obs_data[variables[vv]]/86400
+                nc_obs_data[variables[vv]].attrs['units'] = 'W/m2'
+            else:
+                print('INFO: '+variables[vv]+' from '+obs[oo]+' comes in '+nc_obs_data[variables[vv]].units+' and no transformation is applied.')
+                nc_obs_data[variables[vv]].attrs['units'] = nc_obs_data[variables[vv]].units
             
             #regrid without mask
             print('INFO: Regridding '+variables[vv]+' from '+obs[oo]+' on '+model[mm]+' '+version[mm]+' grid using '+int_method+' method from xesmf...')
