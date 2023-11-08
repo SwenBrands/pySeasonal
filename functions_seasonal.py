@@ -58,11 +58,19 @@ def calc_roll_seasmean(xr_ds):
     weights.close()
     del(weights,xr_ds_roll)
 
-def lin_detrend(xr_ar):
-    """peforms linear detrending of the xarray DataArray xr_ar along the time dimension"""
+def lin_detrend(xr_ar,rm_mean_f):
+    """performs linear detrending of the xarray DataArray xr_ar along the time dimension, rm_mean_f specifies whether the mean is removed yes or no"""
     coeff = xr_ar.polyfit(dim='time',deg=1) #deg = 1 for linear detrending
     fit = xr.polyval(xr_ar['time'], coeff.polyfit_coefficients)
-    xr_ar_detrended = xr_ar - fit
+    if rm_mean_f == 'yes':
+        xr_ar_detrended = xr_ar - fit
+    elif rm_mean_f == 'no':
+        tiles_f = np.ones(len(xr_ar.dims))
+        tiles_f[0] = len(xr_ar.time)
+        meanvals_f = np.tile(xr_ar.mean(dim='time'),tiles_f.astype('int'))
+        xr_ar_detrended = xr_ar - fit + meanvals_f
+    else:
+        raise Exception('ERROR: check entry for <rm_mean_f> input parameter!')
     return(xr_ar_detrended)
 
 def get_frac_significance(np_arr_pval_f,np_arr_rho_f,critval_f):
@@ -140,7 +148,7 @@ def get_map_lowfreq_var(pattern_f,xx_f,yy_f,agree_ind_f,minval_f,maxval_f,dpival
         pointsize_f = 0.5
         marker_f = 'o'
 
-    ax.plot(toplayer_x, toplayer_y, color='blue', marker=marker_f, linestyle='none', markersize=pointsize_f, transform=ccrs.PlateCarree(), zorder=4)
+    ax.plot(toplayer_x, toplayer_y, color='black', marker=marker_f, linestyle='none', markersize=pointsize_f, transform=ccrs.PlateCarree(), zorder=4)
     if origpoint != None:
         ax.plot(origpoint[0], origpoint[1], color='blue', marker='X', linestyle='none', markersize=2, transform=ccrs.PlateCarree(), zorder=5)
     ##plot parallels and meridians

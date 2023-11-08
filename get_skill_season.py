@@ -25,18 +25,16 @@ years_model = [[1981,2022]] #years used in label of model netCDF file, refers to
 years_obs = [[1981,2022]] #years used in label of obs netCDF file
 variables = ['t2m','tp','si10','ssrd'] #variables names valid for both observations and GCM. GCM variable names have been set to ERA5 variable names from CDS in <aggregate_hindcast.py>
 datatype = ['float32','float32','float32','float32']
-#variables = ['t2m'] #variables names valid for both observations and GCM. GCM variable names have been set to ERA5 variable names from CDS in <aggregate_hindcast.py>
-#datatype = ['float32']
 corr_outlier = 'no'
 aggreg = 'mon' #temporal aggregation of the input files
 domain = 'medcof' #spatial domain
 int_method = 'conservative_normed' #'conservative_normed', interpolation method used in <regrid_obs.py>
 nr_mem = [25] #considered ensemble members
+nr_pseudo_mem = 2 #number of times the climatological mean observarions are replicated along the "member" dimension to mimic a model ensemble representing the naiv climatological forecasts used as reference for calculating the CRPS Skill Score. Results are insensitive to variations in this value; the script has been tested for value=2 and 4.
 
 #options for methods estimating hindcast skill
 testlevel = 0.05
-#detrending = ['yes','no'] #yes or no, linear detrending of the gcm and obs time series prior to validation
-detrending = ['no','yes']
+detrending = ['yes','no'] #yes or no, linear detrending of the gcm and obs time series prior to validation
 
 #visualization options
 figformat = 'png' #format of output figures, pdf or png
@@ -77,6 +75,13 @@ for det in np.arange(len(detrending)):
             #leads = np.arange(lead[mm])
             members = nc_gcm.member.values
             nc_gcm = nc_gcm.isel(lead=lead_arr) #filter out the necessary leads only
+            
+            # #correct potential negative values present in the monthly precipiation accumulations of the GCM, anyway these values are only very slighly negative and thus the correction is not necessary
+            # if variables[vv] == 'tp':
+                # print('INFO: setting negative values in '+nc_gcm[variables[vv]].name+' from '+model[mm]+' to zero !')
+                # neg_mask = nc_gcm[variables[vv]].values < 0
+                # nc_gcm[variables[vv]].values[neg_mask] = 0.
+
             leads = nc_gcm.lead.values
             dates_gcm = pd.DatetimeIndex(nc_gcm.time.values)
             for oo in np.arange(len(obs)):
@@ -195,10 +200,11 @@ for det in np.arange(len(detrending)):
                 #optionally apply linear detrending to the time-series, see https://gist.github.com/rabernat/1ea82bb067c3273a6166d1b1f77d490f
                 if detrending[det] == 'yes':
                     print('INFO: As requested by the user, the gcm and obs time series are linearly detrended.')
-                    obs_seas_mn_5d = lin_detrend(obs_seas_mn_5d)
-                    obs_seas_mn_6d = lin_detrend(obs_seas_mn_6d)
-                    gcm_seas_mn_6d = lin_detrend(gcm_seas_mn_6d)
-                    gcm_seas_mn_5d = lin_detrend(gcm_seas_mn_5d)
+                    #gcm_seas_mn_5d_copy = gcm_seas_mn_5d.copy() #was used to check whether the temporal mean of the detrended gcm_seas_mn_5d xr data array is identical to the temporal mean of this non-detrended copy. This answer is yes! 
+                    obs_seas_mn_5d = lin_detrend(obs_seas_mn_5d,'no')
+                    obs_seas_mn_6d = lin_detrend(obs_seas_mn_6d,'no')
+                    gcm_seas_mn_6d = lin_detrend(gcm_seas_mn_6d,'no')
+                    gcm_seas_mn_5d = lin_detrend(gcm_seas_mn_5d,'no')
                 elif detrending[det] == 'no':
                     print('INFO: As requested by the user, the gcm and obs time series are not detrended.')
                 else:
@@ -222,9 +228,9 @@ for det in np.arange(len(detrending)):
                 obs_clim_mean = obs_seas_mn_5d.mean(dim='time').values
                 obs_clim_mean = np.expand_dims(np.expand_dims(obs_clim_mean,axis=0),axis=3)
                 #obs_clim_mean = np.tile(obs_clim_mean,(nr_years,1,1,nr_mems,1,1)) #get 6d numpy array containing the naiv climatological forecasts
-                obs_clim_mean = np.tile(obs_clim_mean,(nr_years,1,1,2,1,1)) #get 6d numpy array containing the naiv climatological forecasts
+                obs_clim_mean = np.tile(obs_clim_mean,(nr_years,1,1,nr_pseudo_mem,1,1)) #get 6d numpy array containing the naiv climatological forecasts
                 #obs_clim_mean = xr.DataArray(obs_clim_mean,coords=[dates_isea,season_label,lead_label,members,nc_obs.y,nc_obs.x],dims=['time', 'season', 'lead', 'member', 'y', 'x'], name=variables[vv]+'_clim') #convert to xarray data array
-                obs_clim_mean = xr.DataArray(obs_clim_mean,coords=[dates_isea,season_label,lead_label,members[0:2],nc_obs.y,nc_obs.x],dims=['time', 'season', 'lead', 'member', 'y', 'x'], name=variables[vv]+'_clim')
+                obs_clim_mean = xr.DataArray(obs_clim_mean,coords=[dates_isea,season_label,lead_label,members[0:nr_pseudo_mem],nc_obs.y,nc_obs.x],dims=['time', 'season', 'lead', 'member', 'y', 'x'], name=variables[vv]+'_clim')
                 crps_ensemble_clim = xs.crps_ensemble(obs_seas_mn_5d,obs_clim_mean,member_weights=None,issorted=False,member_dim='member',dim='time',weights=None,keep_attrs=False).rename('crps_ensemble_clim')
                 #close and delete unnecesarry objects to save mem
                 obs_clim_mean.close()
@@ -259,8 +265,10 @@ for det in np.arange(len(detrending)):
                 end_year = str(dates_isea[-1])[0:5].replace('-','') #end year considered in the skill assessment
                 results.x['standard_name'] = 'longitude'
                 results.y['standard_name'] = 'latitude'
+                results.attrs['variable'] = variables[vv]
                 results.attrs['prediction_system'] = model[mm]
                 results.attrs['reference_observations'] = obs[oo]
+                results.attrs['domain'] = domain
                 results.attrs['validation_period'] = start_year+' to '+end_year
                 results.attrs['time_series_detrending'] = detrending[det]
                 results.attrs['outlier_correction'] = corr_outlier
