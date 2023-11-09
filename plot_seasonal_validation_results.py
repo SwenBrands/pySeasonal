@@ -36,7 +36,7 @@ critval_skillscore = 0 #threshold value above which the skill scores applied her
 critval_relbias = 5 #percentage threshold beyond which the absolute relative bias is printed with a dot in the maps and thus assumed to be "important"
 scores = ['relbias','spearman_r','pearson_r','crps_ensemble_skillscore_clim']
 relbias_max = 100 #magnitude of the upper and lower limit to be plotted in case of relbias and tp, this is a percentage value and it is used because the relbias can be very large in dry regions due to the near-to-zero climatological precip. there
-vers = '1a' #version number of the output netCDF file to be sent to Predictia
+vers = '1b' #version number of the output netCDF file to be sent to Predictia
 
 precision = 'float32' #precision of the variable in the output netCDF files
 dpival = 300 #resultion of the output figure in dpi
@@ -60,9 +60,10 @@ for vv in np.arange(len(variables)):
 
 #init global minimum and maximum values
 minvals_map = np.empty((len(detrending),len(variables),len(model_dataset),len(scores)))
-maxvals_map = np.empty((len(detrending),len(variables),len(model_dataset),len(scores)))
-minvals_pcolor = np.empty((len(detrending),len(variables),len(model_dataset),len(scores)))
-maxvals_pcolor = np.empty((len(detrending),len(variables),len(model_dataset),len(scores)))
+minvals_map[:] = np.nan
+maxvals_map = minvals_map.copy()
+minvals_pcolor = minvals_map.copy()
+maxvals_pcolor = minvals_map.copy()
 for det in np.arange(len(detrending)):
     for vv in np.arange(len(variables)):
         if os.path.isdir(dir_figs+'/'+variables[vv]+'/maps') != True:
@@ -128,10 +129,15 @@ for det in np.arange(len(detrending)):
 # minvals_map = np.reshape(minvals_map,(minvals_map.shape[0],minvals_map.shape[1]*minvals_map.shape[2],minvals_map.shape[3])).min(axis=1)
 # maxvals_map = np.reshape(maxvals_map,(maxvals_map.shape[0],maxvals_map.shape[1]*maxvals_map.shape[2],maxvals_map.shape[3])).max(axis=1)
 
-minvals_pcolor = np.reshape(minvals_pcolor,(minvals_pcolor.shape[0]*minvals_pcolor.shape[1]*minvals_pcolor.shape[2],minvals_pcolor.shape[3])).min(axis=0)
-maxvals_pcolor = np.reshape(maxvals_pcolor,(maxvals_pcolor.shape[0]*maxvals_pcolor.shape[1]*maxvals_pcolor.shape[2],maxvals_pcolor.shape[3])).max(axis=0)
-minvals_map = np.reshape(minvals_map,(minvals_map.shape[0]*minvals_map.shape[1]*minvals_map.shape[2],minvals_map.shape[3])).min(axis=0)
-maxvals_map = np.reshape(maxvals_map,(maxvals_map.shape[0]*maxvals_map.shape[1]*maxvals_map.shape[2],maxvals_map.shape[3])).max(axis=0)
+# minvals_pcolor = np.reshape(minvals_pcolor,(minvals_pcolor.shape[0]*minvals_pcolor.shape[1]*minvals_pcolor.shape[2],minvals_pcolor.shape[3])).min(axis=0)
+# maxvals_pcolor = np.reshape(maxvals_pcolor,(maxvals_pcolor.shape[0]*maxvals_pcolor.shape[1]*maxvals_pcolor.shape[2],maxvals_pcolor.shape[3])).max(axis=0)
+# minvals_map = np.reshape(minvals_map,(minvals_map.shape[0]*minvals_map.shape[1]*minvals_map.shape[2],minvals_map.shape[3])).min(axis=0)
+# maxvals_map = np.reshape(maxvals_map,(maxvals_map.shape[0]*maxvals_map.shape[1]*maxvals_map.shape[2],maxvals_map.shape[3])).max(axis=0)
+
+minvals_pcolor = np.nanmin(np.reshape(minvals_pcolor,(minvals_pcolor.shape[0]*minvals_pcolor.shape[1]*minvals_pcolor.shape[2],minvals_pcolor.shape[3])),axis=0)
+maxvals_pcolor = np.nanmax(np.reshape(maxvals_pcolor,(maxvals_pcolor.shape[0]*maxvals_pcolor.shape[1]*maxvals_pcolor.shape[2],maxvals_pcolor.shape[3])),axis=0)
+minvals_map = np.nanmin(np.reshape(minvals_map,(minvals_map.shape[0]*minvals_map.shape[1]*minvals_map.shape[2],minvals_map.shape[3])),axis=0)
+maxvals_map = np.nanmax(np.reshape(maxvals_map,(maxvals_map.shape[0]*maxvals_map.shape[1]*maxvals_map.shape[2],maxvals_map.shape[3])),axis=0)
 
 #then plot the results with this min and max values
 for det in np.arange(len(detrending)):
@@ -150,7 +156,8 @@ for det in np.arange(len(detrending)):
                 y_coord = nc_results.y.values
                 x_coord = nc_results.x.values
                 xx,yy = np.meshgrid(x_coord,y_coord)
-                binary_mask = np.zeros((len(detrending),len(variables),len(model_dataset),len(scores),len(nc_results.season),len(nc_results.lead),len(y_coord),len(x_coord)),dtype=np.int8)
+                binary_mask = np.zeros((len(detrending),len(variables),len(model_dataset),len(scores),len(nc_results.season),len(nc_results.lead),len(y_coord),len(x_coord)),dtype='single')
+                binary_mask[:] = np.nan
                 halfres = np.abs(np.diff(nc_results.x.values))[0]/2 #needed to plot the pcolormesh
 
             ##plot matrices of verification results for the distinct score (x-axis = seasons, y-axis = stations and save to <figformat>
@@ -192,7 +199,7 @@ for det in np.arange(len(detrending)):
                     binmask = np.zeros(mapme.shape)
                     binmask[:] = np.nan
                     mask1 = (pval < critval_rho) & (rho > 0)
-                    mask0 = mask1 == False
+                    mask0 = mask1 == (pval >= critval_rho) | (rho <= 0)
                     binmask[mask1] = 1
                     binmask[mask0] = 0
                     score_unit[sc] = 'binary'
@@ -302,12 +309,14 @@ for det in np.arange(len(detrending)):
                 del(binary_mask_score_i)
                 ds_binary_mask.attrs['author'] = "Swen Brands (CSIC-UC, Instituto de Fisica de Cantabria), brandssf@ifca.unican.es or swen.brands@gmail.com"
                 ds_binary_mask.attrs['validation_period'] = str(file_years[0])+' to '+str(file_years[1])
+                ds_binary_mask.attrs['version'] = vers
+                ds_binary_mask.attrs['nan_criterion'] = 'A nan is set at a given grid-box if it is returned by xskillscore, e.g. due to a division by zero. It has been confirmed that this occcurs, e.g., if it does not rain at all either in the modelled or quasi-observed time-series.'
             else:
                 print('WARNING: Validation results for '+scores[sc]+' are not yet saved to netCDF because the transition to binary format still has to be discussed with the other PTI members.')
                 continue
         nc_results.close()
         savename_netcdf = dir_netcdf+'/binary_validation_results_pticlima_'+domain+'_'+str(file_years[0])+'_'+str(file_years[1])+'_v'+vers+'.nc'
         ds_binary_mask.to_netcdf(savename_netcdf)
-        ds_binary_mask.close()        
+        ds_binary_mask.close()
         print('INFO: plot_seasonal_validation_results.py has been run successfully and results have been stores in netCDF format at:')
         print(savename_netcdf)

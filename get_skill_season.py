@@ -25,6 +25,7 @@ years_model = [[1981,2022]] #years used in label of model netCDF file, refers to
 years_obs = [[1981,2022]] #years used in label of obs netCDF file
 variables = ['t2m','tp','si10','ssrd'] #variables names valid for both observations and GCM. GCM variable names have been set to ERA5 variable names from CDS in <aggregate_hindcast.py>
 datatype = ['float32','float32','float32','float32']
+precip_threshold = 0.5 #precipitation threshold in mm below which the modelled and quasi-observed monthly precipitation amount is set to 0.
 corr_outlier = 'no'
 aggreg = 'mon' #temporal aggregation of the input files
 domain = 'medcof' #spatial domain
@@ -76,11 +77,11 @@ for det in np.arange(len(detrending)):
             members = nc_gcm.member.values
             nc_gcm = nc_gcm.isel(lead=lead_arr) #filter out the necessary leads only
             
-            # #correct potential negative values present in the monthly precipiation accumulations of the GCM, anyway these values are only very slighly negative and thus the correction is not necessary
-            # if variables[vv] == 'tp':
-                # print('INFO: setting negative values in '+nc_gcm[variables[vv]].name+' from '+model[mm]+' to zero !')
-                # neg_mask = nc_gcm[variables[vv]].values < 0
-                # nc_gcm[variables[vv]].values[neg_mask] = 0.
+            #set modelled precip. < precip_threshold to 0; note that slightly negative values are present in the monthly precipiation accumulations of ECMWF51
+            if variables[vv] == 'tp':
+                print('INFO: setting '+variables[vv]+' values from '+model[mm]+ '< '+str(precip_threshold)+' to 0...')
+                zero_mask = nc_gcm[variables[vv]].values < precip_threshold
+                nc_gcm[variables[vv]].values[zero_mask] = 0.
 
             leads = nc_gcm.lead.values
             dates_gcm = pd.DatetimeIndex(nc_gcm.time.values)
@@ -101,6 +102,12 @@ for det in np.arange(len(detrending)):
                 #redefined date vectors for common time period
                 dates_obs = pd.DatetimeIndex(nc_obs.time.values)
                 dates_gcm = pd.DatetimeIndex(nc_gcm.time.values)
+                
+                #set observed precip. < precip_threshold to 0
+                if variables[vv] == 'tp':
+                    print('INFO: setting '+variables[vv]+' values from '+obs[oo]+ '< '+str(precip_threshold)+' to 0...')
+                    zero_mask = nc_obs[variables[vv]].values < precip_threshold
+                    nc_obs[variables[vv]].values[zero_mask] = 0.
                
                 #loop through each season
                 for sea in np.arange(len(season)):
@@ -221,7 +228,9 @@ for det in np.arange(len(detrending)):
                 spearman_pval_effn = xs.spearman_r_eff_p_value(obs_seas_mn_5d,gcm_seas_mn_5d,dim='time',skipna=True).rename('spearman_pval_effn')
                 bias = xs.me(obs_seas_mn_5d,gcm_seas_mn_5d,dim='time',skipna=True).rename('bias') #in xskillscore the bias is termed me
                 relbias = (bias/obs_seas_mn_5d.mean(dim='time')*100).rename('relbias')
-                
+                infmask = np.isinf(relbias.values)
+                relbias.values[infmask] = np.nan
+
                 #probabilistic validiation measures
                 crps_ensemble = xs.crps_ensemble(obs_seas_mn_5d,gcm_seas_mn_6d,member_weights=None,issorted=False,member_dim='member',dim='time',weights=None,keep_attrs=False).rename('crps_ensemble')
                 #get crps for the climatological / no-skill forecast
@@ -232,6 +241,7 @@ for det in np.arange(len(detrending)):
                 #obs_clim_mean = xr.DataArray(obs_clim_mean,coords=[dates_isea,season_label,lead_label,members,nc_obs.y,nc_obs.x],dims=['time', 'season', 'lead', 'member', 'y', 'x'], name=variables[vv]+'_clim') #convert to xarray data array
                 obs_clim_mean = xr.DataArray(obs_clim_mean,coords=[dates_isea,season_label,lead_label,members[0:nr_pseudo_mem],nc_obs.y,nc_obs.x],dims=['time', 'season', 'lead', 'member', 'y', 'x'], name=variables[vv]+'_clim')
                 crps_ensemble_clim = xs.crps_ensemble(obs_seas_mn_5d,obs_clim_mean,member_weights=None,issorted=False,member_dim='member',dim='time',weights=None,keep_attrs=False).rename('crps_ensemble_clim')
+                
                 #close and delete unnecesarry objects to save mem
                 obs_clim_mean.close()
                 del(obs_clim_mean)
@@ -242,6 +252,8 @@ for det in np.arange(len(detrending)):
                 del(crps_ensemble_clim)
                 #set name of the skill score
                 crps_ensemble_skillscore_clim = crps_ensemble_skillscore_clim.rename('crps_ensemble_skillscore_clim')
+                infmask = np.isinf(crps_ensemble_skillscore_clim.values)
+                crps_ensemble_skillscore_clim.values[infmask] = np.nan
                 
                 #add attribures
                 pearson_r.attrs['units'] = 'dimensionless'
@@ -293,7 +305,7 @@ for det in np.arange(len(detrending)):
                 obs_seas_mn_6d.close()
                 gcm_seas_mn_5d.close()
                 gcm_seas_mn_6d.close()
-                del(results,pearson_r,pearson_pval,pearson_pval_effn,spearman_r,spearman_pval,spearman_pval_effn,bias,relbias,crps_ensemble,crps_ensemble_skillscore_clim,obs_seas_mn_5d,obs_seas_mn_6d,obs_seas_mn_5d_nw,gcm_seas_mn_5d,gcm_seas_mn_6d,gcm_seas_mn_6d_nw)
+                del(results,pearson_r,pearson_pval,pearson_pval_effn,spearman_r,spearman_pval,spearman_pval_effn,bias,relbias,crps_ensemble,crps_ensemble_skillscore_clim,obs_seas_mn_6d,obs_seas_mn_5d,obs_seas_mn_5d_nw,gcm_seas_mn_5d,gcm_seas_mn_6d,gcm_seas_mn_6d_nw)
                 #del(pearson_r,pearson_pval,pearson_pval_effn,spearman_r,spearman_pval,spearman_pval_effn,obs_seas_mn_5d,obs_seas_mn_6d,obs_seas_mn_5d_nw,gcm_seas_mn_5d,gcm_seas_mn_6d,gcm_seas_mn_6d_nw)
 
             #close nc files containing observations

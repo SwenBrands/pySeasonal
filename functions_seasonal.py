@@ -80,11 +80,10 @@ def get_frac_significance(np_arr_pval_f,np_arr_rho_f,critval_f):
     np_arr_pval_step_f = np.reshape(np_arr_pval_f,[shape_f[0],shape_f[1],shape_f[2]*shape_f[3]])
     np_arr_rho_step_f = np.reshape(np_arr_rho_f,[shape_f[0],shape_f[1],shape_f[2]*shape_f[3]])
     sigind_f = (np_arr_pval_step_f < critval_f) & (np_arr_rho_step_f > 0) 
-    #spurind_f = (np_arr_pval_step_f >= critval_f) | (np_arr_rho_step_f <= 0)
-    spurind_f = sigind_f == False
+    spurind_f = (np_arr_pval_step_f >= critval_f) | (np_arr_rho_step_f <= 0)
     np_arr_pval_step_f[sigind_f] = 1
     np_arr_pval_step_f[spurind_f] = 0
-    spatial_sigfraq_f = np.sum(np_arr_pval_step_f,axis=2)/(shape_f[2]*shape_f[3])*100
+    spatial_sigfraq_f = np.nansum(np_arr_pval_step_f,axis=2)/(shape_f[2]*shape_f[3])*100
     return(spatial_sigfraq_f,np_arr_pval_step_f)
 
 def get_frac_above_threshold(np_arr_vals_f,critval_f):
@@ -93,10 +92,9 @@ def get_frac_above_threshold(np_arr_vals_f,critval_f):
     np_arr_vals_step_f = np.reshape(np_arr_vals_f,[shape_f[0],shape_f[1],shape_f[2]*shape_f[3]])
     sigind_f = np_arr_vals_step_f > critval_f 
     spurind_f = np_arr_vals_step_f <= critval_f
-    #spurind_f = sigind_f == False
     np_arr_vals_step_f[sigind_f] = 1
     np_arr_vals_step_f[spurind_f] = 0
-    spatial_fraq_f = np.sum(np_arr_vals_step_f,axis=2)/(shape_f[2]*shape_f[3])*100
+    spatial_fraq_f = np.nansum(np_arr_vals_step_f,axis=2)/(shape_f[2]*shape_f[3])*100
     return(spatial_fraq_f,np_arr_vals_step_f)
 
 def plot_pcolormesh_seasonal(xr_ar_f,minval_f,maxval_f,savename_f,colormap_f,dpival_f):
