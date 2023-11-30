@@ -16,7 +16,7 @@ exec(open('functions_seasonal.py').read()) #reads the <functions_seasonal.py> sc
 
 #set input parameters
 #season = ['DJF','MAM','JJA','SON'] #months of the season to be evaluated
-season_label = ['DJF','JFM','FMA','MAM','AMJ','MJJ','JJA','JAS','ASO','SON','OND','NDF']
+season_label = ['DJF','JFM','FMA','MAM','AMJ','MJJ','JJA','JAS','ASO','SON','OND','NDJ']
 season = [[12,1,2],[1,2,3],[2,3,4],[3,4,5],[4,5,6],[5,6,7],[6,7,8],[7,8,9],[8,9,10],[9,10,11],[10,11,12],[11,12,1]] #[[12,1,2],[3,4,5],[6,7,8],[9,10,11]]
 lead = [[0,1,2],[1,2,3],[2,3,4],[3,4,5],[4,5,6]] #[[0,1,2],[0,1,2],[0,1,2],[0,1,2]] #number of months between init and start of forecast interval to be verified, e.g. 1 will discard the first month after init, 2 will discard the first two months after init etc.
 model = ['ecmwf51'] #interval between meridians and parallels
@@ -230,6 +230,7 @@ for det in np.arange(len(detrending)):
                 relbias = (bias/obs_seas_mn_5d.mean(dim='time')*100).rename('relbias')
                 infmask = np.isinf(relbias.values)
                 relbias.values[infmask] = np.nan
+                del(infmask) #delete to save memory
 
                 #probabilistic validiation measures
                 crps_ensemble = xs.crps_ensemble(obs_seas_mn_5d,gcm_seas_mn_6d,member_weights=None,issorted=False,member_dim='member',dim='time',weights=None,keep_attrs=False).rename('crps_ensemble')
@@ -254,6 +255,7 @@ for det in np.arange(len(detrending)):
                 crps_ensemble_skillscore_clim = crps_ensemble_skillscore_clim.rename('crps_ensemble_skillscore_clim')
                 infmask = np.isinf(crps_ensemble_skillscore_clim.values)
                 crps_ensemble_skillscore_clim.values[infmask] = np.nan
+                del(infmask)
                 
                 #add attribures
                 pearson_r.attrs['units'] = 'dimensionless'

@@ -36,7 +36,7 @@ critval_skillscore = 0 #threshold value above which the skill scores applied her
 critval_relbias = 5 #percentage threshold beyond which the absolute relative bias is printed with a dot in the maps and thus assumed to be "important"
 scores = ['relbias','spearman_r','pearson_r','crps_ensemble_skillscore_clim']
 relbias_max = 100 #magnitude of the upper and lower limit to be plotted in case of relbias and tp, this is a percentage value and it is used because the relbias can be very large in dry regions due to the near-to-zero climatological precip. there
-vers = '1b' #version number of the output netCDF file to be sent to Predictia
+vers = '1c' #version number of the output netCDF file to be sent to Predictia
 
 precision = 'float32' #precision of the variable in the output netCDF files
 dpival = 300 #resultion of the output figure in dpi
