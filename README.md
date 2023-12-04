@@ -18,3 +18,9 @@ in the model files to ERA5 standard (e.g. tas -> t2m or pr -> tp)
 3. get_skill.py calculated hindcast skill measures and plots maps.
 
 
+Credits
+-------
+This research work is funded by the Ministry for the Ecological Transition and the Demographic Challenge (MITECO) and the European Commission NextGenerationEU (Regulation EU 2020/2094), through CSIC's Interdisciplinary Thematic Platform Clima (PTI-Clima).
+
+![alt text](https://www.miteco.gob.es/content/experience-fragments/miteco/language-masters/en/site/header/master-es/_jcr_content/root/header_container/logoImage.coreimg.svg/1693915329839/header-logo.svg)
+

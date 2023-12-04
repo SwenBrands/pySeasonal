@@ -28,15 +28,20 @@ dir_maps = dir_figs+'/maps'
 corr_outlier = 'no' #load the outlier-correted validation results; yes or no
 detrending = ['yes','no'] #yes or no, linear detrending of the gcm and obs time series prior to validation
 file_years = [1981,2022] #start and end years indicated in the input file name
-variables = ['ssrd','si10','t2m','tp']
-ref_dataset = ['era5','era5','era5','era5'] # #list of model or reference observational dataset paired with <variables> input parameter below
+
+# variables = ['ssrd','si10','t2m','tp']
+# ref_dataset = ['era5','era5','era5','era5'] # #list of model or reference observational dataset paired with <variables> input parameter below
+
+variables = ['t2m']
+ref_dataset = ['era5'] # #list of model or reference observational dataset paired with <variables> input parameter below
+
 domain = 'medcof'
 critval_rho = 0.05 #critical value used to define the signficance of the correlation measuere applied here (Pearon and Spearman)
 critval_skillscore = 0 #threshold value above which the skill scores applied here indicate skill (is normally set to 0). Currently the climatological mean value of the reference dataset (e.g. ERA5) is used as naiv reference forecast: Skill Score = 1 - SCORE / SCORE_clim  
 critval_relbias = 5 #percentage threshold beyond which the absolute relative bias is printed with a dot in the maps and thus assumed to be "important"
 scores = ['relbias','spearman_r','pearson_r','crps_ensemble_skillscore_clim']
 relbias_max = 100 #magnitude of the upper and lower limit to be plotted in case of relbias and tp, this is a percentage value and it is used because the relbias can be very large in dry regions due to the near-to-zero climatological precip. there
-vers = '1c' #version number of the output netCDF file to be sent to Predictia
+#vers = '1c' #by 20231201 is already generated in get_skill_season.py, check if everything works and delete this line; version number of the output netCDF file to be sent to Predictia
 
 precision = 'float32' #precision of the variable in the output netCDF files
 dpival = 300 #resultion of the output figure in dpi
@@ -51,7 +56,7 @@ print('INFO: Verfying '+str(model_dataset)+' against for '+str(variables)+' from
 if len(variables) != len(ref_dataset):
     raise Exception('ERROR: The two input lists <variables> and <ref_dataset> must have the same length !')
 
-#create output directories ir they do not exist.
+#create output directories if they do not exist.
 if os.path.isdir(dir_figs) != True:
     os.makedirs(dir_figs)
 for vv in np.arange(len(variables)):
@@ -279,7 +284,6 @@ for det in np.arange(len(detrending)):
                 #save a binary mask (significance or skill yes or no) in netcdf format
                 binary_mask[det,vv,dd,sc,:,:,:,:] = binmask
             ##close input nc files and produced xr dataset
-            nc_results.close()
             pcolorme.close()
         
         #bring the binary result masks into xarray data array format, one array per score. Then assign metadata to score / dataarray and stack them all as variables into a definite xarray dataset to be stored on netCDF
@@ -290,7 +294,6 @@ for det in np.arange(len(detrending)):
                 binary_mask_score_i = xr.DataArray(binary_mask_score_i,coords=[detrending,variables,model_dataset,nc_results.season,nc_results.lead,nc_results.y,nc_results.x],dims=['detrended','variable', 'model', 'season', 'lead', 'y', 'x'], name=scores[sc]+'_binary')
                 binary_mask_score_i['detrended'].attrs['info'] = 'Linear de-trending was applied to the modelled and (quasi)observed time series prior to validation; yes or no'
                 binary_mask_score_i['variable'].attrs['info'] = 'Meteorological variable acronym according to ERA5 nomenclature followed by Copernicus Climate Data Store (CDS)'
-                binary_mask_score_i['model'].attrs['info'] = 'Name and version of the model / prediction system'
                 binary_mask_score_i['model'].attrs['info'] = 'Name and version of the model / prediction system'
                 binary_mask_score_i['season'].attrs['info'] = 'Season the forecast is valid for'
                 binary_mask_score_i['lead'].attrs['info'] = 'Leadtime of the forecast; one per month'
@@ -309,13 +312,13 @@ for det in np.arange(len(detrending)):
                 del(binary_mask_score_i)
                 ds_binary_mask.attrs['author'] = "Swen Brands (CSIC-UC, Instituto de Fisica de Cantabria), brandssf@ifca.unican.es or swen.brands@gmail.com"
                 ds_binary_mask.attrs['validation_period'] = str(file_years[0])+' to '+str(file_years[1])
-                ds_binary_mask.attrs['version'] = vers
+                ds_binary_mask.attrs['version'] = nc_results.version
                 ds_binary_mask.attrs['nan_criterion'] = 'A nan is set at a given grid-box if it is returned by xskillscore, e.g. due to a division by zero. It has been confirmed that this occcurs, e.g., if it does not rain at all either in the modelled or quasi-observed time-series.'
             else:
                 print('WARNING: Validation results for '+scores[sc]+' are not yet saved to netCDF because the transition to binary format still has to be discussed with the other PTI members.')
                 continue
         nc_results.close()
-        savename_netcdf = dir_netcdf+'/binary_validation_results_pticlima_'+domain+'_'+str(file_years[0])+'_'+str(file_years[1])+'_v'+vers+'.nc'
+        savename_netcdf = dir_netcdf+'/binary_validation_results_pticlima_'+domain+'_'+str(file_years[0])+'_'+str(file_years[1])+'_v'+nc_results.version+'.nc'
         ds_binary_mask.to_netcdf(savename_netcdf)
         ds_binary_mask.close()
         print('INFO: plot_seasonal_validation_results.py has been run successfully and results have been stores in netCDF format at:')

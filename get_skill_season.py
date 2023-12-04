@@ -15,23 +15,32 @@ from scipy.signal import detrend
 exec(open('functions_seasonal.py').read()) #reads the <functions_seasonal.py> script containing a set of custom functions needed here
 
 #set input parameters
-#season = ['DJF','MAM','JJA','SON'] #months of the season to be evaluated
+vers = '1d' #version number of the output netCDF file to be sent to Predictia
+model = ['ecmwf51'] #interval between meridians and parallels
+obs = ['era5']
+years_model = [1981,2023] #years used in label of model netCDF file, refers to the first and the last year of the monthly model inits
+years_obs = [1981,2022] #years used in label of obs netCDF file; if they differ from <years_model>, then the common intersection of years will be validated.
+
 season_label = ['DJF','JFM','FMA','MAM','AMJ','MJJ','JJA','JAS','ASO','SON','OND','NDJ']
 season = [[12,1,2],[1,2,3],[2,3,4],[3,4,5],[4,5,6],[5,6,7],[6,7,8],[7,8,9],[8,9,10],[9,10,11],[10,11,12],[11,12,1]] #[[12,1,2],[3,4,5],[6,7,8],[9,10,11]]
 lead = [[0,1,2],[1,2,3],[2,3,4],[3,4,5],[4,5,6]] #[[0,1,2],[0,1,2],[0,1,2],[0,1,2]] #number of months between init and start of forecast interval to be verified, e.g. 1 will discard the first month after init, 2 will discard the first two months after init etc.
-model = ['ecmwf51'] #interval between meridians and parallels
-obs = ['era5']
-years_model = [[1981,2022]] #years used in label of model netCDF file, refers to the first and the last year of the monthly model inits
-years_obs = [[1981,2022]] #years used in label of obs netCDF file
 variables = ['t2m','tp','si10','ssrd'] #variables names valid for both observations and GCM. GCM variable names have been set to ERA5 variable names from CDS in <aggregate_hindcast.py>
-datatype = ['float32','float32','float32','float32']
+
+# season_label = ['DJF']
+# season = [[12,1,2]] #[[12,1,2],[3,4,5],[6,7,8],[9,10,11]]
+# lead = [[0,1,2]] #[[0,1,2],[0,1,2],[0,1,2],[0,1,2]] #number of months between init and start of forecast interval to be verified, e.g. 1 will discard the first month after init, 2 will discard the first two months after init etc.
+# variables = ['t2m'] #variables names valid for both observations and GCM. GCM variable names have been set to ERA5 variable names from CDS in <aggregate_hindcast.py>
+
+datatype = 'float32' #data type of the variables in the output netcdf files
+compression_level = 1
 precip_threshold = 0.5 #precipitation threshold in mm below which the modelled and quasi-observed monthly precipitation amount is set to 0.
 corr_outlier = 'no'
 aggreg = 'mon' #temporal aggregation of the input files
 domain = 'medcof' #spatial domain
-int_method = 'conservative_normed' #'conservative_normed', interpolation method used in <regrid_obs.py>
+int_method = 'conservative_normed' #'conservative_normed', interpolation method used before in <regrid_obs.py>
 nr_mem = [25] #considered ensemble members
 nr_pseudo_mem = 2 #number of times the climatological mean observarions are replicated along the "member" dimension to mimic a model ensemble representing the naiv climatological forecasts used as reference for calculating the CRPS Skill Score. Results are insensitive to variations in this value; the script has been tested for value=2 and 4.
+quantiles = [1/3,1/3*2] #quantiles of the year-to-year time series to be calculated and stored
 
 #options for methods estimating hindcast skill
 testlevel = 0.05
@@ -53,8 +62,6 @@ dir_netcdf = home+'/datos/tareas/proyectos/pticlima/seasonal/results/validation'
 #check consistency of some input parameters
 if len(season) != len(season_label):
     raise Exception('ERROR: the length of the list <season> does not equal the length of the list <season_label> !')
-if len(variables) != len(datatype):
-    raise Exception('ERROR: the length of the list <variables> does not equal the length of the list <datatype> !')
 
 lead_arr = np.arange(np.array(lead).min(),np.array(lead).max()+1)
 
@@ -69,10 +76,10 @@ for det in np.arange(len(detrending)):
         for mm in np.arange(len(model)):
             if model[mm] == 'ecmwf51' and lead_arr[-1] > 6: #if leadtime > 6 for ecmwf51, the return an error because the 7th forecast month is composed of a few days only in this gcm
                 raise Exception('ERROR: the maximum lead requested for '+model[mm]+' ('+str(lead_arr[-1])+') is not valid ! Please check the entries of the input parameter <lead>.')        
-            path_gcm = path_gcm_base+'/'+model[mm]+'/'+variables[vv]+'_'+aggreg+'_'+model[mm]+'_'+str(nr_mem[mm])+'m_'+domain+'_'+str(years_model[mm][0])+'_'+str(years_model[mm][-1])+'.nc'
+            path_gcm = path_gcm_base+'/'+model[mm]+'/'+variables[vv]+'_'+aggreg+'_'+model[mm]+'_'+str(nr_mem[mm])+'m_'+domain+'_'+str(years_model[0])+'_'+str(years_model[-1])+'.nc'
             nc_gcm = xr.open_dataset(path_gcm)
             #nc_gcm = xr.open_dataset(path_gcm, chunks = {'member' : 1})
-            nc_gcm[variables[vv]] = nc_gcm[variables[vv]].astype(datatype[vv])
+            nc_gcm[variables[vv]] = nc_gcm[variables[vv]].astype(datatype)
             #leads = np.arange(lead[mm])
             members = nc_gcm.member.values
             nc_gcm = nc_gcm.isel(lead=lead_arr) #filter out the necessary leads only
@@ -87,9 +94,9 @@ for det in np.arange(len(detrending)):
             dates_gcm = pd.DatetimeIndex(nc_gcm.time.values)
             for oo in np.arange(len(obs)):
                 print('INFO: validating '+variables[vv]+' from '+model[mm]+' vs '+obs[oo]+' with time series detrending option set to '+detrending[det])
-                path_obs = path_obs_base+'/'+obs[oo]+'/'+variables[vv]+'_'+aggreg+'_'+obs[oo]+'_on_'+model[mm]+'_grid_'+int_method+'_'+domain+'_'+str(years_obs[oo][0])+'_'+str(years_obs[oo][-1])+'.nc'
+                path_obs = path_obs_base+'/'+obs[oo]+'/'+variables[vv]+'_'+aggreg+'_'+obs[oo]+'_on_'+model[mm]+'_grid_'+int_method+'_'+domain+'_'+str(years_obs[0])+'_'+str(years_obs[-1])+'.nc'
                 nc_obs = xr.open_dataset(path_obs)
-                nc_obs[variables[vv]] = nc_obs[variables[vv]].astype(datatype[vv])
+                nc_obs[variables[vv]] = nc_obs[variables[vv]].astype(datatype)
                 dates_obs = pd.DatetimeIndex(nc_obs.time.values)
                 dates_bool_obs = dates_obs.isin(dates_gcm)
                 dates_bool_gcm = dates_gcm.isin(dates_obs)
@@ -102,6 +109,13 @@ for det in np.arange(len(detrending)):
                 #redefined date vectors for common time period
                 dates_obs = pd.DatetimeIndex(nc_obs.time.values)
                 dates_gcm = pd.DatetimeIndex(nc_gcm.time.values)
+                #check whether the modelled and observed dates are identical
+                if np.all(dates_obs.isin(dates_gcm)) == True and np.all(dates_gcm.isin(dates_obs)) == True:
+                    print('INFO: the modelled and observed date vectors are identical.')
+                    years_common = [dates_gcm.year[0], dates_gcm.year[-1]] #define common start and end year used to save the results in netCDF format
+                    print('INFO: the common time period used for verification is '+str(years_common[0])+' to '+str(years_common[1])+' !')
+                else:
+                    raise Exception('ERROR: the modelled and observed date vectors are not identical !')
                 
                 #set observed precip. < precip_threshold to 0
                 if variables[vv] == 'tp':
@@ -139,6 +153,14 @@ for det in np.arange(len(detrending)):
                             #these inits are for the non weighted (nw) seasonal mean values which will be calculated alongside the weighted values below for comparison
                             obs_seas_mn_5d_nw = np.copy(obs_seas_mn_5d)
                             gcm_seas_mn_6d_nw = np.copy(gcm_seas_mn_6d)
+                        
+                        #init numpy array which will be filled with tercile values (tercile x season x lead x member x lat x lon)
+                        if det == 0 and vv == 0 and mm == 0 and sea == 0 and ll == 0:
+                            print('Initializing numpy arrays to be filled with quantiles '+str(quantiles)+'...')
+                            quantile_vals = np.zeros((len(detrending),len(variables),len(model),len(quantiles),nr_seas,nr_leads,nr_mems,nr_lats,nr_lons),dtype='single')
+                            quantile_vals[:] = np.nan
+                            quantile_vals_ens = np.zeros((len(detrending),len(variables),len(model),len(quantiles),nr_seas,nr_leads,nr_lats,nr_lons),dtype='single')
+                            quantile_vals_ens[:] = np.nan
                         
                         #and loop through each month of this season to calculate the seasonal mean values in both the model and observations
                         for mon in np.arange(len(season[sea])):
@@ -216,7 +238,18 @@ for det in np.arange(len(detrending)):
                     print('INFO: As requested by the user, the gcm and obs time series are not detrended.')
                 else:
                     raise Exception('ERROR: check entry for <detrending[det]>')
-                        
+                
+                #calculate the quantiles along the time dimension and put them into the pre-initialized numpy arrays                
+                #calculate member-wise quantiles
+                quantile_vals_step = gcm_seas_mn_6d.quantile(quantiles, dim='time')
+                quantile_vals[det,vv,mm,:,:,:,:,:,:] = quantile_vals_step.values
+                shape_gcm = gcm_seas_mn_6d.shape
+                
+                #get overall / ensemble quantiles calculated upon the array with flattened "member" dimension, thereby mimicing a n member times longer time series
+                gcm_seas_mn_5d_flat_mems = gcm_seas_mn_6d.values.reshape((shape_gcm[0]*shape_gcm[3],shape_gcm[1],shape_gcm[2],shape_gcm[4],shape_gcm[5])) #members are flattened to mimic an extended time dimension, this is a numpy array
+                quantile_vals_ens_step = np.nanquantile(gcm_seas_mn_5d_flat_mems,quantiles,axis=0)
+                quantile_vals_ens[det,vv,mm,:,:,:,:,:] = quantile_vals_ens_step
+
                 ##start verification
                 ##calculalate hindcast correlation coefficient for the inter-annual seasonal-mean time series (observations vs. ensemble mean) and corresponding p-values based on the effective sample size
                 #determinstic validation measures
@@ -286,10 +319,19 @@ for det in np.arange(len(detrending)):
                 results.attrs['validation_period'] = start_year+' to '+end_year
                 results.attrs['time_series_detrending'] = detrending[det]
                 results.attrs['outlier_correction'] = corr_outlier
-                results.attrs['contact'] = 'Swen Brands, brandssf@ifca.unican.es or swen.brands@gmail.com'
+                results.attrs['version'] = vers
+                results.attrs['author'] = 'Swen Brands, brandssf@ifca.unican.es or swen.brands@gmail.com'
                 #then save to netCDF and close
                 savename_results = dir_netcdf+'/validation_results_season_'+variables[vv]+'_'+model[mm]+'_vs_'+obs[oo]+'_'+domain+'_corroutlier_'+corr_outlier+'_detrended_'+detrending[det]+'_'+start_year+'_'+end_year+'.nc'
                 results.to_netcdf(savename_results)
+                
+                #retain dimensions used to store quantiles before deleting and closing the respective objects
+                if det == len(detrending)-1 and vv == len(variables)-1 and mm == len(model)-1 and oo == len(obs)-1 and sea == len(season)-1:
+                    print('retain dimension attributes for storing the quantiles....')
+                    season2quan = results.season
+                    lead2quan = results.lead
+                    y2quan = results.y.astype(datatype)
+                    x2quan = results.x.astype(datatype)
                 
                 #close and delete remaining temporary xarray objects to free memory
                 results.close()
@@ -309,8 +351,47 @@ for det in np.arange(len(detrending)):
                 gcm_seas_mn_6d.close()
                 del(results,pearson_r,pearson_pval,pearson_pval_effn,spearman_r,spearman_pval,spearman_pval_effn,bias,relbias,crps_ensemble,crps_ensemble_skillscore_clim,obs_seas_mn_6d,obs_seas_mn_5d,obs_seas_mn_5d_nw,gcm_seas_mn_5d,gcm_seas_mn_6d,gcm_seas_mn_6d_nw)
                 #del(pearson_r,pearson_pval,pearson_pval_effn,spearman_r,spearman_pval,spearman_pval_effn,obs_seas_mn_5d,obs_seas_mn_6d,obs_seas_mn_5d_nw,gcm_seas_mn_5d,gcm_seas_mn_6d,gcm_seas_mn_6d_nw)
-
+            
             #close nc files containing observations
             nc_obs.close()
-        #close nc files containing model data
+            del(nc_obs)
+        #retain attributes and then close and delete nc files containing model data
+        x_attrs = nc_gcm.x.attrs
+        y_attrs = nc_gcm.x.attrs
         nc_gcm.close()
+        del(nc_gcm)
+
+#convert the two numpy arrays containing the two types of quantiles (memberwise and ensemble) into two xarray data arrays, merge them to a single xarray dataset, add attributes to this dataset and save it to netCDF format
+quantile_vals = xr.DataArray(quantile_vals, coords=[detrending,variables,model,np.round(quantiles,2).astype(datatype),season2quan,lead2quan,members,y2quan,x2quan], dims=['detrended','variable','model','quantile_threshold','season','lead','member','y','x'], name='quantile_memberwise')
+quantile_vals.attrs['description'] = 'quantile thresholds calculated separately fore each ensemble member' 
+quantile_vals_ens = xr.DataArray(quantile_vals_ens, coords=[detrending,variables,model,np.round(quantiles,2).astype(datatype),season2quan,lead2quan,y2quan,x2quan], dims=['detrended','variable','model','quantile_threshold','season','lead','y','x'], name='quantile_ensemble')
+quantile_vals_ens.attrs['description'] = 'quantile thresholds calculated on all ensemble members; the distinct ensemble members have been concatenated along the time dimension prior to calculating the quantiles'
+quantile_vals_merged = xr.merge((quantile_vals,quantile_vals_ens))
+#dimension attributes
+quantile_vals_merged['x'].attrs = x_attrs
+quantile_vals_merged['y'].attrs = y_attrs
+quantile_vals_merged['detrended'].attrs['info'] = 'Linear de-trending was applied to the modelled and (quasi)observed time series prior to validation; yes or no'
+quantile_vals_merged['variable'].attrs['info'] = 'Meteorological variable acronym according to ERA5 nomenclature followed by Copernicus Climate Data Store (CDS)'
+quantile_vals_merged['model'].attrs['info'] = 'Name and version of the model / prediction system'
+quantile_vals_merged['quantile_threshold'].attrs['info'] = 'Quantile thresholds rounded to 2 decimals'
+quantile_vals_merged['season'].attrs['info'] = 'Season the forecast is valid for'
+quantile_vals_merged['lead'].attrs['info'] = 'Leadtime of the forecast; one per month'
+#global attributes
+quantile_vals_merged.attrs['validation_period'] = str(years_common[0])+' to '+str(years_common[1])
+quantile_vals_merged.attrs['version'] = vers
+quantile_vals_merged.attrs['author'] = "Swen Brands (CSIC-UC, Instituto de Fisica de Cantabria), brandssf@ifca.unican.es or swen.brands@gmail.com"
+#save to netCDF
+savename_quantiles = dir_netcdf+'/quantiles_pticlima_'+domain+'_'+str(years_common[0])+'_'+str(years_common[1])+'_v'+vers+'.nc'
+encoding = {'quantile_memberwise': {'zlib': True, 'complevel': compression_level}, 'quantile_ensemble': {'zlib': True, 'complevel': compression_level}}
+quantile_vals_merged.to_netcdf(savename_quantiles,encoding=encoding)
+
+#close remaining xarray objects
+season2quan.close()
+lead2quan.close()
+y2quan.close()
+x2quan.close()
+quantile_vals.close()
+quantile_vals_ens.close()
+quantile_vals_merged.close()
+
+print('INFO: get_skill_season.py has been run successfully !')
