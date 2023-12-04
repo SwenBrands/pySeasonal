@@ -20,7 +20,7 @@ in the model files to ERA5 standard (e.g. tas -> t2m or pr -> tp)
 
 Credits
 -------
-This research work is funded by the Ministry for the Ecological Transition and the Demographic Challenge (MITECO) and the European Commission NextGenerationEU (Regulation EU 2020/2094), through CSIC's Interdisciplinary Thematic Platform Clima (PTI-Clima).
+This ongoing research work is being funded by the Ministry for the Ecological Transition and the Demographic Challenge (MITECO) and the European Commission NextGenerationEU (Regulation EU 2020/2094), through CSIC's Interdisciplinary Thematic Platform Clima (PTI-Clima).
 
-![alt text](https://www.miteco.gob.es/content/experience-fragments/miteco/language-masters/en/site/header/master-es/_jcr_content/root/header_container/logoImage.coreimg.svg/1693915329839/header-logo.svg)
+![alt text](https://pti-clima.csic.es/wp-content/uploads/2023/11/Web-Gob-Min-CSIC-COLOR-LOGO-PNG-RGB-300pppCLIMA.png)
 

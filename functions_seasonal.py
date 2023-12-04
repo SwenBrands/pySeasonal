@@ -4,6 +4,36 @@
 
 from math import radians, cos, sin, asin, sqrt
 
+def assign_season_label(season_list_f):
+    '''assign the season string for a the input list of 3 consecutive months, each month being an integer.'''
+    if season_list_f == [1,2,3]:
+        season_label_f = 'JFM'
+    elif season_list_f == [2,3,4]:
+        season_label_f = 'FMA'
+    elif season_list_f == [3,4,5]:
+        season_label_f = 'MAM'
+    elif season_list_f == [4,5,6]:
+        season_label_f = 'AMJ'
+    elif season_list_f == [5,6,7]:
+        season_label_f = 'MJJ'
+    elif season_list_f == [6,7,8]:
+        season_label_f = 'JJA'
+    elif season_list_f == [7,8,9]:
+        season_label_f = 'JAS'
+    elif season_list_f == [8,9,10]:
+        season_label_f = 'ASO'
+    elif season_list_f == [9,10,11]:
+        season_label_f = 'SON'
+    elif season_list_f == [10,11,12]:
+        season_label_f = 'OND'
+    elif season_list_f == [11,12,1]:
+        season_label_f = 'NDJ'
+    elif season_list_f == [12,1,2]:
+        season_label_f = 'DJF'
+    else:
+        raise Exception('ERROR: check entry for <season_list_f> !')
+    return(season_label_f)
+
 def haversine(lon1, lat1, lon2, lat2):
     """
     Calculate the great circle distance in kilometers between two points 
