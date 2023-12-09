@@ -29,11 +29,11 @@ corr_outlier = 'no' #load the outlier-correted validation results; yes or no
 detrending = ['yes','no'] #yes or no, linear detrending of the gcm and obs time series prior to validation
 file_years = [1981,2022] #start and end years indicated in the input file name
 
-# variables = ['ssrd','si10','t2m','tp']
-# ref_dataset = ['era5','era5','era5','era5'] # #list of model or reference observational dataset paired with <variables> input parameter below
+variables = ['msl','ssrd','si10','t2m','tp'] #variable names in CDS format
+ref_dataset = ['era5','era5','era5','era5','era5'] # #list of model or reference observational dataset paired with <variables> input parameter below
 
-variables = ['t2m']
-ref_dataset = ['era5'] # #list of model or reference observational dataset paired with <variables> input parameter below
+#variables = ['t2m'] #variable names in CDS format
+#ref_dataset = ['era5'] # #list of model or reference observational dataset paired with <variables> input parameter below
 
 domain = 'medcof'
 critval_rho = 0.05 #critical value used to define the signficance of the correlation measuere applied here (Pearon and Spearman)
@@ -126,7 +126,7 @@ for det in np.arange(len(detrending)):
                     raise Exception('ERROR: unknown value for <scores[sc]> !')
             ##close file
             nc_results.close()
-            del(nc_results)
+            del(nc_results,score_pval)
     
 ### get global min and max values covering the range of all considered model / reanalysis datasets, currently does not take into account various GCM datasets, i.e. only works for len(model_dataset) == 1
 # minvals_pcolor = np.reshape(minvals_pcolor,(minvals_pcolor.shape[0],minvals_pcolor.shape[1]*minvals_pcolor.shape[2],minvals_pcolor.shape[3])).min(axis=1)
@@ -193,6 +193,12 @@ for det in np.arange(len(detrending)):
                     score_unit[sc] = 'binary'
                     score_info[sc] = 'Continuous Rank Probabililty Score with reference to climatological forecast exceeding '+str(critval_skillscore)+', yes (1) or no (0); the shape of the continuous variable distribution is taken from the ensemble members'
                 elif scores[sc] in ('pearson_r','spearman_r'):
+                    if scores[sc] in ('pearson_r'):
+                        score_pval = 'pearson_pval'
+                    elif scores[sc] in ('spearman_r'):
+                        score_pval = 'spearman_pval'
+                    else:
+                        raise Exception('ERROR: check entry in <scores[sc]> !')
                     #areal percentage of significant grid-box scale correlation coefficients is calculated and plotted
                     savename = dir_figs+'/'+variables[vv]+'/pcolor_siggridboxes_'+variables[vv]+'_'+scores[sc]+'_'+domain+'_'+model_dataset[dd]+'_vs_'+score_ref+'_corr_outlier_'+corr_outlier+'_detrended_'+detrending[det]+'_testlvl_'+str(round(critval_rho*100))+'.'+figformat
                     pval = nc_results[score_pval].values
@@ -275,7 +281,7 @@ for det in np.arange(len(detrending)):
                             savename = dir_figs+'/'+variables[vv]+'/maps/'+scores[sc]+'/map_'+variables[vv]+'_'+seasons[sea]+'_'+leads[ll]+'_'+scores[sc]+'_'+critval_label+'_'+domain+'_'+model_dataset[dd]+'_vs_'+score_ref+'_corr_outlier_'+corr_outlier+'_detrended_'+detrending[det]+'_'+str(file_years[0])+str(file_years[1])+'.'+figformat
                             cbarlabel = scores[sc]
                             agreeind = binmask[sea,ll,:,:] == 1
-                            if scores[sc] == 'relbias' and variables[vv] in ('tp','si10'):
+                            if scores[sc] == 'relbias' and variables[vv] in ('tp','si10','msl'):
                                 get_map_lowfreq_var(mapme[sea,ll,:,:],xx,yy,agreeind,relbias_max*-1,relbias_max,dpival,title,savename,halfres,colormaps[sc],titlesize,cbarlabel) #colormap limits were set by the user in <relbias_max>
                             else:
                                 #get_map_lowfreq_var(mapme[sea,ll,:,:],xx,yy,agreeind,minvals_map[det,sc],maxvals_map[det,sc],dpival,title,savename,halfres,colormaps[sc],titlesize,cbarlabel) #colormap limits have been inferred from the score arrays above

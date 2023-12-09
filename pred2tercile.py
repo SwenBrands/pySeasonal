@@ -18,21 +18,19 @@ import pdb as pdb #then type <set_trace()> at a given line in the code below
 exec(open('functions_seasonal.py').read()) #reads the <functions_seasonal.py> script containing a set of custom functions needed here
 
 #set input parameters
-quantile_version = '1c' #version number of the quantiles file used here
+quantile_version = '1e' #version number of the quantiles file used here
 model = 'ecmwf' #interval between meridians and parallels
 version = '51'
 
-# year_init = [2023,2023] #a list containing the years the forecast are initialized on, will be looped through with yy
-# month_init = [11,12] #a list containing the corresponding months the forecast are initialized on, will be called while looping through <year_init> (with yy), i.e. must have the same length
-year_init = [2023] #a list containing the years the forecast are initialized on, will be looped through with yy
-month_init = [11] #a list containing the corresponding months the forecast are initialized on, will be called while looping through <year_init> (with yy), i.e. must have the same length
+year_init = [2023,2023] #a list containing the years the forecast are initialized on, will be looped through with yy
+month_init = [11,12] #a list containing the corresponding months the forecast are initialized on, will be called while looping through <year_init> (with yy), i.e. must have the same length
 
 years_quantile = [1981,2022] #years used to calculate the quantiles with get_skill_season.py
 season_length = 3 #length of the season, e.g. 3 for DJF, JFM, etc.
 detrended = 'no'
 
-variable_qn = ['t2m','tp','si10','ssrd'] #variables names valid for both observations and GCM. GCM variable names have been set to ERA5 variable names from CDS in <aggregate_hindcast.py>
-variable_fc = ['tas','pr','sfcWind','rsds'] #variables names valid for both observations and GCM. GCM variable names have been set to ERA5 variable names from CDS in <aggregate_hindcast.py>
+variable_qn = ['msl','t2m','tp','si10','ssrd'] #variables names valid for both observations and GCM. GCM variable names have been set to ERA5 variable names from CDS in <aggregate_hindcast.py>
+variable_fc = ['psl','tas','pr','sfcWind','rsds'] #variables names valid for both observations and GCM. GCM variable names have been set to ERA5 variable names from CDS in <aggregate_hindcast.py>
 
 datatype = 'float32' #data type of the variables in the output netcdf files
 domain = 'medcof' #spatial domain
@@ -49,15 +47,18 @@ home = os.getenv('HOME')
 rundir = home+'/datos/tareas/proyectos/pticlima/pyPTIclima/pySeasonal'
 dir_quantile = home+'/datos/tareas/proyectos/pticlima/seasonal/results/validation'
 dir_forecast = home+'/datos/tareas/proyectos/pticlima/seasonal/results/forecast'
-gcm_store = 'extdisk'
+gcm_store = 'F' #laptop, F or extdisk2
 product = 'forecast'
 
 ## EXECUTE #############################################################
 quantile_threshold = [0.33,0.67]
+
 #set path to input gcm files
 if gcm_store == 'laptop':
     path_gcm_base = home+'/datos/GCMData/seasonal-original-single-levels/'+domain # head directory of the source files
-elif gcm_store == 'extdisk':
+elif gcm_store == 'F':
+    path_gcm_base = '/media/swen/F/datos/GCMData/seasonal-original-single-levels/'+domain # head directory of the source files
+elif gcm_store == 'extdisk2':
     path_gcm_base = '/media/swen/ext_disk2/datos/GCMData/seasonal-original-single-levels/'+domain # head directory of the source files
 else:
     raise Exception('ERROR: unknown entry for <path_gcm_base> !')
@@ -73,24 +74,29 @@ for yy in np.arange(len(year_init)):
         filename_forecast = path_gcm_base+'/'+product+'/'+variable_fc[vv]+'/'+model+'/'+version+'/'+str(year_init[yy])+str(month_init[yy]).zfill(2)+'/seasonal-original-single-levels_'+domain+'_'+product+'_'+variable_fc[vv]+'_'+model+'_'+version+'_'+str(year_init[yy])+str(month_init[yy]).zfill(2)+'.nc'
         nc_fc = xr.open_dataset(filename_forecast)
 
-        #get the variable and transform
-        if (variable_fc[vv] == 'tas') & (model == 'ecmwf') & (version == '51'):
-            print('Info: Adding 2x273.15 to '+variable_fc[vv]+' data from '+model+version+' to correct Predictia workflow error and then transform into Kelvin.')
-            #nc_fc[variable_fc[vv]].values = nc_fc[variable_fc[vv]].values+273.15
-            nc_fc[variable_fc[vv]][:] = nc_fc[variable_fc[vv]]+273.15+273.15
-            nc_fc[variable_fc[vv]].attrs['units'] = 'daily mean '+variable_qn[vv]+' in Kelvin'
-        elif (variable_fc[vv] in ('pr','rsds')) & (model == 'ecmwf') & (version == '51'):
-            print('Info: Disaggregate '+variable_fc[vv]+' accumulated over the '+str(len(nc_fc.time))+' days forecast period from '+model+version+' to daily sums.')
-            vals_disagg = np.diff(nc_fc[variable_fc[vv]].values,n=1,axis=0)
-            shape_disagg = vals_disagg.shape
-            add_day = np.expand_dims(vals_disagg[-1,:,:,:],axis=0) #get last available difference
-            #add_day = np.zeros((1,shape_disagg[1],shape_disagg[2],shape_disagg[3]))
-            #add_day[:] = np.nan
-            vals_disagg = np.concatenate((vals_disagg,add_day),axis=0)
-            nc_fc[variable_fc[vv]][:] = vals_disagg
-            nc_fc[variable_fc[vv]].attrs['units'] = 'daily accumulated '+variable_qn[vv]+' in '+nc_fc[variable_fc[vv]].attrs['units']
-        else:
-            print('Info: No data transformation is applied for '+variable_fc[vv]+' data from '+model+version+'.')
+        #transform GCM variables and units, if necessary
+        nc_fc, file_valid = transform_gcm_variable(nc_fc,variable_fc[vv],variable_qn[vv],model,version)
+        #check whether there is a problem with the variable units as revealed in transform_gcm_variable()
+        if file_valid == 0:
+            raise Exception('ERROR: There is a problem with the expected variable units in '+filename_forecast+' !')
+
+        # if (variable_fc[vv] == 'tas') & (model == 'ecmwf') & (version == '51'):
+            # print('Info: Adding 2x273.15 to '+variable_fc[vv]+' data from '+model+version+' to correct Predictia workflow error and then transform into Kelvin.')
+            # #nc_fc[variable_fc[vv]].values = nc_fc[variable_fc[vv]].values+273.15
+            # nc_fc[variable_fc[vv]][:] = nc_fc[variable_fc[vv]]+273.15+273.15
+            # nc_fc[variable_fc[vv]].attrs['units'] = 'daily mean '+variable_qn[vv]+' in Kelvin'
+        # elif (variable_fc[vv] in ('pr','rsds')) & (model == 'ecmwf') & (version == '51'):
+            # print('Info: Disaggregate '+variable_fc[vv]+' accumulated over the '+str(len(nc_fc.time))+' days forecast period from '+model+version+' to daily sums.')
+            # vals_disagg = np.diff(nc_fc[variable_fc[vv]].values,n=1,axis=0)
+            # shape_disagg = vals_disagg.shape
+            # add_day = np.expand_dims(vals_disagg[-1,:,:,:],axis=0) #get last available difference
+            # #add_day = np.zeros((1,shape_disagg[1],shape_disagg[2],shape_disagg[3]))
+            # #add_day[:] = np.nan
+            # vals_disagg = np.concatenate((vals_disagg,add_day),axis=0)
+            # nc_fc[variable_fc[vv]][:] = vals_disagg
+            # nc_fc[variable_fc[vv]].attrs['units'] = 'daily accumulated '+variable_qn[vv]+' in '+nc_fc[variable_fc[vv]].attrs['units']
+        # else:
+            # print('Info: No data transformation is applied for '+variable_fc[vv]+' data from '+model+version+'.')
         
         #get forecast seasons from file
         dates_fc = pd.DatetimeIndex(nc_fc.time.values)
@@ -170,8 +176,10 @@ for yy in np.arange(len(year_init)):
     upper_xr.close()
     seas_mean.close()
     nc_fc.close()
-    nc_quantile.close()
     out_arr.close()
-    del(lower_xr,upper_xr,seas_mean,nc_fc,nc_quantile,out_arr)
+    del(lower_xr,upper_xr,seas_mean,nc_fc,out_arr)
+
+nc_quantile.close()
+del(nc_quantile)
 
 print('INFO: pred2tercile.py has been run successfully !')

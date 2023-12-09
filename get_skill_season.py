@@ -15,7 +15,7 @@ from scipy.signal import detrend
 exec(open('functions_seasonal.py').read()) #reads the <functions_seasonal.py> script containing a set of custom functions needed here
 
 #set input parameters
-vers = '1d' #version number of the output netCDF file to be sent to Predictia
+vers = '1e' #version number of the output netCDF file to be sent to Predictia
 model = ['ecmwf51'] #interval between meridians and parallels
 obs = ['era5']
 years_model = [1981,2023] #years used in label of model netCDF file, refers to the first and the last year of the monthly model inits
@@ -24,12 +24,7 @@ years_obs = [1981,2022] #years used in label of obs netCDF file; if they differ 
 season_label = ['DJF','JFM','FMA','MAM','AMJ','MJJ','JJA','JAS','ASO','SON','OND','NDJ']
 season = [[12,1,2],[1,2,3],[2,3,4],[3,4,5],[4,5,6],[5,6,7],[6,7,8],[7,8,9],[8,9,10],[9,10,11],[10,11,12],[11,12,1]] #[[12,1,2],[3,4,5],[6,7,8],[9,10,11]]
 lead = [[0,1,2],[1,2,3],[2,3,4],[3,4,5],[4,5,6]] #[[0,1,2],[0,1,2],[0,1,2],[0,1,2]] #number of months between init and start of forecast interval to be verified, e.g. 1 will discard the first month after init, 2 will discard the first two months after init etc.
-variables = ['t2m','tp','si10','ssrd'] #variables names valid for both observations and GCM. GCM variable names have been set to ERA5 variable names from CDS in <aggregate_hindcast.py>
-
-# season_label = ['DJF']
-# season = [[12,1,2]] #[[12,1,2],[3,4,5],[6,7,8],[9,10,11]]
-# lead = [[0,1,2]] #[[0,1,2],[0,1,2],[0,1,2],[0,1,2]] #number of months between init and start of forecast interval to be verified, e.g. 1 will discard the first month after init, 2 will discard the first two months after init etc.
-# variables = ['t2m'] #variables names valid for both observations and GCM. GCM variable names have been set to ERA5 variable names from CDS in <aggregate_hindcast.py>
+variables = ['msl','t2m','tp','si10','ssrd'] #variables names in CDS format, here valid for both observations and GCM. GCM variable names have been set to ERA5 variable names from CDS in <aggregate_hindcast.py>
 
 datatype = 'float32' #data type of the variables in the output netcdf files
 compression_level = 1

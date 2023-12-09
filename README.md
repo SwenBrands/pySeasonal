@@ -1,10 +1,15 @@
 # pySeasonal
-A Python package to verify seasonal prediction systems against observations
+
+A Python package to verify seasonal prediction systems against reanalysis
+data or observations. It also provides real-time seasonal forecasts,
+expressed as probabilities for a given variable to occur in the lower,
+centre or upper tercile of the hindcast period. For skill and tercile
+calculations, the hindcasts can be optionally combined with the past
+forecasts. The package currently works with Copernicus Data Store products.
+
 Author: Swen Brands, brandssf@ifcan.unican.es or swen.brands@gmail.com
 
-This package of Python scripts and functions evaluates the skill of the
-Copernicus Data Store seasonal prediction products against reanalyses 
-or observations. The scripts have to be run in the following order:
+The scripts have to be run in the following order:
 
 1. regrid_obs.py #brings monthly obs to model grid and cuts out target
 region (Medcof)
