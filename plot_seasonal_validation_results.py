@@ -41,7 +41,7 @@ critval_skillscore = 0 #threshold value above which the skill scores applied her
 critval_relbias = 5 #percentage threshold beyond which the absolute relative bias is printed with a dot in the maps and thus assumed to be "important"
 scores = ['relbias','spearman_r','pearson_r','crps_ensemble_skillscore_clim']
 relbias_max = 100 #magnitude of the upper and lower limit to be plotted in case of relbias and tp, this is a percentage value and it is used because the relbias can be very large in dry regions due to the near-to-zero climatological precip. there
-#vers = '1c' #by 20231201 is already generated in get_skill_season.py, check if everything works and delete this line; version number of the output netCDF file to be sent to Predictia
+vers = '1f' # 'as_input_file' searches the version stored in the input files generated before with get_skill_season.py; other entries will be directly passed to the netCDF output file produced here
 
 precision = 'float32' #precision of the variable in the output netCDF files
 dpival = 300 #resultion of the output figure in dpi
@@ -210,7 +210,7 @@ for det in np.arange(len(detrending)):
                     binmask = np.zeros(mapme.shape)
                     binmask[:] = np.nan
                     mask1 = (pval < critval_rho) & (rho > 0)
-                    mask0 = mask1 == (pval >= critval_rho) | (rho <= 0)
+                    mask0 = (pval >= critval_rho) | (rho <= 0)
                     binmask[mask1] = 1
                     binmask[mask0] = 0
                     score_unit[sc] = 'binary'
@@ -318,13 +318,18 @@ for det in np.arange(len(detrending)):
                 del(binary_mask_score_i)
                 ds_binary_mask.attrs['author'] = "Swen Brands (CSIC-UC, Instituto de Fisica de Cantabria), brandssf@ifca.unican.es or swen.brands@gmail.com"
                 ds_binary_mask.attrs['validation_period'] = str(file_years[0])+' to '+str(file_years[1])
-                ds_binary_mask.attrs['version'] = nc_results.version
+                #set version of the netCDF output file
+                if vers == 'as_input_file':
+                    version_label = nc_results.version
+                else:
+                    version_label = vers
+                ds_binary_mask.attrs['version'] = version_label
                 ds_binary_mask.attrs['nan_criterion'] = 'A nan is set at a given grid-box if it is returned by xskillscore, e.g. due to a division by zero. It has been confirmed that this occcurs, e.g., if it does not rain at all either in the modelled or quasi-observed time-series.'
             else:
                 print('WARNING: Validation results for '+scores[sc]+' are not yet saved to netCDF because the transition to binary format still has to be discussed with the other PTI members.')
                 continue
         nc_results.close()
-        savename_netcdf = dir_netcdf+'/binary_validation_results_pticlima_'+domain+'_'+str(file_years[0])+'_'+str(file_years[1])+'_v'+nc_results.version+'.nc'
+        savename_netcdf = dir_netcdf+'/binary_validation_results_pticlima_'+domain+'_'+str(file_years[0])+'_'+str(file_years[1])+'_v'+version_label+'.nc'
         ds_binary_mask.to_netcdf(savename_netcdf)
         ds_binary_mask.close()
         print('INFO: plot_seasonal_validation_results.py has been run successfully and results have been stores in netCDF format at:')

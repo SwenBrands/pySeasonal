@@ -15,7 +15,7 @@ from scipy.signal import detrend
 exec(open('functions_seasonal.py').read()) #reads the <functions_seasonal.py> script containing a set of custom functions needed here
 
 #set input parameters
-vers = '1e' #version number of the output netCDF file to be sent to Predictia
+vers = '1f' #version number of the output netCDF file to be sent to Predictia
 model = ['ecmwf51'] #interval between meridians and parallels
 obs = ['era5']
 years_model = [1981,2023] #years used in label of model netCDF file, refers to the first and the last year of the monthly model inits
