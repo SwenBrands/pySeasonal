@@ -12,10 +12,11 @@ import xesmf
 import pandas as pd
 import dask
 from scipy.signal import detrend
+import pdb as pdb #then type <pdb.set_trace()> at a given line in the code below
 exec(open('functions_seasonal.py').read()) #reads the <functions_seasonal.py> script containing a set of custom functions needed here
 
 #set input parameters
-vers = '1f' #version number of the output netCDF file to be sent to Predictia
+vers = '1g' #version number of the output netCDF file to be sent to Predictia
 model = ['ecmwf51'] #interval between meridians and parallels
 obs = ['era5']
 years_model = [1981,2023] #years used in label of model netCDF file, refers to the first and the last year of the monthly model inits
@@ -238,13 +239,18 @@ for det in np.arange(len(detrending)):
                 #calculate member-wise quantiles
                 quantile_vals_step = gcm_seas_mn_6d.quantile(quantiles, dim='time')
                 quantile_vals[det,vv,mm,:,:,:,:,:,:] = quantile_vals_step.values
-                shape_gcm = gcm_seas_mn_6d.shape
+                
+                #shape_gcm = gcm_seas_mn_6d.shape #can be removed !
                 
                 #get overall / ensemble quantiles calculated upon the array with flattened "member" dimension, thereby mimicing a n member times longer time series
-                gcm_seas_mn_5d_flat_mems = gcm_seas_mn_6d.values.reshape((shape_gcm[0]*shape_gcm[3],shape_gcm[1],shape_gcm[2],shape_gcm[4],shape_gcm[5])) #members are flattened to mimic an extended time dimension, this is a numpy array
+                #gcm_seas_mn_5d_flat_mems = gcm_seas_mn_6d.values.reshape((shape_gcm[0]*shape_gcm[3],shape_gcm[1],shape_gcm[2],shape_gcm[4],shape_gcm[5])) #members are flattened to mimic an extended time dimension, this is a numpy array
+                gcm_seas_mn_5d_flat_mems = gcm_seas_mn_6d.transpose('time','member','season','lead','y','x') #change order of the dimensions
+                shape_gcm = gcm_seas_mn_5d_flat_mems.shape #get new shape
+                gcm_seas_mn_5d_flat_mems = gcm_seas_mn_5d_flat_mems.values.reshape((shape_gcm[0]*shape_gcm[1],shape_gcm[2],shape_gcm[3],shape_gcm[4],shape_gcm[5])) #reshape to concatenate the members along the first / time axis
                 quantile_vals_ens_step = np.nanquantile(gcm_seas_mn_5d_flat_mems,quantiles,axis=0)
                 quantile_vals_ens[det,vv,mm,:,:,:,:,:] = quantile_vals_ens_step
-
+                #pdb.set_trace()
+                
                 ##start verification
                 ##calculalate hindcast correlation coefficient for the inter-annual seasonal-mean time series (observations vs. ensemble mean) and corresponding p-values based on the effective sample size
                 #determinstic validation measures

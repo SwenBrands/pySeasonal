@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-'''Verifies reanalysis data against AEMET station data, both brought into a comparable and harmonized format using 1. csv2nc.py and 2. get_neighbour.py prior to calling 3. validate.py (i.e. this script).
+'''Plots verification results calculated before with get_skill_season.py .
 Author: Swen Brands, brandssf@ifca.unican.es
 '''
 
@@ -41,7 +41,7 @@ critval_skillscore = 0 #threshold value above which the skill scores applied her
 critval_relbias = 5 #percentage threshold beyond which the absolute relative bias is printed with a dot in the maps and thus assumed to be "important"
 scores = ['relbias','spearman_r','pearson_r','crps_ensemble_skillscore_clim']
 relbias_max = 100 #magnitude of the upper and lower limit to be plotted in case of relbias and tp, this is a percentage value and it is used because the relbias can be very large in dry regions due to the near-to-zero climatological precip. there
-vers = '1f' # 'as_input_file' searches the version stored in the input files generated before with get_skill_season.py; other entries will be directly passed to the netCDF output file produced here
+vers = '1g' # 'as_input_file' searches the version stored in the input files generated before with get_skill_season.py; other entries will be directly passed to the netCDF output file produced here
 
 precision = 'float32' #precision of the variable in the output netCDF files
 dpival = 300 #resultion of the output figure in dpi

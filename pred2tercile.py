@@ -18,7 +18,7 @@ import pdb as pdb #then type <set_trace()> at a given line in the code below
 exec(open('functions_seasonal.py').read()) #reads the <functions_seasonal.py> script containing a set of custom functions needed here
 
 #set input parameters
-quantile_version = '1e' #version number of the quantiles file used here
+quantile_version = '1g' #version number of the quantiles file used here
 model = 'ecmwf' #interval between meridians and parallels
 version = '51'
 
@@ -139,7 +139,7 @@ for yy in np.arange(len(year_init)):
                     maxind = np.argmax(terciles[:,ii,jj])
                     terciles_nan[maxind,ii,jj] = terciles[maxind,ii,jj]
             #terciles_nan[maxprob_ind] = terciles[maxprob_ind,:,:]
-            out_arr[vv,:,mo,:,:] = terciles_nan        
+            out_arr[vv,:,mo,:,:] = terciles_nan
             season.append(season_i)
             season_label.append(season_i_label)
         

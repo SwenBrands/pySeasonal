@@ -35,7 +35,7 @@ masks
 to seasonal average predictions and transforms them into forecast
 probabilities per tercile. These are then put into netCDF format
 
-6. functions_seasonal.py #contains the functions used by the aforeme-
+6. functions_seasonal.py #contains the functions used by the afore-
 mentioned scripts
 
 
