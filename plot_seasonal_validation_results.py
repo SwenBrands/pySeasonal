@@ -29,8 +29,11 @@ corr_outlier = 'no' #load the outlier-correted validation results; yes or no
 detrending = ['yes','no'] #yes or no, linear detrending of the gcm and obs time series prior to validation
 file_years = [1981,2022] #start and end years indicated in the input file name
 
-variables = ['fwi','tp','ssrd','si10','t2m','msl'] #variable names in CDS format
-ref_dataset = ['era5','era5','era5','era5','era5','era5'] # #list of model or reference observational dataset paired with <variables> input parameter below
+#variables = ['fwi','tp','ssrd','si10','t2m','msl'] #variable names in CDS format
+#ref_dataset = ['era5','era5','era5','era5','era5','era5'] # #list of model or reference observational dataset paired with <variables> input parameter below
+
+variables = ['SPEI-3'] #variable names in CDS format
+ref_dataset = ['era5'] # #list of model or reference observational dataset paired with <variables> input parameter below
 
 domain = 'medcof'
 critval_rho = 0.05 #critical value used to define the signficance of the correlation measuere applied here (Pearon and Spearman)

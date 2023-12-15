@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 ''' This script loads a forecast at a given init, aggregates the raw values to seasonal averages and transforms them into terciles.'''
 
-
 #load packages
 import numpy as np
 import xarray as xr
@@ -22,26 +21,39 @@ quantile_version = '1h' #version number of the quantiles file used here
 model = 'ecmwf' #interval between meridians and parallels
 version = '51'
 
-year_init = [2023,2023] #a list containing the years the forecast are initialized on, will be looped through with yy
-month_init = [11,12] #a list containing the corresponding months the forecast are initialized on, will be called while looping through <year_init> (with yy), i.e. must have the same length
+year_init = [2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023] #a list containing the years the forecast are initialized on, will be looped through with yy
+month_init = [1,2,3,4,5,6,7,8,9,10,11,12] #a list containing the corresponding months the forecast are initialized on, will be called while looping through <year_init> (with yy), i.e. must have the same length
+
+# year_init = [2023,2023] #a list containing the years the forecast are initialized on, will be looped through with yy
+# month_init = [11,12] #a list containing the corresponding months the forecast are initialized on, will be called while looping through <year_init> (with yy), i.e. must have the same length
 
 years_quantile = [1981,2022] #years used to calculate the quantiles with get_skill_season.py
 season_length = 3 #length of the season, e.g. 3 for DJF, JFM, etc.
 detrended = 'no'
 
-variable_qn = ['fwi','msl','t2m','tp','si10','ssrd'] # variable name used inside and outside of the quantile file. This is my work and is thus homegeneous.
-variable_fc = ['fwi','psl','tas','pr','sfcWind','rsds'] # variable name used in the file name, i.e. outside the file, ask collegues for data format harmonization
-variable_fc_nc = ['FWI','psl','tas','pr','sfcWind','rsds'] # variable name within the model netcdf file, may vary depending on source
-time_name = ['time','forecast_time','forecast_time','forecast_time','forecast_time','forecast_time'] #name of the time dimension within the model netcdf file, may vary depending on source
-lon_name = ['lon','x','x','x','x','x']
-lat_name = ['lat','y','y','y','y','y']
+variable_qn = ['SPEI-3','fwi','msl','t2m','tp','si10','ssrd'] # variable name used inside and outside of the quantile file. This is my work and is thus homegeneous.
+variable_fc = ['SPEI-3','fwi','psl','tas','pr','sfcWind','rsds'] # variable name used in the file name, i.e. outside the file, ask collegues for data format harmonization
+variable_fc_nc = ['SPEI-3','FWI','psl','tas','pr','sfcWind','rsds'] # variable name within the model netcdf file, may vary depending on source
+time_name = ['time','time','forecast_time','forecast_time','forecast_time','forecast_time','forecast_time'] #name of the time dimension within the model netcdf file, may vary depending on source
+lon_name = ['lon','lon','x','x','x','x','x']
+lat_name = ['lat','lat','y','y','y','y','y']
+file_start = ['seasonal-original-single-levels_masked','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels'] #start string of the file names
 
-# variable_qn = ['fwi'] # variable name used inside and outside of the quantile file. This is my work and is thus homegeneous.
-# variable_fc = ['fwi'] # variable name used in the file name, i.e. outside the file, ask collegues for data format harmonization
-# variable_fc_nc = ['FWI'] # variable name within the model netcdf file, may vary depending on source
+# variable_qn = ['msl'] # variable name used inside and outside of the quantile file. This is my work and is thus homegeneous.
+# variable_fc = ['psl'] # variable name used in the file name, i.e. outside the file, ask collegues for data format harmonization
+# variable_fc_nc = ['psl'] # variable name within the model netcdf file, may vary depending on source
+# time_name = ['forecast_time'] #name of the time dimension within the model netcdf file, may vary depending on source
+# lon_name = ['x']
+# lat_name = ['y']
+# file_start = ['seasonal-original-single-levels'] #start string of the file names
+
+# variable_qn = ['SPEI-3'] # variable name used inside and outside of the quantile file. This is my work and is thus homegeneous.
+# variable_fc = ['SPEI-3'] # variable name used in the file name, i.e. outside the file, ask collegues for data format harmonization
+# variable_fc_nc = ['SPEI-3'] # variable name within the model netcdf file, may vary depending on source
 # time_name = ['time'] #name of the time dimension within the model netcdf file, may vary depending on source
 # lon_name = ['lon']
 # lat_name = ['lat']
+# file_start = ['seasonal-original-single-levels_masked'] #start string of the file names
 
 precip_threshold = 1/90 #seasonal mean daily precipitation threshold in mm below which the modelled and quasi-observed monthly precipitation amount is set to 0. Bring this in exact agreement with get_skill_season.py in future versions
 datatype = 'float32' #data type of the variables in the output netcdf files
@@ -86,8 +98,18 @@ nc_quantile = xr.open_dataset(filename_quantiles)
 for yy in np.arange(len(year_init)):
     for vv in np.arange(len(variable_fc)):
         #load forecast file 
-        filename_forecast = path_gcm_base+'/'+product+'/'+variable_fc[vv]+'/'+model+'/'+version+'/'+str(year_init[yy])+str(month_init[yy]).zfill(2)+'/seasonal-original-single-levels_'+domain+'_'+product+'_'+variable_fc[vv]+'_'+model+'_'+version+'_'+str(year_init[yy])+str(month_init[yy]).zfill(2)+'.nc'
+        filename_forecast = path_gcm_base+'/'+product+'/'+variable_fc[vv]+'/'+model+'/'+version+'/'+str(year_init[yy])+str(month_init[yy]).zfill(2)+'/'+file_start[vv]+'_'+domain+'_'+product+'_'+variable_fc[vv]+'_'+model+'_'+version+'_'+str(year_init[yy])+str(month_init[yy]).zfill(2)+'.nc'
         nc_fc = xr.open_dataset(filename_forecast)
+        
+        #check if the latitudes are in the right order or must be flipped to be consistent with the obserations used for validation
+        if nc_fc[lat_name[vv]][0].values < nc_fc[lat_name[vv]][-1].values:
+            print('WARNING: the latitudes in '+filename_forecast+' come in ascending order and are inverted to be consistent with the order of the remaining datasets / variables (descending) !')
+            if lat_name[vv] == 'lat':
+                nc_fc = nc_fc.reindex(lat=list(reversed(nc_fc.lat)))
+            elif lat_name[vv] == 'y':
+                nc_fc = nc_fc.reindex(y=list(reversed(nc_fc.y)))
+            else:
+                raise Exception('ERROR: unexpected entry for <lat_name[vv]> !')
 
         #transform GCM variables and units, if necessary
         nc_fc, file_valid = transform_gcm_variable(nc_fc,variable_fc[vv],variable_qn[vv],model,version)
@@ -97,7 +119,13 @@ for yy in np.arange(len(year_init)):
         
         #get forecast seasons from file
         dates_fc = pd.DatetimeIndex(nc_fc.time.values)
-        months_fc_uni = dates_fc[15::30].month #get unique forecast month in the right order, i.e. as appears in the file
+        #check whether the model input data is monthly, otherwise daily is assumed and this must be improved in future versions
+        if len(dates_fc.month) == len(np.unique(dates_fc.month)):
+            print('INFO: the model input data for '+variable_fc[vv]+' is monthly !')
+            months_fc_uni = dates_fc.month
+        else:
+            months_fc_uni = dates_fc[15::30].month #get unique forecast month in the right order, i.e. as appears in the file
+        
         season = []
         season_label = []
         season_start_month = np.arange(len(months_fc_uni)-season_length+1) #index of the first month of each 3-month period
@@ -138,9 +166,13 @@ for yy in np.arange(len(year_init)):
             # lower_ind = seas_mean.where(seas_mean < upper_np)
             # lower_ind = lower_ind.where(np.isnan(lower_ind),other=1)
             
-            upper_ind = seas_mean > upper_np
-            center_ind = (seas_mean >= lower_np) & (seas_mean <= upper_np)
-            lower_ind = seas_mean < lower_np
+            # upper_ind = seas_mean > upper_np
+            # center_ind = (seas_mean >= lower_np) & (seas_mean <= upper_np)
+            # lower_ind = seas_mean < lower_np
+
+            upper_ind = (seas_mean > upper_np) & (~np.isnan(upper_np))
+            center_ind = (seas_mean >= lower_np) & (seas_mean <= upper_np) & (~np.isnan(upper_np))
+            lower_ind = (seas_mean < lower_np) & (~np.isnan(lower_np))
             
             #sum members in each category
             nr_mem = upper_ind.shape[0]
@@ -151,7 +183,7 @@ for yy in np.arange(len(year_init)):
             ##set ocean points to nan
             # upper_nr = upper_nr.where(~np.isnan(lower_xr.values))
             # center_nr = center_nr.where(~np.isnan(lower_xr.values))
-            # lower_nr = lower_nr.where(~np.isnan(lower_xr.values))            
+            # lower_nr = lower_nr.where(~np.isnan(lower_xr.values))
             
             #stack and turn to numpy format
             terciles = np.stack((lower_nr.values,center_nr.values,upper_nr.values),axis=0)
@@ -162,6 +194,7 @@ for yy in np.arange(len(year_init)):
                 for jj in np.arange(terciles.shape[2]):
                     maxind = np.argmax(terciles[:,ii,jj])
                     terciles_nan[maxind,ii,jj] = terciles[maxind,ii,jj]
+                    terciles_nan[terciles_nan == 0] = np.nan #set 0 probabilities to nan
             #terciles_nan[maxprob_ind] = terciles[maxprob_ind,:,:]
             out_arr[vv,:,mo,:,:] = terciles_nan
             season.append(season_i)
@@ -192,7 +225,7 @@ for yy in np.arange(len(year_init)):
     ##set chunking and save the file
     #out_arr = out_arr.chunk({"variable":1, "tercile":1, "season":1, "y":len(nc_fc[lat_name[-1]]), "x":len(nc_fc[lon_name[-1]])})
     encoding = dict(terciles=dict(chunksizes=(1, 1, 1, 1, len(nc_fc[lat_name[-1]]), len(nc_fc[lon_name[-1]])))) #https://docs.xarray.dev/en/stable/user-guide/io.html#writing-encoded-data
-    savename = dir_forecast+'/terciles_'+model+version+'_init_'+str(year_init[yy])+str(month_init[yy])+'_'+str(season_length)+'mon_dtr_'+detrended+'_refyears_'+str(years_quantile[0])+'_'+str(years_quantile[1])+'.nc'
+    savename = dir_forecast+'/terciles_'+model+version+'_init_'+str(year_init[yy])+str(month_init[yy]).zfill(2)+'_'+str(season_length)+'mon_dtr_'+detrended+'_refyears_'+str(years_quantile[0])+'_'+str(years_quantile[1])+'.nc'
     out_arr.to_netcdf(savename,encoding=encoding)
 
     #close all xarray objects
@@ -201,9 +234,9 @@ for yy in np.arange(len(year_init)):
     seas_mean.close()
     nc_fc.close()
     out_arr.close()
-    #del(lower_xr,upper_xr,seas_mean,nc_fc,out_arr)
+    del(lower_xr,upper_xr,seas_mean,nc_fc,out_arr)
     
 nc_quantile.close()
-del(nc_quantile)
+#del(nc_quantile)
 
 print('INFO: pred2tercile.py has been run successfully !')

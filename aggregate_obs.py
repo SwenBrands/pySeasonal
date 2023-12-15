@@ -18,8 +18,8 @@ obs = 'era5' #name of the observational / reanalysis dataset that will be regrid
 agg_src = 'day' #temporal aggregation of the observational input files, pertains to the <obs> loop indicated with <oo> below
 startyear_file = 1981 #start year of the obs file as indicated in filename
 endyear_file = 2022 #corresponding end year
-variables = ['fwi'] #variables to be regridded
-variables_nc = ['FWI']
+variables = ['SPEI-3','fwi'] #variables to be regridded
+variables_nc = ['SPEI-3','FWI'] #variable names with the netCDF file
 years = [1981,2022] #years to be regridded
 int_method = 'conservative_normed' #'conservative_normed', interpolation method used to regrid the observations which already are provided on the model grid
 home = os.getenv('HOME')
@@ -41,9 +41,17 @@ int_method = 'conservative_normed' #here used as label to save the output netcdf
 for vv in np.arange(len(variables)):
     if variables[vv] in ('t2m','tp','sst','z500','si10','ssrd','msl'):
         raise Expcetion('ERROR: '+variables[vv]+' are already available on monthly timescale in '+path_obs_base+' because they have been already donwloaded from CDS!')
-        
-    path_obs_data = path_obs_base+'/'+obs+'/'+agg_src+'/'+domain+'_'+resolution+'/'+variables[vv]+'/'+variables[vv]+'_'+domain+'_'+resolution+'.nc'
-    nc = xr.open_dataset(path_obs_data)
+    
+    #define path to the file and loading function as a function of the variable (variables may come from different providers using distinct rules)
+    if variables[vv] == 'fwi':
+        path_obs_data = path_obs_base+'/'+obs+'/'+agg_src+'/'+domain+'_'+resolution+'/'+variables[vv]+'/'+variables[vv]+'_'+domain+'_'+resolution+'.nc'
+        nc = xr.open_dataset(path_obs_data)
+    elif variables[vv] == 'SPEI-3':
+        path_obs_data = path_obs_base+'/'+obs+'/'+agg_src+'/'+domain+'_'+resolution+'/'+variables[vv]+'/'+variables[vv]+'_'+obs.upper()+'_'+agg_src+'_*.nc' #SPEI-3_ERA5_day_2021.nc
+        nc = xr.open_mfdataset(path_obs_data)
+    else:
+        raise Excpetion('ERROR: variable '+variables[vv]+' is not yet supported by this script !')
+    
     nc = nc.rename({variables_nc[vv]:variables[vv]})
         
     #cut out target period

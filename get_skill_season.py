@@ -28,7 +28,7 @@ years_obs = [1981,2022] #years used in label of obs netCDF file; if they differ 
 season_label = ['DJF','JFM','FMA','MAM','AMJ','MJJ','JJA','JAS','ASO','SON','OND','NDJ']
 season = [[12,1,2],[1,2,3],[2,3,4],[3,4,5],[4,5,6],[5,6,7],[6,7,8],[7,8,9],[8,9,10],[9,10,11],[10,11,12],[11,12,1]] #[[12,1,2],[3,4,5],[6,7,8],[9,10,11]]
 lead = [[0,1,2],[1,2,3],[2,3,4],[3,4,5],[4,5,6]] #[[0,1,2],[0,1,2],[0,1,2],[0,1,2]] #number of months between init and start of forecast interval to be verified, e.g. 1 will discard the first month after init, 2 will discard the first two months after init etc.
-variables = ['fwi','msl','t2m','tp','si10','ssrd'] #variables names in CDS format, here valid for both observations and GCM. GCM variable names have been set to ERA5 variable names from CDS in <aggregate_hindcast.py>
+variables = ['SPEI-3','fwi','msl','t2m','tp','si10','ssrd'] #variables names in CDS format, here valid for both observations and GCM. GCM variable names have been set to ERA5 variable names from CDS in <aggregate_hindcast.py>
 
 datatype = 'float32' #data type of the variables in the output netcdf files
 compression_level = 1

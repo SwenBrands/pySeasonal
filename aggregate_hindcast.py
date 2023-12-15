@@ -21,19 +21,21 @@ exec(open('functions_seasonal.py').read()) #reads the <functions_seasonal.py> sc
 
 ##set input parameters for model dataset to be aggregated
 
-#variables = ['psl','sfcWind','tas','pr','rsds'] #variable names in directories and file names
-#variables_nc = ['psl','sfcWind','tas','pr','rsds'] #variable names within the netCDF files, differs in case of msi (msi is used within the file, but psl is used in the file name)
-#variables_new = ['msl','si10','t2m','tp','ssrd'] #new variable names; as provided by ERA5 data from CDS
-#time_name = ['forecast_time','forecast_time','forecast_time','forecast_time','forecast_time'] #name of the time dimension in the netCDF files for this variable, corresponds to <variables> input parameter and must have the same length
-#lon_name = ['x','x','x','x','x']
-#lat_name = ['y','y','y','y','y']
+variables = ['SPEI-3','fwi','psl','sfcWind','tas','pr','rsds'] #variable names in directories and file names
+variables_nc = ['SPEI-3','FWI','psl','sfcWind','tas','pr','rsds'] #variable names within the netCDF files, differs in case of msi (msi is used within the file, but psl is used in the file name)
+variables_new = ['SPEI-3','fwi','msl','si10','t2m','tp','ssrd'] #new variable names; as provided by ERA5 data from CDS
+time_name = ['time','time','forecast_time','forecast_time','forecast_time','forecast_time','forecast_time'] #name of the time dimension in the netCDF files for this variable, corresponds to <variables> input parameter and must have the same length
+lon_name = ['lon','lon','x','x','x','x','x']
+lat_name = ['lat','lat','y','y','y','y','y']
+file_start = ['seasonal-original-single-levels_masked','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels'] #start string of the file names
 
-variables = ['fwi'] #variable names in directories and file names
-variables_nc = ['FWI'] #variable names within the netCDF files, differs in case of fwi msi (msi / FWI is used within the file, but psl / fwi is used in the file name)
-variables_new = ['fwi'] #new variable names; as provided by ERA5 data from CDS
+variables = ['SPEI-3'] #variable names in directories and file names
+variables_nc = ['SPEI-3'] #variable names within the netCDF files, differs in case of fwi msi (msi / FWI is used within the file, but psl / fwi is used in the file name)
+variables_new = ['SPEI-3'] #new variable names; as provided by ERA5 data from CDS
 time_name = ['time'] #name of the time dimension in the netCDF files for this variable, corresponds to <variables> input parameter and must have the same length
 lon_name = ['lon']
 lat_name = ['lat']
+file_start = ['seasonal-original-single-levels_masked']
 
 years = [1981,2023] #years to be regridded, the output files will be filled with monthly values, aggregated from daily values in this script, covering all months beginning in January of the indicated start year and ending in December of the indicated end year. If no daily input data is found for a given month, nans will be placed in the monthly output netCDF files.
 
@@ -89,7 +91,7 @@ for mm in np.arange(len(model)):
             #load each monthly init separately, aggregate daily to monthly-mean data and fill the numpy array <data_mon> interatively.
             for im in np.arange(len(imonth)):
                 print('INFO: Loading '+variables[vv]+' from '+model[mm]+version[mm]+' on '+domain+' domain for '+str(imonth[im]).zfill(2)+' '+str(years_vec[yy]))
-                path_gcm_data = path_gcm_base+'/'+product+'/'+variables[vv]+'/'+model[mm]+'/'+version[mm]+'/'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'/seasonal-original-single-levels_'+domain+'_'+product+'_'+variables[vv]+'_'+model[mm]+'_'+version[mm]+'_'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'.nc'
+                path_gcm_data = path_gcm_base+'/'+product+'/'+variables[vv]+'/'+model[mm]+'/'+version[mm]+'/'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'/'+file_start[vv]+'_'+domain+'_'+product+'_'+variables[vv]+'_'+model[mm]+'_'+version[mm]+'_'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'.nc'
                 
                 #check whether netCDF file for years_vec[yy] and imonth[im], containing the monthly gcm intis, exists. This is done because a try because some files are missing. If the file is not there, continue to the next step of the loop / month indexed by <im>. 
                 if os.path.isfile(path_gcm_data):
