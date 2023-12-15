@@ -19,9 +19,7 @@ import cartopy.feature as cf
 import pdb as pdb #then type <pdb.set_trace()> at a given line in the code below
 exec(open('functions_seasonal.py').read()) #reads the <functions_seasonal.py> script containing a set of custom functions needed here
 
-##set input parameters for observational datasets to be regridded
-#variables = ['hurs','pr','psl','rsds','sfcWind','tas','tasmax','tasmin'] #variable names in directories and file names, note that pr and rsds are initially fluxes accumulated over the entire forecast period; these variables are dis-aggregeated to daily accumulations below in this script.
-#variables_nc = ['hurs','pr','msi','rsds','sfcWind','tas','tasmax','tasmin'] #variable names within the netCDF files
+##set input parameters for model dataset to be aggregated
 
 #variables = ['psl','sfcWind','tas','pr','rsds'] #variable names in directories and file names
 #variables_nc = ['psl','sfcWind','tas','pr','rsds'] #variable names within the netCDF files, differs in case of msi (msi is used within the file, but psl is used in the file name)

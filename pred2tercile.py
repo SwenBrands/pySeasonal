@@ -14,11 +14,11 @@ import xesmf
 import pandas as pd
 import dask
 from scipy.signal import detrend
-import pdb as pdb #then type <set_trace()> at a given line in the code below
+import pdb as pdb #then type <pdb.set_trace()> at a given line in the code below
 exec(open('functions_seasonal.py').read()) #reads the <functions_seasonal.py> script containing a set of custom functions needed here
 
 #set input parameters
-quantile_version = '1g' #version number of the quantiles file used here
+quantile_version = '1h' #version number of the quantiles file used here
 model = 'ecmwf' #interval between meridians and parallels
 version = '51'
 
@@ -29,9 +29,21 @@ years_quantile = [1981,2022] #years used to calculate the quantiles with get_ski
 season_length = 3 #length of the season, e.g. 3 for DJF, JFM, etc.
 detrended = 'no'
 
-variable_qn = ['msl','t2m','tp','si10','ssrd'] #variables names valid for both observations and GCM. GCM variable names have been set to ERA5 variable names from CDS in <aggregate_hindcast.py>
-variable_fc = ['psl','tas','pr','sfcWind','rsds'] #variables names valid for both observations and GCM. GCM variable names have been set to ERA5 variable names from CDS in <aggregate_hindcast.py>
+variable_qn = ['fwi','msl','t2m','tp','si10','ssrd'] # variable name used inside and outside of the quantile file. This is my work and is thus homegeneous.
+variable_fc = ['fwi','psl','tas','pr','sfcWind','rsds'] # variable name used in the file name, i.e. outside the file, ask collegues for data format harmonization
+variable_fc_nc = ['FWI','psl','tas','pr','sfcWind','rsds'] # variable name within the model netcdf file, may vary depending on source
+time_name = ['time','forecast_time','forecast_time','forecast_time','forecast_time','forecast_time'] #name of the time dimension within the model netcdf file, may vary depending on source
+lon_name = ['lon','x','x','x','x','x']
+lat_name = ['lat','y','y','y','y','y']
 
+# variable_qn = ['fwi'] # variable name used inside and outside of the quantile file. This is my work and is thus homegeneous.
+# variable_fc = ['fwi'] # variable name used in the file name, i.e. outside the file, ask collegues for data format harmonization
+# variable_fc_nc = ['FWI'] # variable name within the model netcdf file, may vary depending on source
+# time_name = ['time'] #name of the time dimension within the model netcdf file, may vary depending on source
+# lon_name = ['lon']
+# lat_name = ['lat']
+
+precip_threshold = 1/90 #seasonal mean daily precipitation threshold in mm below which the modelled and quasi-observed monthly precipitation amount is set to 0. Bring this in exact agreement with get_skill_season.py in future versions
 datatype = 'float32' #data type of the variables in the output netcdf files
 domain = 'medcof' #spatial domain
 detrended = 'no' #yes or no, linear detrending of the gcm and obs time series prior to validation
@@ -52,6 +64,9 @@ product = 'forecast'
 
 ## EXECUTE #############################################################
 quantile_threshold = [0.33,0.67]
+# #check consistency of input parameters
+# if (lon_name[-1] != 'x') | (lat_name[-1] != 'y'):
+    # raise Exception('ERROR: the last entries of the <lon_name> and <lat_name> input lists must be "x" and "y" respectively to ensure that the output netCDF file is consistent!')
 
 #set path to input gcm files
 if gcm_store == 'laptop':
@@ -79,24 +94,6 @@ for yy in np.arange(len(year_init)):
         #check whether there is a problem with the variable units as revealed in transform_gcm_variable()
         if file_valid == 0:
             raise Exception('ERROR: There is a problem with the expected variable units in '+filename_forecast+' !')
-
-        # if (variable_fc[vv] == 'tas') & (model == 'ecmwf') & (version == '51'):
-            # print('Info: Adding 2x273.15 to '+variable_fc[vv]+' data from '+model+version+' to correct Predictia workflow error and then transform into Kelvin.')
-            # #nc_fc[variable_fc[vv]].values = nc_fc[variable_fc[vv]].values+273.15
-            # nc_fc[variable_fc[vv]][:] = nc_fc[variable_fc[vv]]+273.15+273.15
-            # nc_fc[variable_fc[vv]].attrs['units'] = 'daily mean '+variable_qn[vv]+' in Kelvin'
-        # elif (variable_fc[vv] in ('pr','rsds')) & (model == 'ecmwf') & (version == '51'):
-            # print('Info: Disaggregate '+variable_fc[vv]+' accumulated over the '+str(len(nc_fc.time))+' days forecast period from '+model+version+' to daily sums.')
-            # vals_disagg = np.diff(nc_fc[variable_fc[vv]].values,n=1,axis=0)
-            # shape_disagg = vals_disagg.shape
-            # add_day = np.expand_dims(vals_disagg[-1,:,:,:],axis=0) #get last available difference
-            # #add_day = np.zeros((1,shape_disagg[1],shape_disagg[2],shape_disagg[3]))
-            # #add_day[:] = np.nan
-            # vals_disagg = np.concatenate((vals_disagg,add_day),axis=0)
-            # nc_fc[variable_fc[vv]][:] = vals_disagg
-            # nc_fc[variable_fc[vv]].attrs['units'] = 'daily accumulated '+variable_qn[vv]+' in '+nc_fc[variable_fc[vv]].attrs['units']
-        # else:
-            # print('Info: No data transformation is applied for '+variable_fc[vv]+' data from '+model+version+'.')
         
         #get forecast seasons from file
         dates_fc = pd.DatetimeIndex(nc_fc.time.values)
@@ -107,28 +104,55 @@ for yy in np.arange(len(year_init)):
         
         #init final output array
         if vv == 0:
-            out_arr = np.zeros((len(variable_fc),len(quantile_threshold)+1,len(season_start_month),len(nc_fc.y),len(nc_fc.x)),dtype=datatype)
+            out_arr = np.zeros((len(variable_fc),len(quantile_threshold)+1,len(season_start_month),len(nc_fc[lat_name[vv]]),len(nc_fc[lon_name[vv]])),dtype=datatype)
             out_arr[:] = np.nan
         for mo in season_start_month:
             season_i = months_fc_uni[mo:mo+season_length].to_list()
             season_i_label = assign_season_label(season_i)
             season_ind = np.where(np.isin(dates_fc.month,season_i))[0]
-            seas_mean = nc_fc[variable_fc[vv]].isel(forecast_time=season_ind).mean(dim='forecast_time')
+            if time_name[vv] == 'forecast_time':
+                seas_mean = nc_fc[variable_fc_nc[vv]].isel(forecast_time=season_ind).mean(dim=time_name[vv])
+            elif time_name[vv] == 'time':
+                seas_mean = nc_fc[variable_fc_nc[vv]].isel(time=season_ind).mean(dim=time_name[vv])
+            else:
+                raise Exception('ERROR: unkwnown entry for <time_name[vv]> input parameter!')
+            
+            #precipitation correction, is here done on seasonal timescale, but must be done on montly timescale in the future to be consistent with get_skill_season.py!
+            if variable_fc[vv] == 'pr':
+                print('INFO: setting seasonal mean '+variable_fc[vv]+' values from '+model+ '< '+str(precip_threshold)+' to 0...')
+                #zero_mask = seas_mean[variable_fc[vv]].values < precip_threshold
+                #seas_mean[variable_fc[vv]].values[zero_mask] = 0.
+                zero_mask = seas_mean.values < precip_threshold
+                seas_mean.values[zero_mask] = 0.
+
             #get the ensemble quantiles for this season and leadtime (note that the season and leadtime have the same index !)
             lower_xr = nc_quantile.sel(detrended=detrended,model=model+version,quantile_threshold=quantile_threshold[0],variable=variable_qn[vv],season=season_i_label).quantile_ensemble.isel(lead=mo) #is a 2D xarray data array
             upper_xr = nc_quantile.sel(detrended=detrended,model=model+version,quantile_threshold=quantile_threshold[1],variable=variable_qn[vv],season=season_i_label).quantile_ensemble.isel(lead=mo)
             lower_np = np.tile(lower_xr.values,(seas_mean.shape[0],1,1))
             upper_np = np.tile(upper_xr.values,(seas_mean.shape[0],1,1))
             
-            #True of False for either of the 3 categories
+            # upper_ind = seas_mean.where(seas_mean > upper_np)
+            # upper_ind = upper_ind.where(np.isnan(upper_ind),other=1)
+            # center_ind = seas_mean.where((seas_mean >= lower_np) & (seas_mean <= upper_np))
+            # center_ind = center_ind.where(np.isnan(center_ind),other=1)
+            # lower_ind = seas_mean.where(seas_mean < upper_np)
+            # lower_ind = lower_ind.where(np.isnan(lower_ind),other=1)
+            
             upper_ind = seas_mean > upper_np
             center_ind = (seas_mean >= lower_np) & (seas_mean <= upper_np)
             lower_ind = seas_mean < lower_np
+            
             #sum members in each category
             nr_mem = upper_ind.shape[0]
             upper_nr = upper_ind.sum(dim='member')/nr_mem
             center_nr = center_ind.sum(dim='member')/nr_mem
             lower_nr = lower_ind.sum(dim='member')/nr_mem
+            
+            ##set ocean points to nan
+            # upper_nr = upper_nr.where(~np.isnan(lower_xr.values))
+            # center_nr = center_nr.where(~np.isnan(lower_xr.values))
+            # lower_nr = lower_nr.where(~np.isnan(lower_xr.values))            
+            
             #stack and turn to numpy format
             terciles = np.stack((lower_nr.values,center_nr.values,upper_nr.values),axis=0)
             terciles_nan = np.zeros((terciles.shape))
@@ -146,7 +170,7 @@ for yy in np.arange(len(year_init)):
     #create xarray data array and save to netCDF format
     date_init = [nc_fc.time[0].values.astype(str)]
     out_arr = np.expand_dims(out_arr,axis=0) #add "rtime" dimension to add the date of the forecast init
-    out_arr = xr.DataArray(out_arr, coords=[date_init,variable_fc,np.array((1,2,3)),season_label,nc_fc.y,nc_fc.x], dims=['rtime','variable','tercile','season','y','x'], name='terciles')
+    out_arr = xr.DataArray(out_arr, coords=[date_init,variable_fc,np.array((1,2,3)),season_label,nc_fc[lat_name[-1]],nc_fc[lon_name[-1]]], dims=['rtime','variable','tercile','season','y','x'], name='terciles')
     out_arr = out_arr.to_dataset()
     #set dimension attributes
     out_arr['rtime'].attrs['standard_name'] = 'forecast_reference_time'
@@ -166,8 +190,8 @@ for yy in np.arange(len(year_init)):
     out_arr.attrs['file_author'] = nc_quantile.author
 
     ##set chunking and save the file
-    #out_arr = out_arr.chunk({"variable":1, "tercile":1, "season":1, "y":len(nc_fc.y), "x":len(nc_fc.x)})
-    encoding = dict(terciles=dict(chunksizes=(1, 1, 1, 1, len(nc_fc.y), len(nc_fc.x)))) #https://docs.xarray.dev/en/stable/user-guide/io.html#writing-encoded-data
+    #out_arr = out_arr.chunk({"variable":1, "tercile":1, "season":1, "y":len(nc_fc[lat_name[-1]]), "x":len(nc_fc[lon_name[-1]])})
+    encoding = dict(terciles=dict(chunksizes=(1, 1, 1, 1, len(nc_fc[lat_name[-1]]), len(nc_fc[lon_name[-1]])))) #https://docs.xarray.dev/en/stable/user-guide/io.html#writing-encoded-data
     savename = dir_forecast+'/terciles_'+model+version+'_init_'+str(year_init[yy])+str(month_init[yy])+'_'+str(season_length)+'mon_dtr_'+detrended+'_refyears_'+str(years_quantile[0])+'_'+str(years_quantile[1])+'.nc'
     out_arr.to_netcdf(savename,encoding=encoding)
 
@@ -177,8 +201,8 @@ for yy in np.arange(len(year_init)):
     seas_mean.close()
     nc_fc.close()
     out_arr.close()
-    del(lower_xr,upper_xr,seas_mean,nc_fc,out_arr)
-
+    #del(lower_xr,upper_xr,seas_mean,nc_fc,out_arr)
+    
 nc_quantile.close()
 del(nc_quantile)
 

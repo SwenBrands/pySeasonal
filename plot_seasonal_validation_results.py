@@ -29,11 +29,8 @@ corr_outlier = 'no' #load the outlier-correted validation results; yes or no
 detrending = ['yes','no'] #yes or no, linear detrending of the gcm and obs time series prior to validation
 file_years = [1981,2022] #start and end years indicated in the input file name
 
-variables = ['msl','ssrd','si10','t2m','tp'] #variable names in CDS format
-ref_dataset = ['era5','era5','era5','era5','era5'] # #list of model or reference observational dataset paired with <variables> input parameter below
-
-#variables = ['t2m'] #variable names in CDS format
-#ref_dataset = ['era5'] # #list of model or reference observational dataset paired with <variables> input parameter below
+variables = ['fwi','tp','ssrd','si10','t2m','msl'] #variable names in CDS format
+ref_dataset = ['era5','era5','era5','era5','era5','era5'] # #list of model or reference observational dataset paired with <variables> input parameter below
 
 domain = 'medcof'
 critval_rho = 0.05 #critical value used to define the signficance of the correlation measuere applied here (Pearon and Spearman)
@@ -41,7 +38,7 @@ critval_skillscore = 0 #threshold value above which the skill scores applied her
 critval_relbias = 5 #percentage threshold beyond which the absolute relative bias is printed with a dot in the maps and thus assumed to be "important"
 scores = ['relbias','spearman_r','pearson_r','crps_ensemble_skillscore_clim']
 relbias_max = 100 #magnitude of the upper and lower limit to be plotted in case of relbias and tp, this is a percentage value and it is used because the relbias can be very large in dry regions due to the near-to-zero climatological precip. there
-vers = '1g' # 'as_input_file' searches the version stored in the input files generated before with get_skill_season.py; other entries will be directly passed to the netCDF output file produced here
+vers = 'as_input_file' # 'as_input_file' searches the version stored in the input files generated before with get_skill_season.py; other entries will be directly passed to the netCDF output file produced here
 
 precision = 'float32' #precision of the variable in the output netCDF files
 dpival = 300 #resultion of the output figure in dpi

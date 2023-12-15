@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 
+'''calculates skill scores for each season and lead over the overlapping time period indicated in <years_model> and <years_obs>.
+Also calculates and stores the model quantiles over this period, which are used by pred2tercile.py .'''
+
 #load packages
 import numpy as np
 import xarray as xr
@@ -16,7 +19,7 @@ import pdb as pdb #then type <pdb.set_trace()> at a given line in the code below
 exec(open('functions_seasonal.py').read()) #reads the <functions_seasonal.py> script containing a set of custom functions needed here
 
 #set input parameters
-vers = '1g' #version number of the output netCDF file to be sent to Predictia
+vers = '1h' #version number of the output netCDF file to be sent to Predictia
 model = ['ecmwf51'] #interval between meridians and parallels
 obs = ['era5']
 years_model = [1981,2023] #years used in label of model netCDF file, refers to the first and the last year of the monthly model inits
@@ -25,11 +28,11 @@ years_obs = [1981,2022] #years used in label of obs netCDF file; if they differ 
 season_label = ['DJF','JFM','FMA','MAM','AMJ','MJJ','JJA','JAS','ASO','SON','OND','NDJ']
 season = [[12,1,2],[1,2,3],[2,3,4],[3,4,5],[4,5,6],[5,6,7],[6,7,8],[7,8,9],[8,9,10],[9,10,11],[10,11,12],[11,12,1]] #[[12,1,2],[3,4,5],[6,7,8],[9,10,11]]
 lead = [[0,1,2],[1,2,3],[2,3,4],[3,4,5],[4,5,6]] #[[0,1,2],[0,1,2],[0,1,2],[0,1,2]] #number of months between init and start of forecast interval to be verified, e.g. 1 will discard the first month after init, 2 will discard the first two months after init etc.
-variables = ['msl','t2m','tp','si10','ssrd'] #variables names in CDS format, here valid for both observations and GCM. GCM variable names have been set to ERA5 variable names from CDS in <aggregate_hindcast.py>
+variables = ['fwi','msl','t2m','tp','si10','ssrd'] #variables names in CDS format, here valid for both observations and GCM. GCM variable names have been set to ERA5 variable names from CDS in <aggregate_hindcast.py>
 
 datatype = 'float32' #data type of the variables in the output netcdf files
 compression_level = 1
-precip_threshold = 0.5 #precipitation threshold in mm below which the modelled and quasi-observed monthly precipitation amount is set to 0.
+precip_threshold = 1/30 #monthly mean daily precipitation threshold in mm below which the modelled and quasi-observed monthly precipitation amount is set to 0; Bring the parameter in pred2tercile.py in exact agreement with this script in future versions
 corr_outlier = 'no'
 aggreg = 'mon' #temporal aggregation of the input files
 domain = 'medcof' #spatial domain
