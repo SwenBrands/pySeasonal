@@ -29,15 +29,15 @@ lon_name = ['lon','lon','x','x','x','x','x']
 lat_name = ['lat','lat','y','y','y','y','y']
 file_start = ['seasonal-original-single-levels_masked','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels'] #start string of the file names
 
-variables = ['SPEI-3'] #variable names in directories and file names
-variables_nc = ['SPEI-3'] #variable names within the netCDF files, differs in case of fwi msi (msi / FWI is used within the file, but psl / fwi is used in the file name)
-variables_new = ['SPEI-3'] #new variable names; as provided by ERA5 data from CDS
-time_name = ['time'] #name of the time dimension in the netCDF files for this variable, corresponds to <variables> input parameter and must have the same length
-lon_name = ['lon']
-lat_name = ['lat']
-file_start = ['seasonal-original-single-levels_masked']
+# variables = ['SPEI-3'] #variable names in directories and file names
+# variables_nc = ['SPEI-3'] #variable names within the netCDF files, differs in case of fwi msi (msi / FWI is used within the file, but psl / fwi is used in the file name)
+# variables_new = ['SPEI-3'] #new variable names; as provided by ERA5 data from CDS
+# time_name = ['time'] #name of the time dimension in the netCDF files for this variable, corresponds to <variables> input parameter and must have the same length
+# lon_name = ['lon']
+# lat_name = ['lat']
+# file_start = ['seasonal-original-single-levels_masked']
 
-years = [1981,2023] #years to be regridded, the output files will be filled with monthly values, aggregated from daily values in this script, covering all months beginning in January of the indicated start year and ending in December of the indicated end year. If no daily input data is found for a given month, nans will be placed in the monthly output netCDF files.
+years = [1981,2024] #years to be regridded, the output files will be filled with monthly values, aggregated from daily values in this script, covering all months beginning in January of the indicated start year and ending in December of the indicated end year. If no daily input data is found for a given month, nans will be placed in the monthly output netCDF files.
 
 #set input parameters for model datasets, only used to get the land-sea mask of the models listed in <model>
 model = ['ecmwf'] #seasonal forecast model

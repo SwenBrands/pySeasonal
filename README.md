@@ -54,7 +54,7 @@ Deprecated scripts:
 
 Credits
 -------
-This ongoing research work is being funded by the Ministry for the Ecological Transition and the Demographic Challenge (MITECO) and the European Commission NextGenerationEU (Regulation EU 2020/2094), through CSIC's Interdisciplinary Thematic Platform Clima (PTI-Clima).
+This ongoing research work is being funded by the Ministry for Ecological Transition and Demographic Challenge (MITECO) and the European Commission NextGenerationEU (Regulation EU 2020/2094), through CSIC's Interdisciplinary Thematic Platform Clima (PTI-Clima).
 
 ![alt text](https://pti-clima.csic.es/wp-content/uploads/2023/11/Web-Gob-Min-CSIC-COLOR-LOGO-PNG-RGB-300pppCLIMA.png)
 

@@ -19,10 +19,10 @@ import pdb as pdb #then type <pdb.set_trace()> at a given line in the code below
 exec(open('functions_seasonal.py').read()) #reads the <functions_seasonal.py> script containing a set of custom functions needed here
 
 #set input parameters
-vers = '1h' #version number of the output netCDF file to be sent to Predictia
+vers = '1i' #version number of the output netCDF file to be sent to Predictia
 model = ['ecmwf51'] #interval between meridians and parallels
 obs = ['era5']
-years_model = [1981,2023] #years used in label of model netCDF file, refers to the first and the last year of the monthly model inits
+years_model = [1981,2024] #years used in label of model netCDF file, refers to the first and the last year of the monthly model inits
 years_obs = [1981,2022] #years used in label of obs netCDF file; if they differ from <years_model>, then the common intersection of years will be validated.
 
 season_label = ['DJF','JFM','FMA','MAM','AMJ','MJJ','JJA','JAS','ASO','SON','OND','NDJ']

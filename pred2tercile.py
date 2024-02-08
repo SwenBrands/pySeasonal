@@ -17,19 +17,18 @@ import pdb as pdb #then type <pdb.set_trace()> at a given line in the code below
 exec(open('functions_seasonal.py').read()) #reads the <functions_seasonal.py> script containing a set of custom functions needed here
 
 #set input parameters
-quantile_version = '1h' #version number of the quantiles file used here
+quantile_version = '1i' #version number of the quantiles file used here
 model = 'ecmwf' #interval between meridians and parallels
 version = '51'
 
-year_init = [2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023] #a list containing the years the forecast are initialized on, will be looped through with yy
-month_init = [1,2,3,4,5,6,7,8,9,10,11,12] #a list containing the corresponding months the forecast are initialized on, will be called while looping through <year_init> (with yy), i.e. must have the same length
+#year_init = [2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2023,2024,2024] #a list containing the years the forecast are initialized on, will be looped through with yy
+#month_init = [1,2,3,4,5,6,7,8,9,10,11,12,1,2] #a list containing the corresponding months the forecast are initialized on, will be called while looping through <year_init> (with yy), i.e. must have the same length
 
-# year_init = [2023,2023] #a list containing the years the forecast are initialized on, will be looped through with yy
-# month_init = [11,12] #a list containing the corresponding months the forecast are initialized on, will be called while looping through <year_init> (with yy), i.e. must have the same length
+year_init = [2024] #a list containing the years the forecast are initialized on, will be looped through with yy
+month_init = [2] #a list containing the corresponding months the forecast are initialized on, will be called while looping through <year_init> (with yy), i.e. must have the same length
 
 years_quantile = [1981,2022] #years used to calculate the quantiles with get_skill_season.py
 season_length = 3 #length of the season, e.g. 3 for DJF, JFM, etc.
-detrended = 'no'
 
 variable_qn = ['SPEI-3','fwi','msl','t2m','tp','si10','ssrd'] # variable name used inside and outside of the quantile file. This is my work and is thus homegeneous.
 variable_fc = ['SPEI-3','fwi','psl','tas','pr','sfcWind','rsds'] # variable name used in the file name, i.e. outside the file, ask collegues for data format harmonization
