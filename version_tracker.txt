@@ -1,0 +1,5 @@
+#This file contains a short description of all version changes w.r.t. the previous version; responsible persons are annotated in parenthesis.
+
+#Version; Description and responsible persons
+
+1i; SPEI-3 calculations have been modified and improved (Maialen Iturbide and José Manuel Gutiérrez)
