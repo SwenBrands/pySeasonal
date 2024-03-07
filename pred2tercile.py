@@ -38,22 +38,6 @@ lon_name = ['lon','lon','x','x','x','x','x']
 lat_name = ['lat','lat','y','y','y','y','y']
 file_start = ['seasonal-original-single-levels_masked','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels'] #start string of the file names
 
-# variable_qn = ['msl'] # variable name used inside and outside of the quantile file. This is my work and is thus homegeneous.
-# variable_fc = ['psl'] # variable name used in the file name, i.e. outside the file, ask collegues for data format harmonization
-# variable_fc_nc = ['psl'] # variable name within the model netcdf file, may vary depending on source
-# time_name = ['forecast_time'] #name of the time dimension within the model netcdf file, may vary depending on source
-# lon_name = ['x']
-# lat_name = ['y']
-# file_start = ['seasonal-original-single-levels'] #start string of the file names
-
-# variable_qn = ['SPEI-3'] # variable name used inside and outside of the quantile file. This is my work and is thus homegeneous.
-# variable_fc = ['SPEI-3'] # variable name used in the file name, i.e. outside the file, ask collegues for data format harmonization
-# variable_fc_nc = ['SPEI-3'] # variable name within the model netcdf file, may vary depending on source
-# time_name = ['time'] #name of the time dimension within the model netcdf file, may vary depending on source
-# lon_name = ['lon']
-# lat_name = ['lat']
-# file_start = ['seasonal-original-single-levels_masked'] #start string of the file names
-
 precip_threshold = 1/90 #seasonal mean daily precipitation threshold in mm below which the modelled and quasi-observed monthly precipitation amount is set to 0. Bring this in exact agreement with get_skill_season.py in future versions
 datatype = 'float32' #data type of the variables in the output netcdf files
 domain = 'medcof' #spatial domain
@@ -66,11 +50,7 @@ dpival = 300 #resolution of output figures
 south_ext_lambert = 0 #extend the southern limit of the box containing the Lambert Conformal Projection
 
 #set basic path structure for observations and gcms
-home = os.getenv('HOME')
-rundir = home+'/datos/tareas/proyectos/pticlima/pyPTIclima/pySeasonal'
-dir_quantile = home+'/datos/tareas/proyectos/pticlima/seasonal/results/validation'
-dir_forecast = home+'/datos/tareas/proyectos/pticlima/seasonal/results/forecast'
-gcm_store = 'F' #laptop, F or extdisk2
+gcm_store = 'lustre' #laptop, F, extdisk2 or lustre
 product = 'forecast'
 
 ## EXECUTE #############################################################
@@ -81,14 +61,45 @@ quantile_threshold = [0.33,0.67]
 
 #set path to input gcm files
 if gcm_store == 'laptop':
-    path_gcm_base = home+'/datos/GCMData/seasonal-original-single-levels/'+domain # head directory of the source files
+    home = os.getenv('HOME')
+    path_gcm_base = home+'/datos/GCMData/seasonal-original-single-levels' # head directory of the source files
+    path_gcm_base_derived = path_gcm_base # head directory of the source files
+    path_gcm_base_masked = path_gcm_base # head directory of the source files
+    rundir = home+'/lustre/gmeteo/PTICLIMA/Inventory/Scripts/pyPTIclima/pySeasonal'
+    dir_quantile = home+'/datos/tareas/proyectos/pticlima/seasonal/results/validation'
+    dir_forecast = home+'/datos/tareas/proyectos/pticlima/seasonal/results/forecast'
 elif gcm_store == 'F':
-    path_gcm_base = '/media/swen/F/datos/GCMData/seasonal-original-single-levels/'+domain # head directory of the source files
+    home = os.getenv('HOME')
+    path_gcm_base = '/media/swen/F/datos/GCMData/seasonal-original-single-levels' # head directory of the source files
+    path_gcm_base_derived = path_gcm_base # head directory of the source files
+    path_gcm_base_masked = path_gcm_base # head directory of the source files
+    rundir = home+'/lustre/gmeteo/PTICLIMA/Inventory/Scripts/pyPTIclima/pySeasonal'
+    dir_quantile = home+'/datos/tareas/proyectos/pticlima/seasonal/results/validation'
+    dir_forecast = home+'/datos/tareas/proyectos/pticlima/seasonal/results/forecast'
 elif gcm_store == 'extdisk2':
+    home = os.getenv('HOME')
+    path_gcm_base = '/media/swen/ext_disk2/datos/GCMData/seasonal-original-single-levels' # head directory of the source files
+    path_gcm_base_derived = path_gcm_base # head directory of the source files
+    path_gcm_base_masked = path_gcm_base # head directory of the source files
     path_gcm_base = '/media/swen/ext_disk2/datos/GCMData/seasonal-original-single-levels/'+domain # head directory of the source files
+    rundir = home+'/lustre/gmeteo/PTICLIMA/Inventory/Scripts/pyPTIclima/pySeasonal'
+    dir_quantile = home+'/datos/tareas/proyectos/pticlima/seasonal/results/validation'
+    dir_forecast = home+'/datos/tareas/proyectos/pticlima/seasonal/results/forecast'
+elif gcm_store == 'lustre':
+    home = '/lustre/gmeteo/PTICLIMA'
+    path_gcm_base = home+'/DATA/SEASONAL/seasonal-original-single-levels' # head directory of the source files
+    path_gcm_base_derived = home+'/DATA/SEASONAL/seasonal-original-single-levels_derived' # head directory of the source files
+    path_gcm_base_masked = home+'/DATA/SEASONAL/seasonal-original-single-levels_masked' # head directory of the source files    
+    rundir = home+'/Inventory/Scripts/pyPTIclima/pySeasonal'
+    dir_quantile = home+'/Inventory/Results/seasonal/validation'
+    dir_forecast = home+'/Inventory/Results/seasonal/forecast'
 else:
     raise Exception('ERROR: unknown entry for <path_gcm_base> !')
 print('The GCM files will be loaded from the base directory '+path_gcm_base+'...')
+
+#create output directory of the forecasts generated here, if it does not exist.
+if os.path.isdir(dir_forecast) != True:
+    os.makedirs(dir_forecast)
 
 #load the quantiles file
 filename_quantiles = dir_quantile+'/quantiles_pticlima_'+domain+'_'+str(years_quantile[0])+'_'+str(years_quantile[1])+'_v'+quantile_version+'.nc'
@@ -96,8 +107,18 @@ nc_quantile = xr.open_dataset(filename_quantiles)
 
 for yy in np.arange(len(year_init)):
     for vv in np.arange(len(variable_fc)):
-        #load forecast file 
-        filename_forecast = path_gcm_base+'/'+product+'/'+variable_fc[vv]+'/'+model+'/'+version+'/'+str(year_init[yy])+str(month_init[yy]).zfill(2)+'/'+file_start[vv]+'_'+domain+'_'+product+'_'+variable_fc[vv]+'_'+model+'_'+version+'_'+str(year_init[yy])+str(month_init[yy]).zfill(2)+'.nc'
+        
+        #load forecast file
+        if variable_fc[vv] == 'SPEI-3':
+            filename_forecast = path_gcm_base_masked+'/'+domain+'/'+product+'/'+variable_fc[vv]+'/'+model+'/'+version+'/coefs_all_members/'+str(year_init[yy])+str(month_init[yy]).zfill(2)+'/'+file_start[vv]+'_'+domain+'_'+product+'_'+variable_fc[vv]+'_'+model+'_'+version+'_'+str(year_init[yy])+str(month_init[yy]).zfill(2)+'.nc'
+        elif variable_fc[vv] == 'fwi':
+            filename_forecast = path_gcm_base_derived+'/'+domain+'/'+product+'/'+variable_fc[vv]+'/'+str(year_init[yy])+str(month_init[yy]).zfill(2)+'/'+file_start[vv]+'_'+domain+'_'+product+'_'+variable_fc[vv]+'_'+model+'_'+version+'_'+str(year_init[yy])+str(month_init[yy]).zfill(2)+'.nc'
+        elif variable_fc[vv] in ('psl','sfcWind','tas','pr','rsds'):
+            filename_forecast = path_gcm_base+'/'+domain+'/'+product+'/'+variable_fc[vv]+'/'+model+'/'+version+'/'+str(year_init[yy])+str(month_init[yy]).zfill(2)+'/'+file_start[vv]+'_'+domain+'_'+product+'_'+variable_fc[vv]+'_'+model+'_'+version+'_'+str(year_init[yy])+str(month_init[yy]).zfill(2)+'.nc'
+        else:
+            raise Exception('ERROR: check entry for variables[vv] !')
+        
+        #filename_forecast = path_gcm_base+'/'+product+'/'+variable_fc[vv]+'/'+model+'/'+version+'/'+str(year_init[yy])+str(month_init[yy]).zfill(2)+'/'+file_start[vv]+'_'+domain+'_'+product+'_'+variable_fc[vv]+'_'+model+'_'+version+'_'+str(year_init[yy])+str(month_init[yy]).zfill(2)+'.nc'
         nc_fc = xr.open_dataset(filename_forecast)
         
         #check if the latitudes are in the right order or must be flipped to be consistent with the obserations used for validation
@@ -236,6 +257,6 @@ for yy in np.arange(len(year_init)):
     del(lower_xr,upper_xr,seas_mean,nc_fc,out_arr)
     
 nc_quantile.close()
-#del(nc_quantile)
+del(nc_quantile)
 
-print('INFO: pred2tercile.py has been run successfully !')
+print('INFO: pred2tercile.py has been run successfully ! The netcdf output files have been stored at '+dir_forecast)

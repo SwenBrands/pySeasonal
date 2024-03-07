@@ -22,33 +22,57 @@ variables = ['SPEI-3','fwi'] #variables to be regridded
 variables_nc = ['SPEI-3','FWI'] #variable names with the netCDF file
 years = [1981,2022] #years to be regridded
 int_method = 'conservative_normed' #'conservative_normed', interpolation method used to regrid the observations which already are provided on the model grid
-home = os.getenv('HOME')
+file_system = 'lustre' #lustre or myLaptop; used to create the path structure to the input and output files
 
 #set MEDCOF domain
 domain = 'medcof' #spatial domain the model data is available on. So far, this is just a label used in the output filename.
 resolution = '1degree' #resolution shortcut used in the input variable names
 
-#set basic path structure for observations and land-sea masks from the models
-path_obs_base = home+'/datos/OBSData' #base path upon which the final path to the obs data is constructed
-savepath_base = home+'/datos/tareas/proyectos/pticlima/seasonal/results/obs/regridded' #This is the common directory for regridded monthly observations; what is placed here will be processed by get_skill_season.py
 model = 'ecmwf' #here used as label to save the output netcdf file
 version = '51' #here used as label to save the output netcdf file
 int_method = 'conservative_normed' #here used as label to save the output netcdf file, ask Adri if this method was used
 
 ## EXECUTE #############################################################
+#set basic path structure for observations and land-sea masks from the models
+if file_system == 'myLaptop':
+    home = os.getenv('HOME')
+    path_obs_base = home+'/datos/OBSData' #base path upon which the final path to the obs data is constructed
+    savepath_base = home+'/datos/tareas/proyectos/pticlima/seasonal/results/obs/regridded' #This is the common directory for regridded monthly observations; what is placed here will be processed by get_skill_season.py
+elif file_system == 'lustre':
+    home = '/lustre/gmeteo/PTICLIMA'
+    path_obs_base = home+'/DATA/REANALYSIS' #base path upon which the final path to the obs data is constructed
+    savepath_base = home+'/Inventory/Results/seasonal/obs/regridded' #This is the common directory for regridded monthly observations; what is placed here will be processed by get_skill_season.py
+else:
+    raise Exception('ERROR: unknown entry for <file_system> input parameter !')
+print('The file system is '+file_system+'...')
+
+#create output directory if it does not exist.
+if os.path.isdir(savepath_base+'/'+obs) != True:
+    os.makedirs(savepath_base+'/'+obs)
 
 #Load observations, cut out years indicated in <years> and aggregate to monthly mean value. Then save to netcdf
 for vv in np.arange(len(variables)):
+    print('Processing '+variables[vv]+' from '+obs+' for the years '+str(years)+' on file system '+file_system+'...')
     if variables[vv] in ('t2m','tp','sst','z500','si10','ssrd','msl'):
         raise Expcetion('ERROR: '+variables[vv]+' are already available on monthly timescale in '+path_obs_base+' because they have been already donwloaded from CDS!')
     
     #define path to the file and loading function as a function of the variable (variables may come from different providers using distinct rules)
     if variables[vv] == 'fwi':
-        path_obs_data = path_obs_base+'/'+obs+'/'+agg_src+'/'+domain+'_'+resolution+'/'+variables[vv]+'/'+variables[vv]+'_'+domain+'_'+resolution+'.nc'
+        #path_obs_data = path_obs_base+'/'+obs+'/'+agg_src+'/'+domain+'_'+resolution+'/'+variables[vv]+'/'+variables[vv]+'_'+domain+'_'+resolution+'.nc'
+        path_obs_data = path_obs_base+'/'+obs.upper()+'/data_derived/'+domain+'_'+resolution+'/'+variables[vv]+'12/'+variables[vv]+'_'+domain+'_'+resolution+'.nc'
         nc = xr.open_dataset(path_obs_data)
     elif variables[vv] == 'SPEI-3':
-        path_obs_data = path_obs_base+'/'+obs+'/'+agg_src+'/'+domain+'_'+resolution+'/'+variables[vv]+'/'+variables[vv]+'_'+obs.upper()+'_'+agg_src+'_*.nc' #SPEI-3_ERA5_day_2021.nc
-        nc = xr.open_mfdataset(path_obs_data)
+        #path_obs_data = path_obs_base+'/'+obs+'/'+agg_src+'/'+domain+'_'+resolution+'/'+variables[vv]+'/'+variables[vv]+'_'+obs.upper()+'_'+agg_src+'_*.nc' #SPEI-3_ERA5_day_2021.nc
+        path_obs_data = path_obs_base+'/'+obs.upper()+'/data_masked/'+domain+'_'+resolution+'/'+variables[vv] #SPEI-3_ERA5_day_2021.nc
+        #get list of input files
+        inputfiles_list = []
+        for yy in np.arange(years[0],years[1]+1):
+            dir_content = os.listdir(path_obs_data+'/'+str(yy))
+            for fi in np.arange(len(dir_content)):
+                inputfiles_list.append(path_obs_data+'/'+str(yy)+'/'+dir_content[fi])
+        print('The following input files will be loaded and concatenated:')
+        print(inputfiles_list)
+        nc = xr.open_mfdataset(inputfiles_list)
     else:
         raise Excpetion('ERROR: variable '+variables[vv]+' is not yet supported by this script !')
     

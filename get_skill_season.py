@@ -22,8 +22,9 @@ exec(open('functions_seasonal.py').read()) #reads the <functions_seasonal.py> sc
 vers = '1i' #version number of the output netCDF file to be sent to Predictia
 model = ['ecmwf51'] #interval between meridians and parallels
 obs = ['era5']
-years_model = [1981,2024] #years used in label of model netCDF file, refers to the first and the last year of the monthly model inits
+years_model = [1981,2023] #years used in label of model netCDF file, refers to the first and the last year of the monthly model inits
 years_obs = [1981,2022] #years used in label of obs netCDF file; if they differ from <years_model>, then the common intersection of years will be validated.
+file_system = 'lustre' #lustre or myLaptop; used to create the path structure to the input and output files
 
 season_label = ['DJF','JFM','FMA','MAM','AMJ','MJJ','JJA','JAS','ASO','SON','OND','NDJ']
 season = [[12,1,2],[1,2,3],[2,3,4],[3,4,5],[4,5,6],[5,6,7],[6,7,8],[7,8,9],[8,9,10],[9,10,11],[10,11,12],[11,12,1]] #[[12,1,2],[3,4,5],[6,7,8],[9,10,11]]
@@ -50,14 +51,27 @@ figformat = 'png' #format of output figures, pdf or png
 dpival = 300 #resolution of output figures
 south_ext_lambert = 0 #extend the southern limit of the box containing the Lambert Conformal Projection
 
-#set basic path structure for observations and gcms
-home = os.getenv('HOME')
-rundir = home+'/datos/tareas/proyectos/pticlima/pyPTIclima/pySeasonal'
-path_obs_base = home+'/datos/tareas/proyectos/pticlima/seasonal/results/obs/regridded'
-path_gcm_base = home+'/datos/tareas/proyectos/pticlima/seasonal/results/gcm/aggregated'
-dir_netcdf = home+'/datos/tareas/proyectos/pticlima/seasonal/results/validation'
-
 ## EXECUTE #############################################################
+#set basic path structure for observations and gcms
+if file_system == 'myLaptop':
+    home = os.getenv('HOME')
+    rundir = home+'/datos/tareas/proyectos/pticlima/pyPTIclima/pySeasonal'
+    path_obs_base = home+'/datos/tareas/proyectos/pticlima/seasonal/results/obs/regridded'
+    path_gcm_base = home+'/datos/tareas/proyectos/pticlima/seasonal/results/gcm/aggregated'
+    dir_netcdf = home+'/datos/tareas/proyectos/pticlima/seasonal/results/validation'
+elif file_system == 'lustre':
+    home = '/lustre/gmeteo/PTICLIMA'
+    rundir = home+'/Inventory/Scripts/pyPTIclima/pySeasonal'
+    path_obs_base = home+'/Inventory/Results/seasonal/obs/regridded'
+    path_gcm_base = home+'/Inventory/Results/seasonal/gcm/aggregated' 
+    dir_netcdf = home+'/Inventory/Results/seasonal/validation'
+else:
+    raise Exception('ERROR: unknown entry for <file_system> input parameter!')
+    
+#create output directory if it does not exist.
+if os.path.isdir(dir_netcdf) != True:
+    os.makedirs(dir_netcdf)
+
 #check consistency of some input parameters
 if len(season) != len(season_label):
     raise Exception('ERROR: the length of the list <season> does not equal the length of the list <season_label> !')

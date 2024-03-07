@@ -23,13 +23,13 @@ variables = ['msl','si10','ssrd','t2m','tp'] #variables to be regridded
 #variables = ['t2m'] #variables to be regridded
 years = [1981,2022] #years to be regridded
 int_method = 'conservative_normed' #'conservative_normed', interpolation method used by xesmf
+file_system = 'lustre' #lustre or myLaptop; used to create the path structure to the input and output files
 
 #set input parameters for model datasets, only used to get the land-sea mask of the models listed in <model>
 model = ['ecmwf'] #seasonal forecast model
 version = ['51'] #and version thereof; pertains to <model> loop indicated with <mm> below
 lsm_thresh = [0.5] #fraction above which the grid box is considered land in the gcm (the value is continuous between 0 and 1 in ecmwf 51)
 product = 'hindcast' #considered product
-home = os.getenv('HOME')
 
 #set MEDCOF domain
 domain = 'medcof' #spatial domain the model data is available on. So far, this is just a label used in the output filename.
@@ -39,14 +39,26 @@ latlim_m = [14,53]
 lonlim_m = [-20,51]
 
 #set basic path structure for observations and land-sea masks from the models
-path_obs_base = home+'/datos/OBSData' #base path upon which the final path to the obs data is constructed
-path_gcm_base = home+'/datos/GCMData/seasonal-original-single-levels' #here, the land sea masks of all models and versions thereof are located
-savepath_base = home+'/datos/tareas/proyectos/pticlima/seasonal/results/obs/regridded' #The nc files generated here, containing observations regridded to the model grid, are stored in this directory
+if file_system == 'myLaptop':
+    home = os.getenv('HOME')
+    path_obs_base = home+'/datos/OBSData' #base path upon which the final path to the obs data is constructed
+    path_gcm_base = home+'/datos/GCMData/seasonal-original-single-levels' #here, the land sea masks of all models and versions thereof are located
+    savepath_base = home+'/datos/tareas/proyectos/pticlima/seasonal/results/obs/regridded' #The nc files generated here, containing observations regridded to the model grid, are stored in this directory
+elif file_system == 'lustre':
+    home = '/lustre/gmeteo/PTICLIMA'
+    path_obs_base = home+'/DATA/REANALYSIS' #base path upon which the final path to the obs data is constructed
+    path_gcm_base = home+'/DATA/SEASONAL/seasonal-original-single-levels' #here, the land sea masks of all models and versions thereof are located
+    savepath_base = home+'/Inventory/Results/seasonal/obs/regridded' #The nc files generated here, containing observations regridded to the model grid, are stored in this directory
+else:
+    raise Exception('ERROR: unknown entry for <file_system> input parameter !')
 
 ## EXECUTE #############################################################
 for oo in np.arange(len(obs)):
+    #create output directory if it does not exist.
+    if os.path.isdir(savepath_base+'/'+obs[oo]) != True:
+        os.makedirs(savepath_base+'/'+obs[oo])
     #get land-sea mask from observational dataset
-    path_obs_lsm = path_obs_base+'/'+obs[oo]+'/lsm/lsm_'+obs[oo]+'.nc'
+    path_obs_lsm = path_obs_base+'/'+obs[oo].upper()+'/lsm/lsm_'+obs[oo]+'.nc'
     nc_obs_lsm = roll_and_cut(xr.open_dataset(path_obs_lsm),lonlim_o,latlim_o)
     land_obs = nc_obs_lsm.lsm.values == 1 #value is binary in era5
     sea_obs = nc_obs_lsm.lsm.values == 0
@@ -67,7 +79,7 @@ for oo in np.arange(len(obs)):
         
         #Then load observations, cut out years indicated in <years>, interpolate obs variable to the gcm grid and save as netCDF file
         for vv in np.arange(len(variables)):
-            path_obs_data = path_obs_base+'/'+obs[oo]+'/'+agg_src[oo]+'/'+obs[oo]+'_mon_'+variables[vv]+'_'+str(startyear_file[oo])+'_'+str(endyear_file[oo])+'.nc'
+            path_obs_data = path_obs_base+'/'+obs[oo].upper()+'/'+agg_src[oo]+'/'+obs[oo]+'_mon_'+variables[vv]+'_'+str(startyear_file[oo])+'_'+str(endyear_file[oo])+'.nc'
             nc_obs_data = roll_and_cut(xr.open_dataset(path_obs_data),lonlim_o,latlim_o)
             obs_dates = pd.DatetimeIndex(nc_obs_data.time.values)
             yearbool = (obs_dates.year >= years[0]) & (obs_dates.year <= years[1])
