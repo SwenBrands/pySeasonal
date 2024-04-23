@@ -4,6 +4,7 @@ The script loads a forecast at a given init passed via the <year_init> and <mont
 The main difference to pred2tercile.py is that only one init is processed, meaning that the yy loop has been deleted here.'''
 
 #load packages
+from datetime import date
 import numpy as np
 import xarray as xr
 import os
@@ -12,11 +13,19 @@ import dask
 import sys
 exec(open('functions_seasonal.py').read()) #reads the <functions_seasonal.py> script containing a set of custom functions needed here
 
-#the init of the forecast (year and month) is passed by bash
-year_init = sys.argv[1]
-month_init = sys.argv[2]
-if len(year_init) != 4 or len(month_init) != 2: 
-    raise Exception('ERROR: check length of <year_month_init> input parameter !')
+#the init of the forecast (year and month) can passed by bash; if nothing is passed these parameters will be set by python
+if len(sys.argv) > 1:
+    print("Reading from input parameters passed via bash")
+    year_init = sys.argv[1]
+    month_init = sys.argv[2]
+    if len(year_init) != 4 or len(month_init) != 2:
+        raise Exception('ERROR: check length of <year_month_init> input parameter !')
+else:
+    print("No input parameter have been provided by the user and the script will set the <year_init> and <month_init> variables for the year and month of the current date...")
+    year_init = str(date.today().year)
+    month_init = f"{date.today().month:02d}"
+    print(date.today())
+print(year_init, month_init)
 
 # year_init = 2024 #a list containing the years the forecast are initialized on, will be looped through with yy
 # month_init = 3 #a list containing the corresponding months the forecast are initialized on, will be called while looping through <year_init> (with yy), i.e. must have the same length
@@ -49,7 +58,7 @@ dpival = 300 #resolution of output figures
 south_ext_lambert = 0 #extend the southern limit of the box containing the Lambert Conformal Projection
 
 #set basic path structure for observations and gcms
-gcm_store = 'lustre' #laptop, F, extdisk2 or lustre
+gcm_store = 'argo' #argo, laptop, F, extdisk2 or lustre
 product = 'forecast'
 
 ## EXECUTE #############################################################
@@ -83,6 +92,13 @@ elif gcm_store == 'lustre':
     rundir = home+'/Scripts/SBrands/pyPTIclima/pySeasonal'
     dir_quantile = home+'/Results/seasonal/validation'
     dir_forecast = home+'/Results/seasonal/forecast'
+elif gcm_store == 'argo':
+    home = os.getenv("DATA_DIR", "")
+    path_gcm_base = home+'seasonal-original-single-levels' # head directory of the source files
+    path_gcm_base_derived = home+'seasonal-original-single-levels_derived' # head directory of the source files
+    path_gcm_base_masked = home+'seasonal-original-single-levels_masked' # head directory of the source files
+    dir_quantile = '/tmp/terciles/'
+    dir_forecast = home+'seasonal-original-single-levels_derived/medcof/forecast/terciles/'
 else:
     raise Exception('ERROR: unknown entry for <path_gcm_base> !')
 print('The GCM files will be loaded from the base directory '+path_gcm_base+'...')
