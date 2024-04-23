@@ -1,5 +1,7 @@
 #!/usr/bin/env python
-''' This script loads a forecast at a given init, aggregates the raw values to seasonal averages and transforms them into terciles.'''
+''' This is the operational verions of pred2tercile.py, which is called from bash via <generate_forecast.sh>.
+The script loads a forecast at a given init passed via the <year_init> and <month_init> input parameters, aggregates the raw values to seasonal averages and transforms them into terciles.
+The main difference to pred2tercile.py is that only one init is processed, meaning that the yy loop has been deleted here.'''
 
 #load packages
 import numpy as np
@@ -17,19 +19,19 @@ if len(year_init) != 4 or len(month_init) != 2:
     raise Exception('ERROR: check length of <year_month_init> input parameter !')
 
 # year_init = 2024 #a list containing the years the forecast are initialized on, will be looped through with yy
-# month_init = 2 #a list containing the corresponding months the forecast are initialized on, will be called while looping through <year_init> (with yy), i.e. must have the same length
+# month_init = 3 #a list containing the corresponding months the forecast are initialized on, will be called while looping through <year_init> (with yy), i.e. must have the same length
 
 #set input parameters
-quantile_version = '1i' #version number of the quantiles file used here
+quantile_version = '1j' #version number of the quantiles file used here
 model = 'ecmwf' #interval between meridians and parallels
 version = '51'
 
 years_quantile = [1981,2022] #years used to calculate the quantiles with get_skill_season.py
 season_length = 3 #length of the season, e.g. 3 for DJF, JFM, etc.
 
-variable_qn = ['SPEI-3','fwi','msl','t2m','tp','si10','ssrd'] # variable name used inside and outside of the quantile file. This is my work and is thus homegeneous.
-variable_fc = ['SPEI-3','fwi','psl','tas','pr','sfcWind','rsds'] # variable name used in the file name, i.e. outside the file, ask collegues for data format harmonization
-variable_fc_nc = ['SPEI-3','FWI','psl','tas','pr','sfcWind','rsds'] # variable name within the model netcdf file, may vary depending on source
+variable_qn = ['SPEI-3-M','fwi','msl','t2m','tp','si10','ssrd'] # variable name used inside and outside of the quantile file. This is my work and is thus homegeneous.
+variable_fc = ['SPEI-3-M','fwi','psl','tas','pr','sfcWind','rsds'] # variable name used in the file name, i.e. outside the file, ask collegues for data format harmonization
+variable_fc_nc = ['SPEI-3-M','FWI','psl','tas','pr','sfcWind','rsds'] # variable name within the model netcdf file, may vary depending on source
 time_name = ['time','time','forecast_time','forecast_time','forecast_time','forecast_time','forecast_time'] #name of the time dimension within the model netcdf file, may vary depending on source
 lon_name = ['lon','lon','x','x','x','x','x']
 lat_name = ['lat','lat','y','y','y','y','y']
@@ -62,7 +64,7 @@ if gcm_store == 'laptop':
     path_gcm_base = home+'/datos/GCMData/seasonal-original-single-levels' # head directory of the source files
     path_gcm_base_derived = path_gcm_base # head directory of the source files
     path_gcm_base_masked = path_gcm_base # head directory of the source files
-    rundir = home+'/lustre/gmeteo/PTICLIMA/Inventory/Scripts/pyPTIclima/pySeasonal'
+    rundir = home+'/datos/tareas/proyectos/pticlima/pyPTIclima/pySeasonal'
     dir_quantile = home+'/datos/tareas/proyectos/pticlima/seasonal/results/validation'
     dir_forecast = home+'/datos/tareas/proyectos/pticlima/seasonal/results/forecast'
 elif gcm_store == 'F':
@@ -70,16 +72,7 @@ elif gcm_store == 'F':
     path_gcm_base = '/media/swen/F/datos/GCMData/seasonal-original-single-levels' # head directory of the source files
     path_gcm_base_derived = path_gcm_base # head directory of the source files
     path_gcm_base_masked = path_gcm_base # head directory of the source files
-    rundir = home+'/lustre/gmeteo/PTICLIMA/Inventory/Scripts/pyPTIclima/pySeasonal'
-    dir_quantile = home+'/datos/tareas/proyectos/pticlima/seasonal/results/validation'
-    dir_forecast = home+'/datos/tareas/proyectos/pticlima/seasonal/results/forecast'
-elif gcm_store == 'extdisk2':
-    home = os.getenv('HOME')
-    path_gcm_base = '/media/swen/ext_disk2/datos/GCMData/seasonal-original-single-levels' # head directory of the source files
-    path_gcm_base_derived = path_gcm_base # head directory of the source files
-    path_gcm_base_masked = path_gcm_base # head directory of the source files
-    path_gcm_base = '/media/swen/ext_disk2/datos/GCMData/seasonal-original-single-levels/'+domain # head directory of the source files
-    rundir = home+'/lustre/gmeteo/PTICLIMA/Inventory/Scripts/pyPTIclima/pySeasonal'
+    rundir = home+'/datos/tareas/proyectos/pticlima/pyPTIclima/pySeasonal'
     dir_quantile = home+'/datos/tareas/proyectos/pticlima/seasonal/results/validation'
     dir_forecast = home+'/datos/tareas/proyectos/pticlima/seasonal/results/forecast'
 elif gcm_store == 'lustre':
@@ -87,12 +80,15 @@ elif gcm_store == 'lustre':
     path_gcm_base = home+'/DATA/SEASONAL/seasonal-original-single-levels' # head directory of the source files
     path_gcm_base_derived = home+'/DATA/SEASONAL/seasonal-original-single-levels_derived' # head directory of the source files
     path_gcm_base_masked = home+'/DATA/SEASONAL/seasonal-original-single-levels_masked' # head directory of the source files    
-    rundir = home+'/Inventory/Scripts/pyPTIclima/pySeasonal'
-    dir_quantile = home+'/Inventory/Results/seasonal/validation'
-    dir_forecast = home+'/Inventory/Results/seasonal/forecast'
+    rundir = home+'/Scripts/SBrands/pyPTIclima/pySeasonal'
+    dir_quantile = home+'/Results/seasonal/validation'
+    dir_forecast = home+'/Results/seasonal/forecast'
 else:
     raise Exception('ERROR: unknown entry for <path_gcm_base> !')
 print('The GCM files will be loaded from the base directory '+path_gcm_base+'...')
+
+#go to rundir
+os.chdir(rundir)
 
 #create output directory of the forecasts generated here, if it does not exist.
 if os.path.isdir(dir_forecast) != True:
@@ -104,10 +100,9 @@ nc_quantile = xr.open_dataset(filename_quantiles)
 
 #make forecast for each variable
 for vv in np.arange(len(variable_fc)):
-    
     #load forecast file
-    if variable_fc[vv] == 'SPEI-3':
-        filename_forecast = path_gcm_base_masked+'/'+domain+'/'+product+'/'+variable_fc[vv]+'/'+model+'/'+version+'/coefs_all_members/'+str(year_init)+str(month_init).zfill(2)+'/'+file_start[vv]+'_'+domain+'_'+product+'_'+variable_fc[vv]+'_'+model+'_'+version+'_'+str(year_init)+str(month_init).zfill(2)+'.nc'
+    if variable_fc[vv] in ('SPEI-3','SPEI-3-M','SPEI-3-R'):
+        filename_forecast = path_gcm_base_masked+'/'+domain+'/'+product+'/'+variable_fc[vv]+'/'+model+'/'+version+'/coefs_pool_members/'+str(year_init)+str(month_init).zfill(2)+'/'+file_start[vv]+'_'+domain+'_'+product+'_'+variable_fc[vv]+'_'+model+'_'+version+'_'+str(year_init)+str(month_init).zfill(2)+'.nc'
     elif variable_fc[vv] == 'fwi':
         filename_forecast = path_gcm_base_derived+'/'+domain+'/'+product+'/'+variable_fc[vv]+'/'+str(year_init)+str(month_init).zfill(2)+'/'+file_start[vv]+'_'+domain+'_'+product+'_'+variable_fc[vv]+'_'+model+'_'+version+'_'+str(year_init)+str(month_init).zfill(2)+'.nc'
     elif variable_fc[vv] in ('psl','sfcWind','tas','pr','rsds'):
@@ -216,7 +211,7 @@ for vv in np.arange(len(variable_fc)):
         out_arr[vv,:,mo,:,:] = terciles_nan
         season.append(season_i)
         season_label.append(season_i_label)
-    
+
 #create xarray data array and save to netCDF format
 date_init = [nc_fc.time[0].values.astype(str)]
 out_arr = np.expand_dims(out_arr,axis=0) #add "rtime" dimension to add the date of the forecast init

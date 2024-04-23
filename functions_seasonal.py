@@ -89,7 +89,7 @@ def calc_roll_seasmean(xr_ds):
     del(weights,xr_ds_roll)
 
 def lin_detrend(xr_ar,rm_mean_f):
-    """performs linear detrending of the xarray DataArray xr_ar along the time dimension, rm_mean_f specifies whether the mean is removed yes or no"""
+    """also used in pyLamb package; performs linear detrending of the xarray DataArray xr_ar along the time dimension, rm_mean_f specifies whether the mean is removed yes or no"""
     coeff = xr_ar.polyfit(dim='time',deg=1) #deg = 1 for linear detrending
     fit = xr.polyval(xr_ar['time'], coeff.polyfit_coefficients)
     if rm_mean_f == 'yes':

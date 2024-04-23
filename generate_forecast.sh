@@ -12,13 +12,13 @@ echo "Your Python version is:"
 python --version
 
 #set path to the run directory as well as to the local and remote directories containing the netCDF files to be transferred
-RUNDIR=/lustre/gmeteo/PTICLIMA/Inventory/Scripts/pyPTIclima/pySeasonal
+RUNDIR=/lustre/gmeteo/PTICLIMA/Scripts/SBrands/pyPTIclima/pySeasonal
 LOGDIR=${RUNDIR}/LOG
 
 ## EXECUTE #############################################################
 inityear=`date '+%Y'` #forcast init year
-#initmonth=`date '+%m'` #forcast init month
-initmonth=`date -d "1 month ago" +'%m'`
+initmonth=`date '+%m'` #forcast init month
+#initmonth=`date -d "1 month ago" +'%m'`
 
 cd ${RUNDIR}
 echo "The forecast initialized on year "${inityear}" and month "${initmonth}" will be generated..."

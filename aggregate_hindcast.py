@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
-'''This script aggregates daily GCM data arrays with the 4 dimensions time, member, lat, lon (or similar) to monthly-mean data arrays with the 5 dimensions time, lead, member, lat, lon and saves a newly generated xarray DataArray to netCDF format.
+'''This script aggregates and harmonizes daily GCM data arrays with the 4 dimensions time, member, lat, lon (or similar) to monthly-mean data arrays with the 5 dimensions time, lead, member, lat, lon and saves a newly generated xarray DataArray to netCDF format.
 This is done to compare these monthly GCM values with monthly observations, regridded to the GCM grid with the <regrid_obs.py> script located in the same directory. The length of the time dimension in the output file
-is 12 (months) x number of years set in the <years> parameter. If an init month is not set in the <imonth> parameter (e.g. because it is not available), then the corresponding variable value is set to nan in the output file.
+is 12 (months) x number of years set in the <years> parameter plus the number of forecast months (e.g. +8, 215 days, in case of ECMWF SEA5.1 from CDS). If an init month is not set in the <imonth> parameter (e.g. because it is not available), then the corresponding variable value is set to nan in the output file.
 Forecasts are used if no hindcasts are available for a given year (e.g. for ECMWF51 hindcasts are availble unitl 2016 only). The range of considered years is set in the <years> parameter.
 Note that the monthly mean-value of the last lead-time (set in <n_lead>) may be calculated on very few daily values and in this case should be discared aferwareds in the <get_skill.py> script contained in the same folder.
 Author: Swen Brands, brandssf@ifca.unican.es'''
@@ -20,18 +20,17 @@ import pdb as pdb #then type <pdb.set_trace()> at a given line in the code below
 exec(open('functions_seasonal.py').read()) #reads the <functions_seasonal.py> script containing a set of custom functions needed here
 
 ##set input parameters for model dataset to be aggregated
+variables = ['SPEI-3-R','SPEI-3-M','fwi','psl','sfcWind','tas','pr','rsds'] #variable names in directories and file names
+variables_nc = ['SPEI-3-R','SPEI-3-M','FWI','psl','sfcWind','tas','pr','rsds'] #variable names within the netCDF files, differs in case of msi (msi is used within the file, but psl is used in the file name)
+variables_new = ['SPEI-3-R','SPEI-3-M','fwi','msl','si10','t2m','tp','ssrd'] #new variable names; as provided by ERA5 data from CDS
+time_name = ['time','time','time','forecast_time','forecast_time','forecast_time','forecast_time','forecast_time'] #name of the time dimension in the netCDF files for this variable, corresponds to <variables> input parameter and must have the same length
+lon_name = ['lon','lon','lon','x','x','x','x','x']
+lat_name = ['lat','lat','lat','y','y','y','y','y']
+file_start = ['seasonal-original-single-levels_masked','seasonal-original-single-levels_masked','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels'] #start string of the file names
 
-variables = ['SPEI-3','fwi','psl','sfcWind','tas','pr','rsds'] #variable names in directories and file names
-variables_nc = ['SPEI-3','FWI','psl','sfcWind','tas','pr','rsds'] #variable names within the netCDF files, differs in case of msi (msi is used within the file, but psl is used in the file name)
-variables_new = ['SPEI-3','fwi','msl','si10','t2m','tp','ssrd'] #new variable names; as provided by ERA5 data from CDS
-time_name = ['time','time','forecast_time','forecast_time','forecast_time','forecast_time','forecast_time'] #name of the time dimension in the netCDF files for this variable, corresponds to <variables> input parameter and must have the same length
-lon_name = ['lon','lon','x','x','x','x','x']
-lat_name = ['lat','lat','y','y','y','y','y']
-file_start = ['seasonal-original-single-levels_masked','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels'] #start string of the file names
-
-# variables = ['SPEI-3'] #variable names in directories and file names
-# variables_nc = ['SPEI-3'] #variable names within the netCDF files, differs in case of fwi msi (msi / FWI is used within the file, but psl / fwi is used in the file name)
-# variables_new = ['SPEI-3'] #new variable names; as provided by ERA5 data from CDS
+# variables = ['SPEI-3-R'] #variable names in directories and file names
+# variables_nc = ['SPEI-3-R'] #variable names within the netCDF files, differs in case of fwi msi (msi / FWI is used within the file, but psl / fwi is used in the file name)
+# variables_new = ['SPEI-3-R'] #new variable names; as provided by ERA5 data from CDS
 # time_name = ['time'] #name of the time dimension in the netCDF files for this variable, corresponds to <variables> input parameter and must have the same length
 # lon_name = ['lon']
 # lat_name = ['lat']
@@ -82,7 +81,7 @@ elif gcm_store == 'lustre':
     path_gcm_base = home+'/DATA/SEASONAL/seasonal-original-single-levels' # head directory of the source files
     path_gcm_base_derived = home+'/DATA/SEASONAL/seasonal-original-single-levels_derived' # head directory of the source files
     path_gcm_base_masked = home+'/DATA/SEASONAL/seasonal-original-single-levels_masked' # head directory of the source files
-    savepath_base = home+'/Inventory/Results/seasonal/gcm/aggregated' #Directory of the output files generated by this script
+    savepath_base = home+'/Results/seasonal/gcm/aggregated' #Directory of the output files generated by this script
 else:
     raise Exception('ERROR: unknown entry for <path_gcm_base> !')
 print('The GCM files will be loaded from the base directory '+path_gcm_base+'...')
@@ -100,7 +99,7 @@ for mm in np.arange(len(model)):
         #construct path to input GCM files as a function of the variable set in variables[vv]
         if variables[vv] in ('fwi'):
             path_gcm_base_var = path_gcm_base_derived
-        elif variables[vv] in ('SPEI-3'):
+        elif variables[vv] in ('SPEI-3','SPEI-3-M','SPEI-3-R'):
             path_gcm_base_var = path_gcm_base_masked
         elif variables[vv] in ('psl','sfcWind','tas','pr','rsds'):
             path_gcm_base_var = path_gcm_base
@@ -120,8 +119,9 @@ for mm in np.arange(len(model)):
                 print('INFO: Loading '+variables[vv]+' from '+model[mm]+version[mm]+' on '+domain+' domain for '+str(imonth[im]).zfill(2)+' '+str(years_vec[yy]))
                 
                 #print complete path to the GCM input file
-                if variables[vv] == 'SPEI-3':
-                    path_gcm_data = path_gcm_base_var+'/'+domain+'/'+product+'/'+variables[vv]+'/'+model[mm]+'/'+version[mm]+'/coefs_all_members/'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'/'+file_start[vv]+'_'+domain+'_'+product+'_'+variables[vv]+'_'+model[mm]+'_'+version[mm]+'_'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'.nc'
+                if variables[vv] in ('SPEI-3','SPEI-3-M','SPEI-3-R'):
+                    #path_gcm_data = path_gcm_base_var+'/'+domain+'/'+product+'/'+variables[vv]+'/'+model[mm]+'/'+version[mm]+'/coefs_all_members/'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'/'+file_start[vv]+'_'+domain+'_'+product+'_'+variables[vv]+'_'+model[mm]+'_'+version[mm]+'_'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'.nc'
+                    path_gcm_data = path_gcm_base_var+'/'+domain+'/'+product+'/'+variables[vv]+'/'+model[mm]+'/'+version[mm]+'/coefs_pool_members/'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'/'+file_start[vv]+'_'+domain+'_'+product+'_'+variables[vv]+'_'+model[mm]+'_'+version[mm]+'_'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'.nc'
                 elif variables[vv] == 'fwi':
                     path_gcm_data = path_gcm_base_var+'/'+domain+'/'+product+'/'+variables[vv]+'/'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'/'+file_start[vv]+'_'+domain+'_'+product+'_'+variables[vv]+'_'+model[mm]+'_'+version[mm]+'_'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'.nc'
                 elif variables[vv] in ('psl','sfcWind','tas','pr','rsds'):
@@ -169,7 +169,11 @@ for mm in np.arange(len(model)):
                     ##get dimensions and metadata to save in output netCDF file below
                     var_units = nc[variables_nc[vv]].units
                     #var_name = nc[variables_nc[vv]].name #optionally use variable name from input netCDF files
-                    members = nc.member.values.astype(int) #get members from the input file and transform the variety of possible formats to integer
+                    
+                    ##get members from the input file and transform the variety of possible formats to integer
+                    #members = nc.member.values.astype(int) #this option does not work for the first SPEI-3-R version
+                    members = np.array([int(str(nc.member[ii].astype(str).values).replace('Member_','')) for ii in np.arange(len(nc.member))]) #this option also works for the first SPEI-3-R version
+                    members = np.arange(len(members)) #force the members to start with 0 irrespective of the input format (the first SPEI-3-R version started with 1)
                     
                     #try to retrieve region defintion (i.e. the domain) from the input netCDF file. The region is provided by the files from Predictia but not so by fwi files. If not provided, the value in the <domain> input parameter is set.
                     try:

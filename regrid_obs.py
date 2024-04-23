@@ -48,7 +48,7 @@ elif file_system == 'lustre':
     home = '/lustre/gmeteo/PTICLIMA'
     path_obs_base = home+'/DATA/REANALYSIS' #base path upon which the final path to the obs data is constructed
     path_gcm_base = home+'/DATA/SEASONAL/seasonal-original-single-levels' #here, the land sea masks of all models and versions thereof are located
-    savepath_base = home+'/Inventory/Results/seasonal/obs/regridded' #The nc files generated here, containing observations regridded to the model grid, are stored in this directory
+    savepath_base = home+'/Results/seasonal/obs/regridded' #The nc files generated here, containing observations regridded to the model grid, are stored in this directory
 else:
     raise Exception('ERROR: unknown entry for <file_system> input parameter !')
 

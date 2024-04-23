@@ -41,7 +41,7 @@ if file_system == 'myLaptop':
 elif file_system == 'lustre':
     home = '/lustre/gmeteo/PTICLIMA'
     path_obs_base = home+'/DATA/REANALYSIS' #base path upon which the final path to the obs data is constructed
-    savepath_base = home+'/Inventory/Results/seasonal/obs/regridded' #This is the common directory for regridded monthly observations; what is placed here will be processed by get_skill_season.py
+    savepath_base = home+'/Results/seasonal/obs/regridded' #This is the common directory for regridded monthly observations; what is placed here will be processed by get_skill_season.py
 else:
     raise Exception('ERROR: unknown entry for <file_system> input parameter !')
 print('The file system is '+file_system+'...')

@@ -19,7 +19,7 @@ import pdb as pdb #then type <pdb.set_trace()> at a given line in the code below
 exec(open('functions_seasonal.py').read()) #reads the <functions_seasonal.py> script containing a set of custom functions needed here
 
 #set input parameters
-vers = '1i' #version number of the output netCDF file to be sent to Predictia
+vers = '1j' #version number of the output netCDF file to be sent to Predictia
 model = ['ecmwf51'] #interval between meridians and parallels
 obs = ['era5']
 years_model = [1981,2023] #years used in label of model netCDF file, refers to the first and the last year of the monthly model inits
@@ -29,7 +29,8 @@ file_system = 'lustre' #lustre or myLaptop; used to create the path structure to
 season_label = ['DJF','JFM','FMA','MAM','AMJ','MJJ','JJA','JAS','ASO','SON','OND','NDJ']
 season = [[12,1,2],[1,2,3],[2,3,4],[3,4,5],[4,5,6],[5,6,7],[6,7,8],[7,8,9],[8,9,10],[9,10,11],[10,11,12],[11,12,1]] #[[12,1,2],[3,4,5],[6,7,8],[9,10,11]]
 lead = [[0,1,2],[1,2,3],[2,3,4],[3,4,5],[4,5,6]] #[[0,1,2],[0,1,2],[0,1,2],[0,1,2]] #number of months between init and start of forecast interval to be verified, e.g. 1 will discard the first month after init, 2 will discard the first two months after init etc.
-variables = ['SPEI-3','fwi','msl','t2m','tp','si10','ssrd'] #variables names in CDS format, here valid for both observations and GCM. GCM variable names have been set to ERA5 variable names from CDS in <aggregate_hindcast.py>
+variables_gcm = ['SPEI-3-R','SPEI-3-M','fwi','msl','t2m','tp','si10','ssrd'] #model variable names in CDS format  GCM variable names have been set to ERA5 variable names from CDS in <aggregate_hindcast.py> except for <SPEI-3-M> and <SPEI-3-R>, which are paired with <SPEI-3> in <variables_obs>)
+variables_obs = ['SPEI-3','SPEI-3','fwi','msl','t2m','tp','si10','ssrd'] #variable names in observations; are identical to <variables_gcm> except for <SPEI-3>, which is referred to as <SPEI-3-M> or <SPEI-3-R> in the model depending on whether past values are taken from the model or reanalysis (i.e. quasi-observations)
 
 datatype = 'float32' #data type of the variables in the output netcdf files
 compression_level = 1
@@ -61,10 +62,10 @@ if file_system == 'myLaptop':
     dir_netcdf = home+'/datos/tareas/proyectos/pticlima/seasonal/results/validation'
 elif file_system == 'lustre':
     home = '/lustre/gmeteo/PTICLIMA'
-    rundir = home+'/Inventory/Scripts/pyPTIclima/pySeasonal'
-    path_obs_base = home+'/Inventory/Results/seasonal/obs/regridded'
-    path_gcm_base = home+'/Inventory/Results/seasonal/gcm/aggregated' 
-    dir_netcdf = home+'/Inventory/Results/seasonal/validation'
+    rundir = home+'/Scripts/SBrands/pyPTIclima/pySeasonal'
+    path_obs_base = home+'/Results/seasonal/obs/regridded'
+    path_gcm_base = home+'/Results/seasonal/gcm/aggregated' 
+    dir_netcdf = home+'/Results/seasonal/validation'
 else:
     raise Exception('ERROR: unknown entry for <file_system> input parameter!')
     
@@ -85,31 +86,31 @@ if os.path.isdir(dir_netcdf) != True:
 lead_label = [str(lead[ll]).replace(',','').replace('[','').replace(']','').replace(' ','') for ll in np.arange(len(lead))]
 #xr.set_options(file_cache_maxsize=1)
 for det in np.arange(len(detrending)):
-    for vv in np.arange(len(variables)):
+    for vv in np.arange(len(variables_gcm)):
         for mm in np.arange(len(model)):
             if model[mm] == 'ecmwf51' and lead_arr[-1] > 6: #if leadtime > 6 for ecmwf51, the return an error because the 7th forecast month is composed of a few days only in this gcm
                 raise Exception('ERROR: the maximum lead requested for '+model[mm]+' ('+str(lead_arr[-1])+') is not valid ! Please check the entries of the input parameter <lead>.')        
-            path_gcm = path_gcm_base+'/'+model[mm]+'/'+variables[vv]+'_'+aggreg+'_'+model[mm]+'_'+str(nr_mem[mm])+'m_'+domain+'_'+str(years_model[0])+'_'+str(years_model[-1])+'.nc'
+            path_gcm = path_gcm_base+'/'+model[mm]+'/'+variables_gcm[vv]+'_'+aggreg+'_'+model[mm]+'_'+str(nr_mem[mm])+'m_'+domain+'_'+str(years_model[0])+'_'+str(years_model[-1])+'.nc'
             nc_gcm = xr.open_dataset(path_gcm)
             #nc_gcm = xr.open_dataset(path_gcm, chunks = {'member' : 1})
-            nc_gcm[variables[vv]] = nc_gcm[variables[vv]].astype(datatype)
+            nc_gcm[variables_gcm[vv]] = nc_gcm[variables_gcm[vv]].astype(datatype)
             #leads = np.arange(lead[mm])
             members = nc_gcm.member.values
             nc_gcm = nc_gcm.isel(lead=lead_arr) #filter out the necessary leads only
             
             #set modelled precip. < precip_threshold to 0; note that slightly negative values are present in the monthly precipiation accumulations of ECMWF51
-            if variables[vv] == 'tp':
-                print('INFO: setting '+variables[vv]+' values from '+model[mm]+ '< '+str(precip_threshold)+' to 0...')
-                zero_mask = nc_gcm[variables[vv]].values < precip_threshold
-                nc_gcm[variables[vv]].values[zero_mask] = 0.
+            if variables_gcm[vv] == 'tp':
+                print('INFO: setting '+variables_gcm[vv]+' values from '+model[mm]+ '< '+str(precip_threshold)+' to 0...')
+                zero_mask = nc_gcm[variables_gcm[vv]].values < precip_threshold
+                nc_gcm[variables_gcm[vv]].values[zero_mask] = 0.
 
             leads = nc_gcm.lead.values
             dates_gcm = pd.DatetimeIndex(nc_gcm.time.values)
             for oo in np.arange(len(obs)):
-                print('INFO: validating '+variables[vv]+' from '+model[mm]+' vs '+obs[oo]+' with time series detrending option set to '+detrending[det])
-                path_obs = path_obs_base+'/'+obs[oo]+'/'+variables[vv]+'_'+aggreg+'_'+obs[oo]+'_on_'+model[mm]+'_grid_'+int_method+'_'+domain+'_'+str(years_obs[0])+'_'+str(years_obs[-1])+'.nc'
+                print('INFO: validating '+variables_obs[vv]+' from '+model[mm]+' vs '+obs[oo]+' with time series detrending option set to '+detrending[det])
+                path_obs = path_obs_base+'/'+obs[oo]+'/'+variables_obs[vv]+'_'+aggreg+'_'+obs[oo]+'_on_'+model[mm]+'_grid_'+int_method+'_'+domain+'_'+str(years_obs[0])+'_'+str(years_obs[-1])+'.nc'
                 nc_obs = xr.open_dataset(path_obs)
-                nc_obs[variables[vv]] = nc_obs[variables[vv]].astype(datatype)
+                nc_obs[variables_obs[vv]] = nc_obs[variables_obs[vv]].astype(datatype)
                 dates_obs = pd.DatetimeIndex(nc_obs.time.values)
                 dates_bool_obs = dates_obs.isin(dates_gcm)
                 dates_bool_gcm = dates_gcm.isin(dates_obs)
@@ -131,10 +132,10 @@ for det in np.arange(len(detrending)):
                     raise Exception('ERROR: the modelled and observed date vectors are not identical !')
                 
                 #set observed precip. < precip_threshold to 0
-                if variables[vv] == 'tp':
-                    print('INFO: setting '+variables[vv]+' values from '+obs[oo]+ '< '+str(precip_threshold)+' to 0...')
-                    zero_mask = nc_obs[variables[vv]].values < precip_threshold
-                    nc_obs[variables[vv]].values[zero_mask] = 0.
+                if variables_obs[vv] == 'tp':
+                    print('INFO: setting '+variables_obs[vv]+' values from '+obs[oo]+ '< '+str(precip_threshold)+' to 0...')
+                    zero_mask = nc_obs[variables_obs[vv]].values < precip_threshold
+                    nc_obs[variables_obs[vv]].values[zero_mask] = 0.
                
                 #loop through each season
                 for sea in np.arange(len(season)):
@@ -170,9 +171,9 @@ for det in np.arange(len(detrending)):
                         #init numpy array which will be filled with tercile values (tercile x season x lead x member x lat x lon)
                         if det == 0 and vv == 0 and mm == 0 and sea == 0 and ll == 0:
                             print('Initializing numpy arrays to be filled with quantiles '+str(quantiles)+'...')
-                            quantile_vals = np.zeros((len(detrending),len(variables),len(model),len(quantiles),nr_seas,nr_leads,nr_mems,nr_lats,nr_lons),dtype='single')
+                            quantile_vals = np.zeros((len(detrending),len(variables_gcm),len(model),len(quantiles),nr_seas,nr_leads,nr_mems,nr_lats,nr_lons),dtype='single')
                             quantile_vals[:] = np.nan
-                            quantile_vals_ens = np.zeros((len(detrending),len(variables),len(model),len(quantiles),nr_seas,nr_leads,nr_lats,nr_lons),dtype='single')
+                            quantile_vals_ens = np.zeros((len(detrending),len(variables_gcm),len(model),len(quantiles),nr_seas,nr_leads,nr_lats,nr_lons),dtype='single')
                             quantile_vals_ens[:] = np.nan
                         
                         #and loop through each month of this season to calculate the seasonal mean values in both the model and observations
@@ -185,9 +186,9 @@ for det in np.arange(len(detrending)):
                                 raise Exception('ERROR: the indices indicating the target month in the observed and model data do not agree !')                    
                             
                             #select the target months/seasons and work with xarray data arrays and numpy arrays from here on instead of working with xr datasets
-                            nc_gcm_mon = nc_gcm[variables[vv]].isel(time=monthind_gcm) #get the requested calendar month from the model
+                            nc_gcm_mon = nc_gcm[variables_gcm[vv]].isel(time=monthind_gcm) #get the requested calendar month from the model
                             nc_gcm_mon = nc_gcm_mon.sel(lead=lead[ll][mon]) #get the requested lead from the model
-                            nc_obs_mon = nc_obs[variables[vv]].isel(time=monthind_obs) #get the requested calendar month from the observations / reanalysis, there is no lead time in this case
+                            nc_obs_mon = nc_obs[variables_obs[vv]].isel(time=monthind_obs) #get the requested calendar month from the observations / reanalysis, there is no lead time in this case
                             gcm_mon = nc_gcm_mon.values #retain the numpy arrays with in the xr dataarrays
                             obs_mon = nc_obs_mon.values #retain the numpy arrays with in the xr dataarrays
                             
@@ -234,9 +235,9 @@ for det in np.arange(len(detrending)):
                 obs_seas_mn_6d = np.tile(obs_seas_mn_6d,(1,1,1,len(members),1,1))
                 
                 #convert numpy array into xarray data arrays
-                obs_seas_mn_5d = xr.DataArray(obs_seas_mn_5d,coords=[dates_isea,season_label,lead_label,nc_obs.y,nc_obs.x],dims=['time', 'season', 'lead', 'y', 'x'], name=variables[vv]) #convert to xarray data array
-                obs_seas_mn_6d = xr.DataArray(obs_seas_mn_6d,coords=[dates_isea,season_label,lead_label,members,nc_obs.y,nc_obs.x],dims=['time', 'season', 'lead', 'member', 'y', 'x'], name=variables[vv])
-                gcm_seas_mn_6d = xr.DataArray(gcm_seas_mn_6d,coords=[dates_isea,season_label,lead_label,members,nc_gcm.y,nc_gcm.x],dims=['time', 'season', 'lead', 'member', 'y', 'x'], name=variables[vv]) #convert to xarray data array
+                obs_seas_mn_5d = xr.DataArray(obs_seas_mn_5d,coords=[dates_isea,season_label,lead_label,nc_obs.y,nc_obs.x],dims=['time', 'season', 'lead', 'y', 'x'], name=variables_obs[vv]) #convert to xarray data array
+                obs_seas_mn_6d = xr.DataArray(obs_seas_mn_6d,coords=[dates_isea,season_label,lead_label,members,nc_obs.y,nc_obs.x],dims=['time', 'season', 'lead', 'member', 'y', 'x'], name=variables_obs[vv])
+                gcm_seas_mn_6d = xr.DataArray(gcm_seas_mn_6d,coords=[dates_isea,season_label,lead_label,members,nc_gcm.y,nc_gcm.x],dims=['time', 'season', 'lead', 'member', 'y', 'x'], name=variables_gcm[vv]) #convert to xarray data array
                 gcm_seas_mn_5d = gcm_seas_mn_6d.mean(dim='member') #get ensemble meann values
                 
                 #optionally apply linear detrending to the time-series, see https://gist.github.com/rabernat/1ea82bb067c3273a6166d1b1f77d490f
@@ -291,7 +292,7 @@ for det in np.arange(len(detrending)):
                 #obs_clim_mean = np.tile(obs_clim_mean,(nr_years,1,1,nr_mems,1,1)) #get 6d numpy array containing the naiv climatological forecasts
                 obs_clim_mean = np.tile(obs_clim_mean,(nr_years,1,1,nr_pseudo_mem,1,1)) #get 6d numpy array containing the naiv climatological forecasts
                 #obs_clim_mean = xr.DataArray(obs_clim_mean,coords=[dates_isea,season_label,lead_label,members,nc_obs.y,nc_obs.x],dims=['time', 'season', 'lead', 'member', 'y', 'x'], name=variables[vv]+'_clim') #convert to xarray data array
-                obs_clim_mean = xr.DataArray(obs_clim_mean,coords=[dates_isea,season_label,lead_label,members[0:nr_pseudo_mem],nc_obs.y,nc_obs.x],dims=['time', 'season', 'lead', 'member', 'y', 'x'], name=variables[vv]+'_clim')
+                obs_clim_mean = xr.DataArray(obs_clim_mean,coords=[dates_isea,season_label,lead_label,members[0:nr_pseudo_mem],nc_obs.y,nc_obs.x],dims=['time', 'season', 'lead', 'member', 'y', 'x'], name=variables_obs[vv]+'_clim')
                 crps_ensemble_clim = xs.crps_ensemble(obs_seas_mn_5d,obs_clim_mean,member_weights=None,issorted=False,member_dim='member',dim='time',weights=None,keep_attrs=False).rename('crps_ensemble_clim')
                 
                 #close and delete unnecesarry objects to save mem
@@ -317,7 +318,7 @@ for det in np.arange(len(detrending)):
                 spearman_pval_effn.attrs['units'] = 'probability'
                 spearman_pval_effn.attrs['units'] = 'probability'
                 crps_ensemble.attrs['units'] = 'cummulative probability error'
-                bias.attrs['units'] = nc_obs[variables[vv]].units
+                bias.attrs['units'] = nc_obs[variables_obs[vv]].units
                 relbias.attrs['units'] = 'percent'
                 crps_ensemble_skillscore_clim.attrs['units'] = 'bound between -1 and 1, positive values indicate more skill than the reference climatological forecast'
                 crps_ensemble_skillscore_clim.attrs['reference'] = 'Wilks (2006), pages 281 and 302-304'
@@ -330,7 +331,7 @@ for det in np.arange(len(detrending)):
                 end_year = str(dates_isea[-1])[0:5].replace('-','') #end year considered in the skill assessment
                 results.x['standard_name'] = 'longitude'
                 results.y['standard_name'] = 'latitude'
-                results.attrs['variable'] = variables[vv]
+                results.attrs['variable'] = variables_gcm[vv]
                 results.attrs['prediction_system'] = model[mm]
                 results.attrs['reference_observations'] = obs[oo]
                 results.attrs['domain'] = domain
@@ -340,11 +341,11 @@ for det in np.arange(len(detrending)):
                 results.attrs['version'] = vers
                 results.attrs['author'] = 'Swen Brands, brandssf@ifca.unican.es or swen.brands@gmail.com'
                 #then save to netCDF and close
-                savename_results = dir_netcdf+'/validation_results_season_'+variables[vv]+'_'+model[mm]+'_vs_'+obs[oo]+'_'+domain+'_corroutlier_'+corr_outlier+'_detrended_'+detrending[det]+'_'+start_year+'_'+end_year+'.nc'
+                savename_results = dir_netcdf+'/validation_results_season_'+variables_gcm[vv]+'_'+model[mm]+'_vs_'+obs[oo]+'_'+domain+'_corroutlier_'+corr_outlier+'_detrended_'+detrending[det]+'_'+start_year+'_'+end_year+'.nc'
                 results.to_netcdf(savename_results)
                 
                 #retain dimensions used to store quantiles before deleting and closing the respective objects
-                if det == len(detrending)-1 and vv == len(variables)-1 and mm == len(model)-1 and oo == len(obs)-1 and sea == len(season)-1:
+                if det == len(detrending)-1 and vv == len(variables_gcm)-1 and mm == len(model)-1 and oo == len(obs)-1 and sea == len(season)-1:
                     print('retain dimension attributes for storing the quantiles....')
                     season2quan = results.season
                     lead2quan = results.lead
@@ -380,9 +381,9 @@ for det in np.arange(len(detrending)):
         del(nc_gcm)
 
 #convert the two numpy arrays containing the two types of quantiles (memberwise and ensemble) into two xarray data arrays, merge them to a single xarray dataset, add attributes to this dataset and save it to netCDF format
-quantile_vals = xr.DataArray(quantile_vals, coords=[detrending,variables,model,np.round(quantiles,2).astype(datatype),season2quan,lead2quan,members,y2quan,x2quan], dims=['detrended','variable','model','quantile_threshold','season','lead','member','y','x'], name='quantile_memberwise')
+quantile_vals = xr.DataArray(quantile_vals, coords=[detrending,variables_gcm,model,np.round(quantiles,2).astype(datatype),season2quan,lead2quan,members,y2quan,x2quan], dims=['detrended','variable','model','quantile_threshold','season','lead','member','y','x'], name='quantile_memberwise')
 quantile_vals.attrs['description'] = 'quantile thresholds calculated separately fore each ensemble member' 
-quantile_vals_ens = xr.DataArray(quantile_vals_ens, coords=[detrending,variables,model,np.round(quantiles,2).astype(datatype),season2quan,lead2quan,y2quan,x2quan], dims=['detrended','variable','model','quantile_threshold','season','lead','y','x'], name='quantile_ensemble')
+quantile_vals_ens = xr.DataArray(quantile_vals_ens, coords=[detrending,variables_gcm,model,np.round(quantiles,2).astype(datatype),season2quan,lead2quan,y2quan,x2quan], dims=['detrended','variable','model','quantile_threshold','season','lead','y','x'], name='quantile_ensemble')
 quantile_vals_ens.attrs['description'] = 'quantile thresholds calculated on all ensemble members; the distinct ensemble members have been concatenated along the time dimension prior to calculating the quantiles'
 quantile_vals_merged = xr.merge((quantile_vals,quantile_vals_ens))
 #dimension attributes
