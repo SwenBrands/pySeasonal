@@ -109,11 +109,23 @@ def get_frac_significance(np_arr_pval_f,np_arr_rho_f,critval_f):
     shape_f = np_arr_pval_f.shape
     np_arr_pval_step_f = np.reshape(np_arr_pval_f,[shape_f[0],shape_f[1],shape_f[2]*shape_f[3]])
     np_arr_rho_step_f = np.reshape(np_arr_rho_f,[shape_f[0],shape_f[1],shape_f[2]*shape_f[3]])
+    
+    #find grid-boxes set to nan, e.g. because they are over sea
+    nanind_rho_f = np.where(np.isnan(np_arr_rho_step_f[0,0,:]))[0]
+    nanind_pval_f = np.where(np.isnan(np_arr_pval_step_f[0,0,:]))[0]
+    #check whether the two nan indices representing nan grid-boxes are identical
+    if np.any(nanind_rho_f != nanind_pval_f) == True:
+        raise Exception('ERROR in get_frac_significance() function ! The indices <nanind_rho_f> and <nanind_pval_f> do not match !')
+    #remove nan grid-boxes
+    np_arr_rho_step_f = np.delete(np_arr_rho_step_f,nanind_rho_f,axis=2)
+    np_arr_pval_step_f = np.delete(np_arr_pval_step_f,nanind_rho_f,axis=2)
+
     sigind_f = (np_arr_pval_step_f < critval_f) & (np_arr_rho_step_f > 0) 
     spurind_f = (np_arr_pval_step_f >= critval_f) | (np_arr_rho_step_f <= 0)
     np_arr_pval_step_f[sigind_f] = 1
     np_arr_pval_step_f[spurind_f] = 0
-    spatial_sigfraq_f = np.nansum(np_arr_pval_step_f,axis=2)/(shape_f[2]*shape_f[3])*100
+    #spatial_sigfraq_f = np.nansum(np_arr_pval_step_f,axis=2)/(shape_f[2]*shape_f[3])*100
+    spatial_sigfraq_f = np.nansum(np_arr_pval_step_f,axis=2)/(np_arr_rho_step_f.shape[2])*100
     return(spatial_sigfraq_f,np_arr_pval_step_f)
 
 def get_frac_above_threshold(np_arr_vals_f,critval_f):

@@ -19,16 +19,28 @@ import pdb as pdb #then type <pdb.set_trace()> at a given line in the code below
 exec(open('functions_seasonal.py').read()) #reads the <functions_seasonal.py> script containing a set of custom functions needed here
 
 #set input parameters
-vers = '1j' #version number of the output netCDF file to be sent to Predictia
+vers = 'v1j_mon' #version number of the output netCDF file to be sent to Predictia
 model = ['ecmwf51'] #interval between meridians and parallels
 obs = ['era5']
 years_model = [1981,2023] #years used in label of model netCDF file, refers to the first and the last year of the monthly model inits
 years_obs = [1981,2022] #years used in label of obs netCDF file; if they differ from <years_model>, then the common intersection of years will be validated.
 file_system = 'lustre' #lustre or myLaptop; used to create the path structure to the input and output files
 
-season_label = ['DJF','JFM','FMA','MAM','AMJ','MJJ','JJA','JAS','ASO','SON','OND','NDJ']
-season = [[12,1,2],[1,2,3],[2,3,4],[3,4,5],[4,5,6],[5,6,7],[6,7,8],[7,8,9],[8,9,10],[9,10,11],[10,11,12],[11,12,1]] #[[12,1,2],[3,4,5],[6,7,8],[9,10,11]]
-lead = [[0,1,2],[1,2,3],[2,3,4],[3,4,5],[4,5,6]] #[[0,1,2],[0,1,2],[0,1,2],[0,1,2]] #number of months between init and start of forecast interval to be verified, e.g. 1 will discard the first month after init, 2 will discard the first two months after init etc.
+# ##settings for 3-months verification
+# season_label = ['DJF','JFM','FMA','MAM','AMJ','MJJ','JJA','JAS','ASO','SON','OND','NDJ']
+# season = [[12,1,2],[1,2,3],[2,3,4],[3,4,5],[4,5,6],[5,6,7],[6,7,8],[7,8,9],[8,9,10],[9,10,11],[10,11,12],[11,12,1]] #[[12,1,2],[3,4,5],[6,7,8],[9,10,11]]
+# lead = [[0,1,2],[1,2,3],[2,3,4],[3,4,5],[4,5,6]] #[[0,1,2],[0,1,2],[0,1,2],[0,1,2]] #number of months between init and start of forecast interval to be verified, e.g. 1 will discard the first month after init, 2 will discard the first two months after init etc.
+
+##settings for monthly verification
+season_label = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC']
+season = [[1],[2],[3],[4],[5],[6],[7],[8],[9],[10],[11],[12]] #[[12,1,2],[3,4,5],[6,7,8],[9,10,11]]
+lead = [[0],[1],[2],[3],[4],[5],[6]] #[[0,1,2],[0,1,2],[0,1,2],[0,1,2]] #number of months between init and start of forecast interval to be verified, e.g. 1 will discard the first month after init, 2 will discard the first two months after init etc.
+
+# ##settings for monthly verification
+# season_label = ['JAN','FEB']
+# season = [[1],[2]] #[[12,1,2],[3,4,5],[6,7,8],[9,10,11]]
+# lead = [[0],[1]] #[[0,1,2],[0,1,2],[0,1,2],[0,1,2]] #number of months between init and start of forecast interval to be verified, e.g. 1 will discard the first month after init, 2 will discard the first two months after init etc.
+
 variables_gcm = ['SPEI-3-R','SPEI-3-M','fwi','msl','t2m','tp','si10','ssrd'] #model variable names in CDS format  GCM variable names have been set to ERA5 variable names from CDS in <aggregate_hindcast.py> except for <SPEI-3-M> and <SPEI-3-R>, which are paired with <SPEI-3> in <variables_obs>)
 variables_obs = ['SPEI-3','SPEI-3','fwi','msl','t2m','tp','si10','ssrd'] #variable names in observations; are identical to <variables_gcm> except for <SPEI-3>, which is referred to as <SPEI-3-M> or <SPEI-3-R> in the model depending on whether past values are taken from the model or reanalysis (i.e. quasi-observations)
 
@@ -59,13 +71,13 @@ if file_system == 'myLaptop':
     rundir = home+'/datos/tareas/proyectos/pticlima/pyPTIclima/pySeasonal'
     path_obs_base = home+'/datos/tareas/proyectos/pticlima/seasonal/results/obs/regridded'
     path_gcm_base = home+'/datos/tareas/proyectos/pticlima/seasonal/results/gcm/aggregated'
-    dir_netcdf = home+'/datos/tareas/proyectos/pticlima/seasonal/results/validation'
+    dir_netcdf = home+'/datos/tareas/proyectos/pticlima/seasonal/results/validation/'+vers
 elif file_system == 'lustre':
     home = '/lustre/gmeteo/PTICLIMA'
     rundir = home+'/Scripts/SBrands/pyPTIclima/pySeasonal'
     path_obs_base = home+'/Results/seasonal/obs/regridded'
     path_gcm_base = home+'/Results/seasonal/gcm/aggregated' 
-    dir_netcdf = home+'/Results/seasonal/validation'
+    dir_netcdf = home+'/Results/seasonal/validation/'+vers
 else:
     raise Exception('ERROR: unknown entry for <file_system> input parameter!')
     
@@ -341,7 +353,7 @@ for det in np.arange(len(detrending)):
                 results.attrs['version'] = vers
                 results.attrs['author'] = 'Swen Brands, brandssf@ifca.unican.es or swen.brands@gmail.com'
                 #then save to netCDF and close
-                savename_results = dir_netcdf+'/validation_results_season_'+variables_gcm[vv]+'_'+model[mm]+'_vs_'+obs[oo]+'_'+domain+'_corroutlier_'+corr_outlier+'_detrended_'+detrending[det]+'_'+start_year+'_'+end_year+'.nc'
+                savename_results = dir_netcdf+'/validation_results_season_'+variables_gcm[vv]+'_'+model[mm]+'_vs_'+obs[oo]+'_'+domain+'_corroutlier_'+corr_outlier+'_detrended_'+detrending[det]+'_'+start_year+'_'+end_year+'_'+vers+'.nc'
                 results.to_netcdf(savename_results)
                 
                 #retain dimensions used to store quantiles before deleting and closing the respective objects
@@ -400,7 +412,7 @@ quantile_vals_merged.attrs['validation_period'] = str(years_common[0])+' to '+st
 quantile_vals_merged.attrs['version'] = vers
 quantile_vals_merged.attrs['author'] = "Swen Brands (CSIC-UC, Instituto de Fisica de Cantabria), brandssf@ifca.unican.es or swen.brands@gmail.com"
 #save to netCDF
-savename_quantiles = dir_netcdf+'/quantiles_pticlima_'+domain+'_'+str(years_common[0])+'_'+str(years_common[1])+'_v'+vers+'.nc'
+savename_quantiles = dir_netcdf+'/quantiles_pticlima_'+domain+'_'+str(years_common[0])+'_'+str(years_common[1])+'_'+vers+'.nc'
 encoding = {'quantile_memberwise': {'zlib': True, 'complevel': compression_level}, 'quantile_ensemble': {'zlib': True, 'complevel': compression_level}}
 quantile_vals_merged.to_netcdf(savename_quantiles,encoding=encoding)
 
