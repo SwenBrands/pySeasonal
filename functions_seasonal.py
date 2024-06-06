@@ -104,53 +104,57 @@ def lin_detrend(xr_ar,rm_mean_f):
     return(xr_ar_detrended)
 
 #def get_frac_significance(np_arr_pval_f,np_arr_rho_f,critval_f,mode_f='fraction',lat_f=None):
-def get_spatial_aggregation(np_arr_pval_f,np_arr_rho_f,critval_f,mode_f='fraction',lat_f=None):
-    """get the fraction of grid-boxes where significant results are obtained in percentage of all grid-boxes forming the domain; np_arr_pval_f and np_arr_rho_f are a 4d numpy array
+#def get_spatial_aggregation(np_arr_pval_f,np_arr_rho_f,critval_f,mode_f='fraction',lat_f=None):
+def get_spatial_aggregation(score_f,critval_f,pval_f=None,mode_f='fraction',lat_f=None):
+    """get the fraction of grid-boxes where significant results are obtained in percentage of all grid-boxes forming the domain; score_f and pval_f a 4d numpy array
     with the dimensions season x lead x lat x lon"""
-    shape_f = np_arr_pval_f.shape
-    np_arr_pval_step_f = np.reshape(np_arr_pval_f,[shape_f[0],shape_f[1],shape_f[2]*shape_f[3]])
-    np_arr_rho_step_f = np.reshape(np_arr_rho_f,[shape_f[0],shape_f[1],shape_f[2]*shape_f[3]])
     
-   #find grid-boxes set to nan, e.g. because they are over sea
-    nanind_rho_f = np.where(np.isnan(np_arr_rho_step_f[0,0,:]))[0]
-    nanind_pval_f = np.where(np.isnan(np_arr_pval_step_f[0,0,:]))[0]
-    #check whether the two nan indices representing nan grid-boxes are identical
-    if np.any(nanind_rho_f != nanind_pval_f) == True:
-        raise Exception('ERROR in get_frac_significance() function ! The indices <nanind_rho_f> and <nanind_pval_f> do not match !')
+    shape_f = score_f.shape
+    score_step_f = np.reshape(score_f,[shape_f[0],shape_f[1],shape_f[2]*shape_f[3]])
+    #find grid-boxes set to nan, e.g. because they are over sea
+    nanind_rho_f = np.where(np.isnan(score_step_f[0,0,:]))[0]
     #remove nan grid-boxes
-    np_arr_rho_step_f = np.delete(np_arr_rho_step_f,nanind_rho_f,axis=2)
-    np_arr_pval_step_f = np.delete(np_arr_pval_step_f,nanind_rho_f,axis=2)
+    score_step_f = np.delete(score_step_f,nanind_rho_f,axis=2)
+
+    if pval_f is not None:
+        pval_step_f = np.reshape(pval_f,[shape_f[0],shape_f[1],shape_f[2]*shape_f[3]])
+        nanind_pval_f = np.where(np.isnan(pval_step_f[0,0,:]))[0]    
+        #check whether the two nan indices representing nan grid-boxes are identical
+        if np.any(nanind_rho_f != nanind_pval_f) == True:
+            raise Exception('ERROR in get_frac_significance() function ! The indices <nanind_rho_f> and <nanind_pval_f> do not match !')
+        #remove nan gridboxes
+        pval_step_f = np.delete(pval_step_f,nanind_rho_f,axis=2)
     
-    #if lat_f is passed in anything but None, then latitudinal weights are calculated and adapted to the format of <np_arr_rho_step_f>
+    #if lat_f is passed in anything but None, then latitudinal weights are calculated and adapted to the format of <score_step_f>
     if lat_f is not None:
         lat_weights = np.cos(np.radians(np.reshape(lat_f,lat_f.shape[0]*lat_f.shape[1])))
         lat_weights = np.delete(lat_weights,nanind_rho_f,axis=0)
-        lat_weights = np.tile(lat_weights,[np_arr_rho_step_f.shape[0],np_arr_rho_step_f.shape[1],1])
+        lat_weights = np.tile(lat_weights,[score_step_f.shape[0],score_step_f.shape[1],1])
     
     if mode_f == 'fraction': #caclulate the areal percentage of significant correlation coefficients
-        sigind_f = (np_arr_pval_step_f < critval_f) & (np_arr_rho_step_f > 0) 
-        spurind_f = (np_arr_pval_step_f >= critval_f) | (np_arr_rho_step_f <= 0)
-        np_arr_pval_step_f[sigind_f] = 1
-        np_arr_pval_step_f[spurind_f] = 0
+        sigind_f = (pval_step_f < critval_f) & (score_step_f > 0) 
+        spurind_f = (pval_step_f >= critval_f) | (score_step_f <= 0)
+        pval_step_f[sigind_f] = 1
+        pval_step_f[spurind_f] = 0
         if lat_f is not None:
             print('As requested by the user, the latitude-weighted areal-mean value is calculated...')
-            np_arr_pval_step_f = np_arr_pval_step_f*lat_weights
-            spatial_agg_f = (np.nansum(np_arr_pval_step_f,axis=2)/np.nansum(lat_weights,axis=2))*100
+            pval_step_f = pval_step_f*lat_weights
+            spatial_agg_f = (np.nansum(pval_step_f,axis=2)/np.nansum(lat_weights,axis=2))*100
         else:
             print('As requested by the user, the simple areal-mean value is calculated...')
-            spatial_agg_f = (np.nansum(np_arr_pval_step_f,axis=2)/np_arr_rho_step_f.shape[2])*100
+            spatial_agg_f = (np.nansum(pval_step_f,axis=2)/score_step_f.shape[2])*100
     elif mode_f == 'mean': #calculate the areal-mean correlation coefficient
         if lat_f is not None:
             print('As requested by the user, the latitude-weighted areal-mean value is calculated...')
-            np_arr_rho_step_f = np_arr_rho_step_f*lat_weights
-            spatial_agg_f = np.nansum(np_arr_rho_step_f,axis=2)/np.nansum(lat_weights,axis=2)
+            score_step_f = score_step_f*lat_weights
+            spatial_agg_f = np.nansum(score_step_f,axis=2)/np.nansum(lat_weights,axis=2)
         else:
             print('As requested by the user, the simple areal-mean value is calculated...')
-            spatial_agg_f = np.nansum(np_arr_rho_step_f,axis=2)/(np_arr_rho_step_f.shape[2])
+            spatial_agg_f = np.nansum(score_step_f,axis=2)/(score_step_f.shape[2])
     else:
         raise Exception('ERROR: check entry for <mode_f> parameter within the get_frac_significance() function !')
     return(spatial_agg_f) #the spatially aggregated value is returned
-    #return(spatial_sigfraq_f,np_arr_pval_step_f) #former versions of this function returned two output variables
+    #return(spatial_sigfraq_f,pval_step_f) #former versions of this function returned two output variables
 
 def get_frac_above_threshold(np_arr_vals_f,critval_f):
     """get the fraction of grid-boxes where values i values_f exceed the threshold <critval_f>; np_arr_f is a 4d numpy array with the dimensions season x lead x lat x lon"""
@@ -163,26 +167,27 @@ def get_frac_above_threshold(np_arr_vals_f,critval_f):
     spatial_fraq_f = np.nansum(np_arr_vals_step_f,axis=2)/(shape_f[2]*shape_f[3])*100
     return(spatial_fraq_f,np_arr_vals_step_f)
 
-
 def get_sub_domain(xr_ds_f,domain_f):
     '''cuts out the sub-domain defined in <domain_f> from xarray dataset <xr_ds_f>'''
-    if sub_domain == 'medcof':
-        print('Upon user request, no sub-domain will be selected.')
-    elif sub_domain == 'iberia':
-        print('Upon user request, verification results for the Iberian Peninsula will be shown.')
+    #check whether the requested sub-domain is known; otherwise return an error
+    if sub_domain == 'iberia':
+        print('Upon user request, verification results for '+domain_f+' will be cut out.')
         lat_bool = (xr_ds_f.y.values >= 36) & (xr_ds_f.y.values <= 44)
         lon_bool = (xr_ds_f.x.values >= -10) & (xr_ds_f.x.values <= 3)
         xr_ds_f = xr_ds_f.isel(y=lat_bool,x=lon_bool)
-        #set grid-boxes in North Africa to nan
-        latind_f = xr_ds_f.y.values <= 37
-        lonind_f = xr_ds_f.x.values >= -1
-        xr_ds_f.loc[dict(y=latind_f, x=lonind_f)] = np.nan
+        # #set grid-boxes in North Africa to nan
+        # latind_f = xr_ds_f.y.values <= 37
+        # lonind_f = xr_ds_f.x.values >= -1
+        # xr_ds_f.loc[dict(y=latind_f, x=lonind_f)] = np.nan
+    elif sub_domain == 'medcof2': #this domain is identical to the medcof domain, but does not include the Sahara desert. The SPEI does not cover this area.
+        lat_bool = (xr_ds_f.y.values >= 28) & (xr_ds_f.y.values <= 90)
+        lon_bool = (xr_ds_f.x.values >= -16) & (xr_ds_f.x.values <= 180)
+        xr_ds_f = xr_ds_f.isel(y=lat_bool,x=lon_bool)
     else:
         raise Exception('ERROR: check entry for the <sub_domain> input parameter !')
     return(xr_ds_f)
     xr_ds_f.close()
     del(xr_ds_f)
-
 
 def plot_pcolormesh_seasonal(xr_ar_f,minval_f,maxval_f,savename_f,colormap_f,dpival_f):
     '''Plots matrix of the verfication results contained in xarray data array <xr_ar_f>, seasons are plotted on the x axis, lead months on the y axis.'''
@@ -206,7 +211,7 @@ def plot_pcolormesh_seasonal(xr_ar_f,minval_f,maxval_f,savename_f,colormap_f,dpi
     plt.close('all')
 
 
-def get_map_lowfreq_var(pattern_f,xx_f,yy_f,agree_ind_f,minval_f,maxval_f,dpival_f,title_f,savename_f,halfres_f,colormap_f,titlesize_f,cbarlabel_f,origpoint=None):
+def get_map_lowfreq_var(pattern_f,xx_f,yy_f,agree_ind_f,minval_f,maxval_f,dpival_f,title_f,savename_f,halfres_f,colormap_f,titlesize_f,cbarlabel_f,origpoint=None,orientation_f=None):
     '''Currently used in pyLamb and pySeasonal packages in sligthly differing versions. Plots a pcolormesh contour over a map overlain by dots indicating, e.g. statistical significance'''
     
     map_proj = ccrs.PlateCarree()
@@ -244,10 +249,17 @@ def get_map_lowfreq_var(pattern_f,xx_f,yy_f,agree_ind_f,minval_f,maxval_f,dpival
     #gl.xformatter = LONGITUDE_FORMATTER
     #gl.yformatter = LATITUDE_FORMATTER
     
-    cbar = plt.colorbar(image,orientation='vertical', shrink = 0.6)
-    cbar.set_label(cbarlabel_f, rotation=270, labelpad=+12, y=0.5, fontsize=titlesize_f)
+    #set orientation of the colorbar
+    if orientation_f is None:
+        orientation_f = 'vertical'
+        rotation_f = 270
+    else:
+        rotation_f = 0
+    cbar = plt.colorbar(image,orientation=orientation_f, pad=0.03, shrink = 0.6) #pad defines the distance between the panel and its colormap
+    cbar.set_label(cbarlabel_f, rotation=rotation_f, labelpad=4, y=0.5, fontsize=titlesize_f) #labelpad defines the distance between the colorbar and its label
+    cbar.ax.tick_params(labelsize=titlesize_f)
     plt.title(title_f, fontsize=titlesize_f-1)
-    plt.savefig(savename_f,dpi=dpival_f)
+    plt.savefig(savename_f,dpi=dpival_f,bbox_inches='tight')
     plt.close('all')   
 
 def transform_gcm_variable(ds_f,var_in_f,var_out_f,model_f,version_f):

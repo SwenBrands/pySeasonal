@@ -279,7 +279,6 @@ for det in np.arange(len(detrending)):
                 gcm_seas_mn_5d_flat_mems = gcm_seas_mn_5d_flat_mems.values.reshape((shape_gcm[0]*shape_gcm[1],shape_gcm[2],shape_gcm[3],shape_gcm[4],shape_gcm[5])) #reshape to concatenate the members along the first / time axis
                 quantile_vals_ens_step = np.nanquantile(gcm_seas_mn_5d_flat_mems,quantiles,axis=0)
                 quantile_vals_ens[det,vv,mm,:,:,:,:,:] = quantile_vals_ens_step
-                #pdb.set_trace()
                 
                 ##start verification
                 ##calculalate hindcast correlation coefficient for the inter-annual seasonal-mean time series (observations vs. ensemble mean) and corresponding p-values based on the effective sample size
