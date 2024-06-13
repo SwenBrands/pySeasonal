@@ -295,4 +295,41 @@ def transform_gcm_variable(ds_f,var_in_f,var_out_f,model_f,version_f):
         print('Info: No data transformation is applied for '+var_in_f+' data from '+model_f+version_f+'.')
         valid_f = 1
     return(ds_f, valid_f)
-        
+
+def get_reliability(obs_f,gcm_f,gcm_quantile_f,threshold_f):
+    """ caclulates the mean absolute difference (returned as <reliability>) between the forecast probabilities and corresponding conditional observed probabilities of the reliability plot and the diagonal of the plot
+    obs_f (5d in get_skill_season.py) and gcm_f (6d) are xarray data arrays and gcm_quantile_f are pre-caclulated gcm quantiles having the same size as gcm_f - note that the corresponding
+    observed quantile values are calculated within the function; threshold_f is a threshold value in decimals. I threshold_f is >= 0.5 then it is asked wether the values in xr_obs_f and
+    xr_gcm_f are greater than the treshold; otherwise it is asked whether they are smaller"""
+    
+    #obtain observed quantile thresholds and replicate along the time axis
+    obs_quantile_threshold = obs_f.quantile(threshold_f,dim='time') #calculate the quantiles along the time axis
+    obs_quantile_threshold = np.tile(obs_quantile_threshold,(obs_f.shape[0],1,1,1,1)) #replicate to fit the size of xr_obs_f; this returns a numpy array
+    
+    #replicate the gcm quantile thresholds passed to this function via <gcm_quantile_f> along the time axis
+    gcm_quantile_threshold = np.tile(gcm_quantile_f.sel(quantile=threshold_f),(gcm_f.shape[0],1,1,1,1,1)) #get target threshold value from precalculated threshold values and replicate along the time dimension to fit the size of gcm_f
+
+    #get binary time series, quantile is exceeded yes (1) or no (0)
+    if threshold_f >= 0.5:
+        obs_bin = xr.where(obs_f > obs_quantile_threshold, 1, 0) #here the nan values over the sea are lost. They will be brought back below.
+        gcm_bin = xr.where(gcm_f > gcm_quantile_threshold, 1, 0)
+    elif threshold_f < 0.5:
+        obs_bin = xr.where(obs_f < obs_quantile_threshold, 1, 0) #here the nan values over the sea are lost. They will be brought back below.
+        gcm_bin = xr.where(gcm_f < gcm_quantile_threshold, 1, 0)
+    else:
+        raise Exception("ERROR: check entry for threshold_f !")
+    
+    # obs_bin = obs_bin.where(~np.isnan(obs_f)) #xs.reliability does not work with nans in the input arrays, so this line is commented so far
+    # gcm_bin = gcm_bin.where(~np.isnan(obs_f)) #xs.reliability does not work with nans in the input arrays, so this line is commented so far
+    
+    #manually remove the first time instant so far, as long as xskill does not treat nans for this function
+    if pd.DatetimeIndex(gcm_f.time).year[0] == 1981:
+        print('WARNING: the first year in the observed (obs_bin) and forecasted occurrence / absence (gcm_bin) time series is 1981 and is removed by the get_reliability() function because of nans present in <gcm_bin> during the first year of evaluation that cannot be handled by xskillscore.reliability() so far.') 
+        obs_bin = obs_bin.isel(time=slice(1, None))
+        gcm_bin = gcm_bin.isel(time=slice(1, None))
+    
+    o_cond_y = xs.reliability(obs_bin, gcm_bin.mean("member"), dim='time').drop('samples') #see Wilks 2006, returns the observed relative frequencies (o) conditional to 5 (= default values) forecast probability bins y (0.1, 0.3, 0.5, 0.7, 0.9), see https://xskillscore.readthedocs.io/en/stable/api/xskillscore.reliability.html#xskillscore.reliability 
+    diagonal = np.tile(o_cond_y.forecast_probability.values,(o_cond_y.shape[0],o_cond_y.shape[1],o_cond_y.shape[2],o_cond_y.shape[3],1)) #this is the diagonal of the reliability diagramm
+    reliability = np.abs(o_cond_y - diagonal).mean(dim='forecast_probability') #calculate the residual (i.e. absolute difference) from the diagonal averged over the 5 forecast bins mentioned above
+    reliability = reliability.where(~np.isnan(obs_f[0,:,:,:,:])) # re-set the grid-boxes over sea to nan as in the input data values
+    return(reliability)

@@ -44,6 +44,9 @@ lead = [[0],[1],[2],[3],[4],[5],[6]] #[[0,1,2],[0,1,2],[0,1,2],[0,1,2]] #number 
 variables_gcm = ['SPEI-3-R','SPEI-3-M','fwi','msl','t2m','tp','si10','ssrd'] #model variable names in CDS format  GCM variable names have been set to ERA5 variable names from CDS in <aggregate_hindcast.py> except for <SPEI-3-M> and <SPEI-3-R>, which are paired with <SPEI-3> in <variables_obs>)
 variables_obs = ['SPEI-3','SPEI-3','fwi','msl','t2m','tp','si10','ssrd'] #variable names in observations; are identical to <variables_gcm> except for <SPEI-3>, which is referred to as <SPEI-3-M> or <SPEI-3-R> in the model depending on whether past values are taken from the model or reanalysis (i.e. quasi-observations)
 
+# variables_gcm = ['SPEI-3-R','SPEI-3-M'] #model variable names in CDS format  GCM variable names have been set to ERA5 variable names from CDS in <aggregate_hindcast.py> except for <SPEI-3-M> and <SPEI-3-R>, which are paired with <SPEI-3> in <variables_obs>)
+# variables_obs = ['SPEI-3','SPEI-3'] #variable names in observations; are identical to <variables_gcm> except for <SPEI-3>, which is referred to as <SPEI-3-M> or <SPEI-3-R> in the model depending on whether past values are taken from the model or reanalysis (i.e. quasi-observations)
+
 datatype = 'float32' #data type of the variables in the output netcdf files
 compression_level = 1
 precip_threshold = 1/30 #monthly mean daily precipitation threshold in mm below which the modelled and quasi-observed monthly precipitation amount is set to 0; Bring the parameter in pred2tercile.py in exact agreement with this script in future versions
@@ -295,7 +298,8 @@ for det in np.arange(len(detrending)):
                 relbias.values[infmask] = np.nan
                 del(infmask) #delete to save memory
 
-                #probabilistic validiation measures
+                # probabilistic validiation measures
+                # Continuous Ranked Probability Score
                 crps_ensemble = xs.crps_ensemble(obs_seas_mn_5d,gcm_seas_mn_6d,member_weights=None,issorted=False,member_dim='member',dim='time',weights=None,keep_attrs=False).rename('crps_ensemble')
                 #get crps for the climatological / no-skill forecast
                 obs_clim_mean = obs_seas_mn_5d.mean(dim='time').values
@@ -306,6 +310,26 @@ for det in np.arange(len(detrending)):
                 obs_clim_mean = xr.DataArray(obs_clim_mean,coords=[dates_isea,season_label,lead_label,members[0:nr_pseudo_mem],nc_obs.y,nc_obs.x],dims=['time', 'season', 'lead', 'member', 'y', 'x'], name=variables_obs[vv]+'_clim')
                 crps_ensemble_clim = xs.crps_ensemble(obs_seas_mn_5d,obs_clim_mean,member_weights=None,issorted=False,member_dim='member',dim='time',weights=None,keep_attrs=False).rename('crps_ensemble_clim')
                 
+                # # Reliability
+                # #obtain quantile observed quantile thresholds
+                # obs_quantile_threshold = obs_seas_mn_5d.quantile(2/3,dim='time') #calculate the quantiles along the time axis
+                # obs_quantile_threshold = np.tile(obs_quantile_threshold,(obs_seas_mn_5d.shape[0],1,1,1,1)) #replicate to fit the size of obs_seas_mn_5d; this returns a numpy array
+                # #get binary time series, quantile is exceeded yes (1) or no (0)
+                # obs_seas_mn_5d_bin = xr.where(obs_seas_mn_5d > obs_quantile_threshold, 1, 0) #here the nan values over the sea are lost and will be put in place again in the next line
+                # #obs_seas_mn_5d_bin = xr.where(obs_seas_mn_5d > obs_quantile_threshold, True, False)
+                # #obs_seas_mn_5d_bin = obs_seas_mn_5d_bin.where(~np.isnan(obs_seas_mn_5d)) #place nan at their original positions (i.e. over the sea)
+                
+                # gcm_quantile_threshold = np.tile(quantile_vals_step.sel(quantile=2/3),(obs_seas_mn_5d.shape[0],1,1,1,1,1)) #get upper tercile and add replicate along the newly added time dimension to fit the size of gcm_seas_mn_6d 
+                # gcm_seas_mn_6d_bin = xr.where(gcm_seas_mn_6d > gcm_quantile_threshold, 1, 0)
+                # #gcm_seas_mn_6d_bin = gcm_seas_mn_6d_bin.where(~np.isnan(gcm_seas_mn_6d)) #place the nan at their original positions
+                # o_conditioned_on_y = xs.reliability(obs_seas_mn_5d_bin, gcm_seas_mn_6d_bin.mean("member"), dim='time') #see Wilks 2006, returns the observed relative frequencies (o) conditional to 5 (= default values) forecast probability bins y (0.1, 0.3, 0.5, 0.7, 0.9), see https://xskillscore.readthedocs.io/en/stable/api/xskillscore.reliability.html#xskillscore.reliability 
+                # diagonal = np.tile(o_conditioned_on_y.forecast_probability.values,(o_conditioned_on_y.shape[0],o_conditioned_on_y.shape[1],o_conditioned_on_y.shape[2],o_conditioned_on_y.shape[3],1)) #this is the diagonal of the reliability diagramm
+                # reliability = np.abs(o_conditioned_on_y - diagonal).mean(dim='forecast_probability') #calculate the residual (i.e. absolute difference) from the diagonal averged over the 5 forecast bins mentioned above
+                # reliability = reliability.where(~np.isnan(obs_seas_mn_5d[0,:,:,:,:])) #get grid-boxes over sea to nan as in the input data values, if requested by the user
+                
+                reliability_lower = get_reliability(obs_seas_mn_5d,gcm_seas_mn_6d,quantile_vals_step,1/3).rename('reliability_lower_tercile') #calculate reliability for the third tercile
+                reliability_upper = get_reliability(obs_seas_mn_5d,gcm_seas_mn_6d,quantile_vals_step,2/3).rename('reliability_upper_tercile') #calculate reliability for the first tercile
+                                
                 #close and delete unnecesarry objects to save mem
                 obs_clim_mean.close()
                 del(obs_clim_mean)
@@ -331,11 +355,13 @@ for det in np.arange(len(detrending)):
                 crps_ensemble.attrs['units'] = 'cummulative probability error'
                 bias.attrs['units'] = nc_obs[variables_obs[vv]].units
                 relbias.attrs['units'] = 'percent'
+                reliability_lower.attrs['units'] = 'probability'
+                reliability_upper.attrs['units'] = 'probability'
                 crps_ensemble_skillscore_clim.attrs['units'] = 'bound between -1 and 1, positive values indicate more skill than the reference climatological forecast'
                 crps_ensemble_skillscore_clim.attrs['reference'] = 'Wilks (2006), pages 281 and 302-304'
                 
                 #join xarray dataArrays containing the verification results into a single xarray dataset, set attributes and save to netCDF format
-                results = xr.merge((pearson_r,pearson_pval,pearson_pval_effn,spearman_r,spearman_pval,spearman_pval_effn,bias,relbias,crps_ensemble,crps_ensemble_skillscore_clim)) #merge xr dataarrays into a single xr dataset
+                results = xr.merge((pearson_r,pearson_pval,pearson_pval_effn,spearman_r,spearman_pval,spearman_pval_effn,bias,relbias,crps_ensemble,crps_ensemble_skillscore_clim,reliability_lower,reliability_upper)) #merge xr dataarrays into a single xr dataset
                 del results.attrs['units'] #delete global attributge <units>, which is unexpectedly created by xr.merge() in the previous line; <units> are preserved as variable attribute. 
                 #set global and variable attributes
                 start_year = str(dates_isea[0])[0:5].replace('-','') #start year considered in the skill assessment
@@ -379,7 +405,9 @@ for det in np.arange(len(detrending)):
                 obs_seas_mn_6d.close()
                 gcm_seas_mn_5d.close()
                 gcm_seas_mn_6d.close()
-                del(results,pearson_r,pearson_pval,pearson_pval_effn,spearman_r,spearman_pval,spearman_pval_effn,bias,relbias,crps_ensemble,crps_ensemble_skillscore_clim,obs_seas_mn_6d,obs_seas_mn_5d,obs_seas_mn_5d_nw,gcm_seas_mn_5d,gcm_seas_mn_6d,gcm_seas_mn_6d_nw)
+                reliability_lower.close()
+                reliability_upper.close()
+                del(results,pearson_r,pearson_pval,pearson_pval_effn,spearman_r,spearman_pval,spearman_pval_effn,bias,relbias,crps_ensemble,crps_ensemble_skillscore_clim,obs_seas_mn_6d,obs_seas_mn_5d,obs_seas_mn_5d_nw,gcm_seas_mn_5d,gcm_seas_mn_6d,gcm_seas_mn_6d_nw,reliability_lower,reliability_upper)
                 #del(pearson_r,pearson_pval,pearson_pval_effn,spearman_r,spearman_pval,spearman_pval_effn,obs_seas_mn_5d,obs_seas_mn_6d,obs_seas_mn_5d_nw,gcm_seas_mn_5d,gcm_seas_mn_6d,gcm_seas_mn_6d_nw)
             
             #close nc files containing observations
