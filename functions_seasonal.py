@@ -105,7 +105,7 @@ def lin_detrend(xr_ar,rm_mean_f):
 
 #def get_frac_significance(np_arr_pval_f,np_arr_rho_f,critval_f,mode_f='fraction',lat_f=None):
 #def get_spatial_aggregation(np_arr_pval_f,np_arr_rho_f,critval_f,mode_f='fraction',lat_f=None):
-def get_spatial_aggregation(score_f,critval_f,pval_f=None,mode_f='fraction',lat_f=None):
+def get_spatial_aggregation(score_f,critval_f=None,pval_f=None,mode_f='fraction',lat_f=None):
     """get the fraction of grid-boxes where significant results are obtained in percentage of all grid-boxes forming the domain; score_f and pval_f a 4d numpy array
     with the dimensions season x lead x lat x lon"""
     
@@ -296,7 +296,7 @@ def transform_gcm_variable(ds_f,var_in_f,var_out_f,model_f,version_f):
         valid_f = 1
     return(ds_f, valid_f)
 
-def get_reliability(obs_f,gcm_f,gcm_quantile_f,threshold_f):
+def get_reliability_or_roc(obs_f,gcm_f,gcm_quantile_f,threshold_f,score_f='reliability'):
     """ caclulates the mean absolute difference (returned as <reliability>) between the forecast probabilities and corresponding conditional observed probabilities of the reliability plot and the diagonal of the plot
     obs_f (5d in get_skill_season.py) and gcm_f (6d) are xarray data arrays and gcm_quantile_f are pre-caclulated gcm quantiles having the same size as gcm_f - note that the corresponding
     observed quantile values are calculated within the function; threshold_f is a threshold value in decimals. I threshold_f is >= 0.5 then it is asked wether the values in xr_obs_f and
@@ -311,16 +311,16 @@ def get_reliability(obs_f,gcm_f,gcm_quantile_f,threshold_f):
 
     #get binary time series, quantile is exceeded yes (1) or no (0)
     if threshold_f >= 0.5:
-        obs_bin = xr.where(obs_f > obs_quantile_threshold, 1, 0) #here the nan values over the sea are lost. They will be brought back below.
-        gcm_bin = xr.where(gcm_f > gcm_quantile_threshold, 1, 0)
+        obs_bin = xr.where(obs_f > obs_quantile_threshold, 1, 0).astype('int8') #here the nan values over the sea are lost. They will be brought back below.
+        gcm_bin = xr.where(gcm_f > gcm_quantile_threshold, 1, 0).astype('int8')
     elif threshold_f < 0.5:
-        obs_bin = xr.where(obs_f < obs_quantile_threshold, 1, 0) #here the nan values over the sea are lost. They will be brought back below.
-        gcm_bin = xr.where(gcm_f < gcm_quantile_threshold, 1, 0)
+        obs_bin = xr.where(obs_f < obs_quantile_threshold, 1, 0).astype('int8') #here the nan values over the sea are lost. They will be brought back below.
+        gcm_bin = xr.where(gcm_f < gcm_quantile_threshold, 1, 0).astype('int8')
     else:
         raise Exception("ERROR: check entry for threshold_f !")
-    
-    # obs_bin = obs_bin.where(~np.isnan(obs_f)) #xs.reliability does not work with nans in the input arrays, so this line is commented so far
-    # gcm_bin = gcm_bin.where(~np.isnan(obs_f)) #xs.reliability does not work with nans in the input arrays, so this line is commented so far
+        
+    # obs_bin = obs_bin.where(~np.isnan(obs_f)) #xs.reliability and xs.roc do not work with nans in the input arrays, so this line is commented so far
+    # gcm_bin = gcm_bin.where(~np.isnan(gcm_f)) #xs.reliability and xs.roc do not work with nans in the input arrays, so this line is commented so far
     
     #manually remove the first time instant so far, as long as xskill does not treat nans for this function
     if pd.DatetimeIndex(gcm_f.time).year[0] == 1981:
@@ -328,8 +328,19 @@ def get_reliability(obs_f,gcm_f,gcm_quantile_f,threshold_f):
         obs_bin = obs_bin.isel(time=slice(1, None))
         gcm_bin = gcm_bin.isel(time=slice(1, None))
     
-    o_cond_y = xs.reliability(obs_bin, gcm_bin.mean("member"), dim='time').drop('samples') #see Wilks 2006, returns the observed relative frequencies (o) conditional to 5 (= default values) forecast probability bins y (0.1, 0.3, 0.5, 0.7, 0.9), see https://xskillscore.readthedocs.io/en/stable/api/xskillscore.reliability.html#xskillscore.reliability 
-    diagonal = np.tile(o_cond_y.forecast_probability.values,(o_cond_y.shape[0],o_cond_y.shape[1],o_cond_y.shape[2],o_cond_y.shape[3],1)) #this is the diagonal of the reliability diagramm
-    reliability = np.abs(o_cond_y - diagonal).mean(dim='forecast_probability') #calculate the residual (i.e. absolute difference) from the diagonal averged over the 5 forecast bins mentioned above
-    reliability = reliability.where(~np.isnan(obs_f[0,:,:,:,:])) # re-set the grid-boxes over sea to nan as in the input data values
-    return(reliability)
+    #caclulate the score indicated in the <score_f> input parameter
+    if score_f == 'reliability': #calculate reliability as defined in Wilks (2006)
+        print('As requested by the user, the RELIABILITY is calculated by the get_reliability_or_roc() function.')        
+        o_cond_y = xs.reliability(obs_bin, gcm_bin.mean("member"), dim='time').drop('samples') #see Wilks 2006, returns the observed relative frequencies (o) conditional to 5 (= default values) forecast probability bins y (0.1, 0.3, 0.5, 0.7, 0.9), see https://xskillscore.readthedocs.io/en/stable/api/xskillscore.reliability.html#xskillscore.reliability 
+        diagonal = np.tile(o_cond_y.forecast_probability.values,(o_cond_y.shape[0],o_cond_y.shape[1],o_cond_y.shape[2],o_cond_y.shape[3],1)) #this is the diagonal of the reliability diagramm
+        reliability = np.abs(o_cond_y - diagonal).mean(dim='forecast_probability') #calculate the residual (i.e. absolute difference) from the diagonal averged over the 5 forecast bins mentioned above
+        reliability = reliability.where(~np.isnan(obs_f[0,:,:,:,:])) # re-set the grid-boxes over sea to nan as in the input data values
+        out_score = reliability
+    elif score_f == 'roc_auc': #caclulate roc area under the curve
+        print('As requested by the user, the ROC area under the curve is calculated by the get_reliability_or_roc() function.')
+        roc = xs.roc(obs_bin, gcm_bin.mean("member"), dim='time',  bin_edges='continuous', drop_intermediate=False, return_results='area')
+        out_score = roc
+    else:
+        raise Exception('ERROR: unknown entry for <score_f> input parameter in get_reliability_or_roc() function !')
+    out_score = out_score.where(~np.isnan(obs_f[0,:,:,:,:])) # re-set the grid-boxes over sea to nan as in the input data values
+    return(out_score)

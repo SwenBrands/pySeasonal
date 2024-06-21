@@ -28,8 +28,8 @@ file_system = 'lustre' #lustre or myLaptop; used to create the path structure to
 # variables = ['SPEI-3-R','SPEI-3-M','fwi','tp','ssrd','si10','t2m','msl'] #variable names in CDS format
 # ref_dataset = ['era5','era5','era5','era5','era5','era5','era5','era5'] # #list of model or reference observational dataset paired with <variables> input parameter below
 
-variables = ['tp'] #variable names in CDS format
-ref_dataset = ['era5'] # #list of model or reference observational dataset paired with <variables> input parameter below
+variables = ['tp','ssrd','si10','t2m','msl'] #variable names in CDS format
+ref_dataset = ['era5','era5','era5','era5','era5'] # #list of model or reference observational dataset paired with <variables> input parameter below
 
 domain = 'medcof' #the domain the verfication results have been save on by get_skill_season.py
 sub_domain = 'medcof2' #medcof (corresponds to no sub-domain), medcof2 or iberia; the domain the results are plotted for; if set to <medcof>, then no sub-selection will be applied and the results for the entire medcof domain will be plotted
@@ -39,8 +39,7 @@ critval_skillscore = 0 #threshold value above which the skill scores applied her
 critval_relbias = 5 #percentage threshold beyond which the absolute relative bias is printed with a dot in the maps and thus assumed to be "important"
 critval_bias = 10*8 # this is a dummy threshold so far, replace by p-value from a t-test for bias significantly distinct from zero in future versions
 critval_reliability = 1
-#scores = ['bias','relbias','spearman_r','pearson_r','crps_ensemble_skillscore_clim','reliability_lower_tercile','reliability_upper_tercile']
-scores = ['relbias']
+scores = ['bias','relbias','spearman_r','pearson_r','crps_ensemble_skillscore_rand','reliability_lower_tercile','reliability_upper_tercile','roc_auc_lower_tercile_skillscore','roc_auc_upper_tercile_skillscore']
 relbias_max = 100 #magnitude of the upper and lower limit to be plotted in case of relbias and tp, this is a percentage value and it is used because the relbias can be very large in dry regions due to the near-to-zero climatological precip. there
 manual_cbar_variables = ('SPEI-3-R','SPEI-3-M') #variables not participating in the colorbar adjustment made by the script due to excessive relative biases, the cbar for these variables is set to range from <relbias_max>*-1 to <relbias_max>
 meanrho_max = 1.
@@ -162,19 +161,31 @@ for det in np.arange(len(detrending)):
                         maxvals_pcolor[det,vv,dd,sc] = np.abs(nc_results[scores[sc]].mean(dim='x').mean(dim='y')).max().values #maximum of the seasonal areal mean values
                         minvals_pcolor[det,vv,dd,sc] = np.abs(nc_results[scores[sc]].mean(dim='x').mean(dim='y')).max().values*-1 #minimum of the seasonal areal mean values
                     colormaps.append(colormap_div)
-                elif scores[sc] in ('mae','mape','rmse','crps_ensemble','reliability_lower_tercile','reliability_upper_tercile'):
+                elif scores[sc] in ('mae','mape','rmse','crps_ensemble'):
                     maxvals_map[det,vv,dd,sc] = nc_results[scores[sc]].max().values #global maximum for the specific model dataset and variable
                     minvals_map[det,vv,dd,sc] = nc_results[scores[sc]].min().values #global minimum for the specific model dataset and variable
                     maxvals_pcolor[det,vv,dd,sc] = nc_results[scores[sc]].mean(dim='x').mean(dim='y').max().values #maximum of the seasonal areal mean values
                     minvals_pcolor[det,vv,dd,sc] = nc_results[scores[sc]].mean(dim='x').mean(dim='y').min().values #minimum of the seasonal areal mean values
                     colormaps.append(colormap_ascend)
-                elif scores[sc] in ('crps_ensemble_skillscore_clim'):
-                    maxvals_map[det,vv,dd,sc] = nc_results[scores[sc]].max().values
-                    minvals_map[det,vv,dd,sc] = 0
-                    percent_sig, sig_arr = get_frac_above_threshold(nc_results[scores[sc]].values.copy(),0) #percent_sig here refers to the percentage of grid-boxes with skill score values > 0
-                    maxvals_pcolor[det,vv,dd,sc] = np.max(percent_sig)
-                    minvals_pcolor[det,vv,dd,sc] = 0
+                elif scores[sc] in ('reliability_lower_tercile','reliability_upper_tercile'):
+                    maxvals_map[det,vv,dd,sc] = 0.5 #global maximum for the specific model dataset and variable, suggested by Jose Manuel Gutiérrez
+                    minvals_map[det,vv,dd,sc] = nc_results[scores[sc]].min().values #global minimum for the specific model dataset and variable
+                    maxvals_pcolor[det,vv,dd,sc] = nc_results[scores[sc]].mean(dim='x').mean(dim='y').max().values #maximum of the seasonal areal mean values
+                    minvals_pcolor[det,vv,dd,sc] = nc_results[scores[sc]].mean(dim='x').mean(dim='y').min().values #minimum of the seasonal areal mean values
                     colormaps.append(colormap_ascend)
+                elif scores[sc] in ('crps_ensemble_skillscore_clim','crps_ensemble_skillscore_rand','roc_auc_lower_tercile_skillscore','roc_auc_upper_tercile_skillscore'):
+                    #maxvals_map[det,vv,dd,sc] = nc_results[scores[sc]].max().values
+                    #minvals_map[det,vv,dd,sc] = 0
+                    #minvals_map[det,vv,dd,sc] = nc_results[scores[sc]].min().values
+                    maxvals_map[det,vv,dd,sc] = 1
+                    minvals_map[det,vv,dd,sc] = -1
+                    #pdb.set_trace()
+                    #percent_sig, sig_arr = get_frac_above_threshold(nc_results[scores[sc]].values.copy(),0) #percent_sig here refers to the percentage of grid-boxes with skill score values > 0
+                    mean_cprs_ens_ss_clim = get_spatial_aggregation(nc_results[scores[sc]].values,mode_f='mean',lat_f=yy) #calculate spatial mean crps skill score
+                    maxvals_pcolor[det,vv,dd,sc] = np.max(np.abs(mean_cprs_ens_ss_clim))
+                    minvals_pcolor[det,vv,dd,sc] = np.max(np.abs(mean_cprs_ens_ss_clim))*-1
+                    #colormaps.append(colormap_ascend)
+                    colormaps.append(colormap_div)
                 elif scores[sc] in ('pearson_r','spearman_r'):
                     if scores[sc] in ('pearson_r'):
                         score_pval = 'pearson_pval'
@@ -269,7 +280,7 @@ for det in np.arange(len(detrending)):
                 binary_mask[:] = np.nan
                 halfres = np.abs(np.diff(nc_results.x.values))[0]/2 #needed to plot the pcolormesh
 
-            ##plot matrices of verification results for the distinct score (x-axis = seasons, y-axis = stations and save to <figformat>
+            ##Get arrays to be shown as pcolor figures and maps (assigned as <pcolorme> and <mapme> respectively. In addition, retrieve a binary skill / no skill (1 / 0) named <binmask> below
             score_unit = np.zeros((len(scores))).tolist()
             score_info = score_unit.copy()
             for sc in np.arange(len(scores)):
@@ -277,14 +288,22 @@ for det in np.arange(len(detrending)):
                 score_ref = nc_results.reference_observations
                 if os.path.isdir(dir_figs+'/'+variables[vv]+'/maps/'+scores[sc]) != True:
                     os.makedirs(dir_figs+'/'+variables[vv]+'/maps/'+scores[sc])
-                if scores[sc] in ('crps_ensemble_skillscore_clim'):
-                    #areal percentage of positive skill score values
-                    savename = dir_figs+'/'+variables[vv]+'/pcolor_posgridboxes_'+variables[vv]+'_'+scores[sc]+'_'+domain+'_'+sub_domain+'_'+model_dataset[dd]+'_vs_'+score_ref+'_corr_outlier_'+corr_outlier+'_detrended_'+detrending[det]+'_testlvl_'+str(round(critval_rho*100))+'_'+vers+'.'+figformat
+                if scores[sc] in ('crps_ensemble_skillscore_clim','crps_ensemble_skillscore_rand','roc_auc_lower_tercile_skillscore','roc_auc_upper_tercile_skillscore'):
                     #pval = nc_results['pearson_pval'].values
                     #rho = nc_results['pearson_r'].values
-                    pcolorme, sig_arr = get_frac_above_threshold(nc_results[scores[sc]].values.copy(),0) #if .copy() is not put here, then nc_results[scores[sc]] is overwritten, which is a very strange bug !
+                    
+                    #polor for areal percentage of positive skill score values
+                    #savename = dir_figs+'/'+variables[vv]+'/pcolor_posgridboxes_'+variables[vv]+'_'+scores[sc]+'_'+domain+'_'+sub_domain+'_'+model_dataset[dd]+'_vs_'+score_ref+'_corr_outlier_'+corr_outlier+'_detrended_'+detrending[det]+'_testlvl_'+str(round(critval_rho*100))+'_'+vers+'.'+figformat
+                    #pcolorme, sig_arr = get_frac_above_threshold(nc_results[scores[sc]].values.copy(),0) #if .copy() is not put here, then nc_results[scores[sc]] is overwritten, which is a very strange bug !
+                    #units_pcolor = '-inf <= score <= 1'
+                    #label_pcolor = 'areal fraction of positive '+scores[sc]
+                    
+                    #pcolor for areal average of skill score values
+                    savename = dir_figs+'/'+variables[vv]+'/pcolor_arealmean_'+variables[vv]+'_'+scores[sc]+'_'+domain+'_'+sub_domain+'_'+model_dataset[dd]+'_vs_'+score_ref+'_corr_outlier_'+corr_outlier+'_detrended_'+detrending[det]+'_testlvl_'+str(round(critval_rho*100))+'_'+vers+'.'+figformat
+                    pcolorme = get_spatial_aggregation(nc_results[scores[sc]].values,mode_f='mean',lat_f=yy) #calculate spatial mean crps skill score
                     units_pcolor = '-inf <= score <= 1'
-                    label_pcolor = 'areal fraction of positive '+scores[sc]
+                    label_pcolor = 'areal mean '+scores[sc]                    
+                    
                     mapme = nc_results[scores[sc]].values
                     binmask = np.zeros(mapme.shape)
                     binmask[:] = np.nan
@@ -309,7 +328,7 @@ for det in np.arange(len(detrending)):
                     pval = nc_results[score_pval].values
                     rho = nc_results[scores[sc]].values
                     pcolorme = get_spatial_aggregation(rho.copy(),critval_rho,pval_f=pval.copy(),mode_f='fraction',lat_f=yy) #.copy() is mandatory here; otherwise pval will be changed within the get_spatial_aggregation() function
-                    pcolorme_meanrho = get_spatial_aggregation(rho.copy(),critval_rho,mode_f='mean',lat_f=yy) #.copy() is mandatory here; otherwise pval will be changed within the get_spatial_aggregation() function
+                    pcolorme_meanrho = get_spatial_aggregation(rho.copy(),mode_f='mean',lat_f=yy) #.copy() is mandatory here; otherwise pval will be changed within the get_spatial_aggregation() function
                     units_pcolor = '%'
                     label_pcolor = 'areal fraction of sig. positive '+scores[sc]
                     mapme = rho
@@ -322,7 +341,7 @@ for det in np.arange(len(detrending)):
                     score_unit[sc] = 'binary'
                     score_info[sc] = 'significant '+scores[sc]+' at '+str(round(critval_rho*100))+' percent test-level and positive sign for the ensemble mean time series, yes (1) or no (0)'
                 #currently the 10th percentile of the cprs is assumed to set the binary mask to 1 (if below this percentile)
-                elif scores[sc] in ('crps_ensemble'):
+                elif scores[sc] in ('crps_ensemble','crps_ensemble_skillscore_clim','crps_ensemble_skillscore_rand','roc_auc_lower_tercile_skillscore','roc_auc_upper_tercile_skillscore'):
                     savename = dir_figs+'/'+variables[vv]+'/pcolor_arealmean_'+variables[vv]+'_'+scores[sc]+'_'+domain+'_'+sub_domain+'_'+model_dataset[dd]+'_vs_'+score_ref+'_corr_outlier_'+corr_outlier+'_detrended_'+detrending[det]+'_'+vers+'.'+figformat
                     pcolorme = nc_results[scores[sc]].mean(dim='y').mean(dim='x')
                     units_pcolor = nc_results[scores[sc]].units
@@ -341,7 +360,7 @@ for det in np.arange(len(detrending)):
                 elif scores[sc] in ('bias','relbias'):
                     savename = dir_figs+'/'+variables[vv]+'/pcolor_arealmean_'+variables[vv]+'_'+scores[sc]+'_'+domain+'_'+sub_domain+'_'+model_dataset[dd]+'_vs_'+score_ref+'_corr_outlier_'+corr_outlier+'_detrended_'+detrending[det]+'.'+figformat
                     #calculate areal mean absolute bias
-                    pcolorme = get_spatial_aggregation(np.abs(nc_results[scores[sc]].values),critval_bias,mode_f='mean',lat_f=yy)
+                    pcolorme = get_spatial_aggregation(np.abs(nc_results[scores[sc]].values),mode_f='mean',lat_f=yy)
                     #pcolorme = nc_results[scores[sc]].mean(dim='y').mean(dim='x')
                     mapme = nc_results[scores[sc]].values
                     label_pcolor = 'areal mean absolute '+nc_results[scores[sc]].name
@@ -366,7 +385,7 @@ for det in np.arange(len(detrending)):
                     score_unit[sc] = 'binary'
                 elif scores[sc] in ('reliability_lower_tercile','reliability_upper_tercile'):
                     savename = dir_figs+'/'+variables[vv]+'/pcolor_arealmean_'+variables[vv]+'_'+scores[sc]+'_'+domain+'_'+sub_domain+'_'+model_dataset[dd]+'_vs_'+score_ref+'_corr_outlier_'+corr_outlier+'_detrended_'+detrending[det]+'.'+figformat
-                    pcolorme = get_spatial_aggregation(nc_results[scores[sc]].values,critval_bias,mode_f='mean',lat_f=yy)
+                    pcolorme = get_spatial_aggregation(nc_results[scores[sc]].values,mode_f='mean',lat_f=yy)
                     mapme = nc_results[scores[sc]].values
                     label_pcolor = 'areal mean '+nc_results[scores[sc]].name
                     units_pcolor = nc_results[scores[sc]].units
@@ -390,6 +409,7 @@ for det in np.arange(len(detrending)):
                 else:                    
                     raise Exception('ERROR: '+scores[sc]+' are currently not supported by plot_seasonal_validation_results.py !')
                 
+                ## PLOT pcolor figures, x-axis: season / month the prediction is valid for and y-axis lead-time (1 season / month)
                 #convert to xr dataArray and add metadata necessary for plotting
                 pcolorme = xr.DataArray(pcolorme,coords=[np.arange(len(nc_results.season.values)),np.arange(len(nc_results.lead.values))],dims=['season', 'lead'], name=label_pcolor)
                 pcolorme.attrs['units'] = units_pcolor
@@ -413,7 +433,7 @@ for det in np.arange(len(detrending)):
                     #plot_pcolormesh_seasonal(pcolorme,minvals_pcolor[det,sc],maxvals_pcolor[det,sc],savename,colormaps[sc],dpival) #colormap limits have been inferred from the score arrays above
                     plot_pcolormesh_seasonal(pcolorme,minvals_pcolor[sc],maxvals_pcolor[sc],savename,colormaps[sc],dpival)
                 
-                #produce a map for each variable, model dataset season and lead
+                #produce a VERIFICATION MAP for each score, season and leadtime
                 seasons = nc_results.season.values
                 leads = nc_results.lead.values
                 if scores[sc] in ('relbias','bias') and detrending[det] == 'yes':
@@ -430,7 +450,7 @@ for det in np.arange(len(detrending)):
                             elif scores[sc] in ('bias','reliability_lower_tercile','reliability_upper_tercile'):
                                 critval_label = str(critval_bias)
                                 agreeind = binmask[sea,ll,:,:] == 0 #if set to 0, no signficance layer is plotted upon the pclormesh in get_map_lowfreq_var() function
-                            elif scores[sc] in ('crps_ensemble_skillscore_clim'):
+                            elif scores[sc] in ('crps_ensemble_skillscore_clim','crps_ensemble_skillscore_rand','roc_auc_lower_tercile_skillscore','roc_auc_upper_tercile_skillscore'):
                                 critval_label = str(critval_skillscore)
                                 agreeind = binmask[sea,ll,:,:] == 1
                             else:
@@ -444,6 +464,9 @@ for det in np.arange(len(detrending)):
                                 get_map_lowfreq_var(mapme[sea,ll,:,:],xx,yy,agreeind,relbias_max*-1,relbias_max,dpival,title,savename,halfres,colormaps[sc],titlesize,cbarlabel,orientation_f='horizontal') #colormap limits were set by the user in <relbias_max>
                             elif scores[sc] in ('reliability_lower_tercile','reliability_upper_tercile'):
                                 get_map_lowfreq_var(mapme[sea,ll,:,:],xx,yy,agreeind,0,maxvals_map[sc],dpival,title,savename,halfres,colormaps[sc],titlesize,cbarlabel,orientation_f='horizontal')
+                            elif scores[sc] in ('crps_ensemble_skillscore_clim','crps_ensemble_skillscore_rand','roc_auc_lower_tercile_skillscore','roc_auc_upper_tercile_skillscore'):
+                                abs_max = np.max((np.abs(minvals_map[sc]),np.abs(maxvals_map[sc])))# retain the maximum absolute value in the data, used to define the lower and upper limits of the colorbar in the next line
+                                get_map_lowfreq_var(mapme[sea,ll,:,:],xx,yy,agreeind,abs_max*-1,abs_max,dpival,title,savename,halfres,colormaps[sc],titlesize,cbarlabel,orientation_f='horizontal')
                             else:
                                 #get_map_lowfreq_var(mapme[sea,ll,:,:],xx,yy,agreeind,minvals_map[det,sc],maxvals_map[det,sc],dpival,title,savename,halfres,colormaps[sc],titlesize,cbarlabel) #colormap limits have been inferred from the score arrays above
                                 get_map_lowfreq_var(mapme[sea,ll,:,:],xx,yy,agreeind,minvals_map[sc],maxvals_map[sc],dpival,title,savename,halfres,colormaps[sc],titlesize,cbarlabel,orientation_f='horizontal')
@@ -455,7 +478,7 @@ for det in np.arange(len(detrending)):
         
         #bring the binary result masks into xarray data array format, one array per score. Then assign metadata to score / dataarray and stack them all as variables into a definite xarray dataset to be stored on netCDF
         for sc in np.arange(len(scores)):
-            if scores[sc] in ('bias','relbias','pearson_r','spearman_r','crps_ensemble_skillscore_clim'):
+            if scores[sc] in ('bias','relbias','pearson_r','spearman_r','crps_ensemble_skillscore_clim','crps_ensemble_skillscore_rand','roc_auc_lower_tercile_skillscore','roc_auc_upper_tercile_skillscore'):
                 print('INFO: saving validation results for '+scores[sc])
                 binary_mask_score_i = binary_mask[:,:,:,sc,:,:,:,:]
                 binary_mask_score_i = xr.DataArray(binary_mask_score_i,coords=[detrending,variables,model_dataset,nc_results.season,nc_results.lead,nc_results.y,nc_results.x],dims=['detrended','variable', 'model', 'season', 'lead', 'y', 'x'], name=scores[sc]+'_binary')

@@ -55,8 +55,9 @@ aggreg = 'mon' #temporal aggregation of the input files
 domain = 'medcof' #spatial domain
 int_method = 'conservative_normed' #'conservative_normed', interpolation method used before in <regrid_obs.py>
 nr_mem = [25] #considered ensemble members
-nr_pseudo_mem = 2 #number of times the climatological mean observarions are replicated along the "member" dimension to mimic a model ensemble representing the naiv climatological forecasts used as reference for calculating the CRPS Skill Score. Results are insensitive to variations in this value; the script has been tested for value=2 and 4.
 quantiles = [1/3,1/3*2] #quantiles of the year-to-year time series to be calculated and stored
+skillscore_reference = 'rand' #'clim' or 'rand'; use either the climatological mean or randomly reshuffled observed time series as reference forcast for calculating the CPRSS
+nr_pseudo_mem = 25 #number of times the climatological mean or randomly reshuffled observarions are replicated along the "member" dimension to mimic a model ensemble representing the naiv climatological forecasts used as reference for calculating the CRPS Skill Score. Results are insensitive to variations in this value; the script has been tested for value=2 and 4.
 
 #options for methods estimating hindcast skill
 testlevel = 0.05
@@ -245,22 +246,22 @@ for det in np.arange(len(detrending)):
                         obs_seas_mn_5d_nw[:,sea,ll,:,:] = obs_allmon.mean(axis=-1)
                         gcm_seas_mn_6d_nw[:,sea,ll,:,:,:] = gcm_allmon.mean(axis=-1)
                 
-                #generate 6d numpy array with observations replicated along the <member dimension>; will be used as reference for the member-wise GCM verification
-                obs_seas_mn_6d = np.expand_dims(obs_seas_mn_5d,axis=3)
-                obs_seas_mn_6d = np.tile(obs_seas_mn_6d,(1,1,1,len(members),1,1))
-                
+                ##generate 6d numpy array with observations replicated along the <member dimension>; will be used as reference for the member-wise GCM verification
+                #obs_seas_mn_6d = np.expand_dims(obs_seas_mn_5d,axis=3)
+                #obs_seas_mn_6d = np.tile(obs_seas_mn_6d,(1,1,1,len(members),1,1))
+               
                 #convert numpy array into xarray data arrays
                 obs_seas_mn_5d = xr.DataArray(obs_seas_mn_5d,coords=[dates_isea,season_label,lead_label,nc_obs.y,nc_obs.x],dims=['time', 'season', 'lead', 'y', 'x'], name=variables_obs[vv]) #convert to xarray data array
-                obs_seas_mn_6d = xr.DataArray(obs_seas_mn_6d,coords=[dates_isea,season_label,lead_label,members,nc_obs.y,nc_obs.x],dims=['time', 'season', 'lead', 'member', 'y', 'x'], name=variables_obs[vv])
+                #obs_seas_mn_6d = xr.DataArray(obs_seas_mn_6d,coords=[dates_isea,season_label,lead_label,members,nc_obs.y,nc_obs.x],dims=['time', 'season', 'lead', 'member', 'y', 'x'], name=variables_obs[vv])
                 gcm_seas_mn_6d = xr.DataArray(gcm_seas_mn_6d,coords=[dates_isea,season_label,lead_label,members,nc_gcm.y,nc_gcm.x],dims=['time', 'season', 'lead', 'member', 'y', 'x'], name=variables_gcm[vv]) #convert to xarray data array
-                gcm_seas_mn_5d = gcm_seas_mn_6d.mean(dim='member') #get ensemble meann values
+                gcm_seas_mn_5d = gcm_seas_mn_6d.mean(dim='member') #get ensemble mean values
                 
                 #optionally apply linear detrending to the time-series, see https://gist.github.com/rabernat/1ea82bb067c3273a6166d1b1f77d490f
                 if detrending[det] == 'yes':
                     print('INFO: As requested by the user, the gcm and obs time series are linearly detrended.')
                     #gcm_seas_mn_5d_copy = gcm_seas_mn_5d.copy() #was used to check whether the temporal mean of the detrended gcm_seas_mn_5d xr data array is identical to the temporal mean of this non-detrended copy. This answer is yes! 
                     obs_seas_mn_5d = lin_detrend(obs_seas_mn_5d,'no')
-                    obs_seas_mn_6d = lin_detrend(obs_seas_mn_6d,'no')
+                    #obs_seas_mn_6d = lin_detrend(obs_seas_mn_6d,'no')
                     gcm_seas_mn_6d = lin_detrend(gcm_seas_mn_6d,'no')
                     gcm_seas_mn_5d = lin_detrend(gcm_seas_mn_5d,'no')
                 elif detrending[det] == 'no':
@@ -298,18 +299,35 @@ for det in np.arange(len(detrending)):
                 relbias.values[infmask] = np.nan
                 del(infmask) #delete to save memory
 
-                # probabilistic validiation measures
-                # Continuous Ranked Probability Score
-                crps_ensemble = xs.crps_ensemble(obs_seas_mn_5d,gcm_seas_mn_6d,member_weights=None,issorted=False,member_dim='member',dim='time',weights=None,keep_attrs=False).rename('crps_ensemble')
-                #get crps for the climatological / no-skill forecast
-                obs_clim_mean = obs_seas_mn_5d.mean(dim='time').values
-                obs_clim_mean = np.expand_dims(np.expand_dims(obs_clim_mean,axis=0),axis=3)
-                #obs_clim_mean = np.tile(obs_clim_mean,(nr_years,1,1,nr_mems,1,1)) #get 6d numpy array containing the naiv climatological forecasts
-                obs_clim_mean = np.tile(obs_clim_mean,(nr_years,1,1,nr_pseudo_mem,1,1)) #get 6d numpy array containing the naiv climatological forecasts
-                #obs_clim_mean = xr.DataArray(obs_clim_mean,coords=[dates_isea,season_label,lead_label,members,nc_obs.y,nc_obs.x],dims=['time', 'season', 'lead', 'member', 'y', 'x'], name=variables[vv]+'_clim') #convert to xarray data array
-                obs_clim_mean = xr.DataArray(obs_clim_mean,coords=[dates_isea,season_label,lead_label,members[0:nr_pseudo_mem],nc_obs.y,nc_obs.x],dims=['time', 'season', 'lead', 'member', 'y', 'x'], name=variables_obs[vv]+'_clim')
-                crps_ensemble_clim = xs.crps_ensemble(obs_seas_mn_5d,obs_clim_mean,member_weights=None,issorted=False,member_dim='member',dim='time',weights=None,keep_attrs=False).rename('crps_ensemble_clim')
+                #generate 6d numpy array with observations replicated along the <member dimension>; will be used as reference for the member-wise GCM verification
+                if skillscore_reference == 'clim': #use climatological mean observations as reference forecast
+                    print('As requested by the user, climatological-mean time series are used as reference forecasts')
+                    ref_forecast = obs_seas_mn_5d.mean(dim='time').values
+                    ref_forecast = np.expand_dims(np.expand_dims(ref_forecast,axis=0),axis=3)
+                    ref_forecast = np.tile(ref_forecast,(nr_years,1,1,nr_pseudo_mem,1,1)) #get 6d numpy array containing the naiv climatological forecasts
+                    ref_forecast = xr.DataArray(ref_forecast,coords=[dates_isea,season_label,lead_label,members[0:nr_pseudo_mem],nc_obs.y,nc_obs.x],dims=['time', 'season', 'lead', 'member', 'y', 'x'], name=variables_obs[vv]+'_'+skillscore_reference)
+                elif skillscore_reference == 'rand': #use randomly reshuffled observed time series as reference forecast
+                    print('As requested by the user, randomly reshuffled time series are used as reference forecasts. '+str(nr_pseudo_mem)+' random time series will be generated to this end.')
+                    #init the output array of randomly resuffled time series and fill
+                    ref_forecast = np.zeros((obs_seas_mn_5d.shape[0],obs_seas_mn_5d.shape[1],obs_seas_mn_5d.shape[2],nr_pseudo_mem,obs_seas_mn_5d.shape[3],obs_seas_mn_5d.shape[4]))
+                    ref_forecast[:] = np.nan
+                    ntime = len(np.arange(years_common[0],years_common[1]+1)) #number of years
+                    for ii in np.arange(nr_pseudo_mem):
+                        rand1 = np.random.randint(0,ntime,ntime)
+                        ref_forecast[:,:,:,ii,:,:] = obs_seas_mn_5d[rand1,:,:,:,:]
+                        del(rand1)
+                    ref_forecast = xr.DataArray(ref_forecast,coords=[dates_isea,season_label,lead_label,members[0:nr_pseudo_mem],nc_obs.y,nc_obs.x],dims=['time', 'season', 'lead', 'member', 'y', 'x'], name=variables_obs[vv]+'_'+skillscore_reference)
+                else:
+                    raise Exception('ERROR: check entry for <skillscore_reference> input parameter !')
                 
+                #Continuous Ranked Probability Score and respective skill score
+                crps_ensemble = xs.crps_ensemble(obs_seas_mn_5d,gcm_seas_mn_6d,member_weights=None,issorted=False,member_dim='member',dim='time',weights=None,keep_attrs=False).rename('crps_ensemble')
+                crps_ensemble_clim = xs.crps_ensemble(obs_seas_mn_5d,ref_forecast,member_weights=None,issorted=False,member_dim='member',dim='time',weights=None,keep_attrs=False).rename('crps_ensemble_'+skillscore_reference)
+                crps_ensemble_skillscore = 1 - (crps_ensemble/crps_ensemble_clim)
+                #close and delete unnecesarry objects to save mem
+                crps_ensemble_clim.close()
+                del(crps_ensemble_clim)
+
                 # # Reliability
                 # #obtain quantile observed quantile thresholds
                 # obs_quantile_threshold = obs_seas_mn_5d.quantile(2/3,dim='time') #calculate the quantiles along the time axis
@@ -327,22 +345,50 @@ for det in np.arange(len(detrending)):
                 # reliability = np.abs(o_conditioned_on_y - diagonal).mean(dim='forecast_probability') #calculate the residual (i.e. absolute difference) from the diagonal averged over the 5 forecast bins mentioned above
                 # reliability = reliability.where(~np.isnan(obs_seas_mn_5d[0,:,:,:,:])) #get grid-boxes over sea to nan as in the input data values, if requested by the user
                 
-                reliability_lower = get_reliability(obs_seas_mn_5d,gcm_seas_mn_6d,quantile_vals_step,1/3).rename('reliability_lower_tercile') #calculate reliability for the third tercile
-                reliability_upper = get_reliability(obs_seas_mn_5d,gcm_seas_mn_6d,quantile_vals_step,2/3).rename('reliability_upper_tercile') #calculate reliability for the first tercile
-                                
-                #close and delete unnecesarry objects to save mem
-                obs_clim_mean.close()
-                del(obs_clim_mean)
-                #calc. skill score
-                crps_ensemble_skillscore_clim = 1 - (crps_ensemble/crps_ensemble_clim)
-                #close and delete unnecesarry objects to save mem
-                crps_ensemble_clim.close()
-                del(crps_ensemble_clim)
-                #set name of the skill score
-                crps_ensemble_skillscore_clim = crps_ensemble_skillscore_clim.rename('crps_ensemble_skillscore_clim')
-                infmask = np.isinf(crps_ensemble_skillscore_clim.values)
-                crps_ensemble_skillscore_clim.values[infmask] = np.nan
-                del(infmask)
+                ## reliability
+                reliability_lower = get_reliability_or_roc(obs_seas_mn_5d,gcm_seas_mn_6d,quantile_vals_step,1/3,score_f = 'reliability').rename('reliability_lower_tercile') #calculate reliability for the first tercile
+                reliability_upper = get_reliability_or_roc(obs_seas_mn_5d,gcm_seas_mn_6d,quantile_vals_step,2/3,score_f = 'reliability').rename('reliability_upper_tercile') #calculate reliability for the third tercile
+                ## roc area under the curve
+                roc_auc_lower = get_reliability_or_roc(obs_seas_mn_5d,gcm_seas_mn_6d,quantile_vals_step,1/3,score_f = 'roc_auc').rename('roc_auc_lower_tercile') #calculate roc area under the curve for the first tercile
+                roc_auc_upper = get_reliability_or_roc(obs_seas_mn_5d,gcm_seas_mn_6d,quantile_vals_step,2/3,score_f = 'roc_auc').rename('roc_auc_upper_tercile') #calculate roc area under the curve for the third tercile
+                
+                ## roc area under the curve for climatololgical / reference forecast
+                ## explicitly calculate the skill of random forecasts using the randomly re-shuffeled observations generated above (ref_forecast)
+                # ref_forecast_quantile_threshold = ref_forecast.quantile(quantiles,dim='time') #get the upper and lower tercile threshold values of the climatological mean observations, these are equal because they are climatological values
+                # roc_auc_lower_clim = get_reliability_or_roc(obs_seas_mn_5d,ref_forecast,ref_forecast_quantile_threshold,1/3,score_f = 'roc_auc').rename('roc_auc_lower_tercile_'+skillscore_reference)
+                # roc_auc_upper_clim = get_reliability_or_roc(obs_seas_mn_5d,ref_forecast,ref_forecast_quantile_threshold,2/3,score_f = 'roc_auc').rename('roc_auc_upper_tercile_'+skillscore_reference)
+                # ref_forecast.close()
+                # ref_forecast_quantile_threshold.close()
+                # del(ref_forecast,ref_forecast_quantile_threshold)
+                # roc_auc_lower_skillscore = (roc_auc_lower - roc_auc_lower_clim) / 1 - roc_auc_lower_clim #roc auc lower tercile skill score
+                # roc_auc_upper_skillscore = (roc_auc_upper - roc_auc_upper_clim) / 1 - roc_auc_upper_clim #roc auc upper tercile skill score
+                
+                quantile_vals_step.close()
+                del(quantile_vals_step)
+                
+                #calc. roc auc skill scores, see https://doi.org/10.1007/s00382-019-04640-4
+                roc_auc_lower_skillscore = (roc_auc_lower - 0.5) / 0.5 #roc auc lower tercile skill score
+                roc_auc_upper_skillscore = (roc_auc_upper - 0.5) / 0.5 #roc auc upper tercile skill score
+                
+                #set name of all 3 skill scores
+                crps_ensemble_skillscore = crps_ensemble_skillscore.rename('crps_ensemble_skillscore_'+skillscore_reference)
+                roc_auc_lower_skillscore = roc_auc_lower_skillscore.rename('roc_auc_lower_tercile_skillscore')
+                roc_auc_upper_skillscore = roc_auc_upper_skillscore.rename('roc_auc_upper_tercile_skillscore')
+                
+                #set infinite values to nan for all 3 skill scores
+                infmask_crps = np.isinf(crps_ensemble_skillscore.values)
+                crps_ensemble_skillscore.values[infmask_crps] = np.nan
+                del(infmask_crps)
+                infmask_roc_auc_lower = np.isinf(roc_auc_lower_skillscore.values)
+                roc_auc_lower_skillscore.values[infmask_roc_auc_lower] = np.nan
+                del(infmask_roc_auc_lower)
+                infmask_roc_auc_upper = np.isinf(roc_auc_upper_skillscore.values)
+                roc_auc_upper_skillscore.values[infmask_roc_auc_upper] = np.nan
+                del(infmask_roc_auc_upper)
+                
+                # crps_ensemble_skillscore = crps_ensemble_skillscore.where(~np.isinf(crps_ensemble_skillscore))
+                # roc_auc_lower_skillscore = roc_auc_lower_skillscore.where(~np.isinf(roc_auc_lower_skillscore))
+                # roc_auc_upper_skillscore = roc_auc_upper_skillscore.where(~np.isinf(roc_auc_upper_skillscore))
                 
                 #add attribures
                 pearson_r.attrs['units'] = 'dimensionless'
@@ -353,15 +399,19 @@ for det in np.arange(len(detrending)):
                 spearman_pval_effn.attrs['units'] = 'probability'
                 spearman_pval_effn.attrs['units'] = 'probability'
                 crps_ensemble.attrs['units'] = 'cummulative probability error'
+                crps_ensemble_skillscore.attrs['units'] = 'bound between -1 and 1, positive values indicate more skill than the reference climatological forecast'
+                crps_ensemble_skillscore.attrs['reference'] = 'Wilks (2006), pages 281 and 302-304'
                 bias.attrs['units'] = nc_obs[variables_obs[vv]].units
                 relbias.attrs['units'] = 'percent'
                 reliability_lower.attrs['units'] = 'probability'
                 reliability_upper.attrs['units'] = 'probability'
-                crps_ensemble_skillscore_clim.attrs['units'] = 'bound between -1 and 1, positive values indicate more skill than the reference climatological forecast'
-                crps_ensemble_skillscore_clim.attrs['reference'] = 'Wilks (2006), pages 281 and 302-304'
+                roc_auc_lower.attrs['units'] = 'area under the curve'
+                roc_auc_upper.attrs['units'] = 'area under the curve'
+                roc_auc_lower_skillscore.attrs['units'] = 'bound between -1 and 1, positive values indicate more skill than the reference climatological forecast'
+                roc_auc_upper_skillscore.attrs['units'] = 'bound between -1 and 1, positive values indicate more skill than the reference climatological forecast'
                 
                 #join xarray dataArrays containing the verification results into a single xarray dataset, set attributes and save to netCDF format
-                results = xr.merge((pearson_r,pearson_pval,pearson_pval_effn,spearman_r,spearman_pval,spearman_pval_effn,bias,relbias,crps_ensemble,crps_ensemble_skillscore_clim,reliability_lower,reliability_upper)) #merge xr dataarrays into a single xr dataset
+                results = xr.merge((pearson_r,pearson_pval,pearson_pval_effn,spearman_r,spearman_pval,spearman_pval_effn,bias,relbias,crps_ensemble,crps_ensemble_skillscore,reliability_lower,reliability_upper,roc_auc_lower,roc_auc_upper,roc_auc_lower_skillscore,roc_auc_upper_skillscore)) #merge xr dataarrays into a single xr dataset
                 del results.attrs['units'] #delete global attributge <units>, which is unexpectedly created by xr.merge() in the previous line; <units> are preserved as variable attribute. 
                 #set global and variable attributes
                 start_year = str(dates_isea[0])[0:5].replace('-','') #start year considered in the skill assessment
@@ -400,15 +450,20 @@ for det in np.arange(len(detrending)):
                 bias.close()
                 relbias.close()
                 crps_ensemble.close()
-                crps_ensemble_skillscore_clim.close()
+                crps_ensemble_skillscore.close()
                 obs_seas_mn_5d.close()
-                obs_seas_mn_6d.close()
+                #obs_seas_mn_6d.close()
                 gcm_seas_mn_5d.close()
                 gcm_seas_mn_6d.close()
                 reliability_lower.close()
                 reliability_upper.close()
-                del(results,pearson_r,pearson_pval,pearson_pval_effn,spearman_r,spearman_pval,spearman_pval_effn,bias,relbias,crps_ensemble,crps_ensemble_skillscore_clim,obs_seas_mn_6d,obs_seas_mn_5d,obs_seas_mn_5d_nw,gcm_seas_mn_5d,gcm_seas_mn_6d,gcm_seas_mn_6d_nw,reliability_lower,reliability_upper)
-                #del(pearson_r,pearson_pval,pearson_pval_effn,spearman_r,spearman_pval,spearman_pval_effn,obs_seas_mn_5d,obs_seas_mn_6d,obs_seas_mn_5d_nw,gcm_seas_mn_5d,gcm_seas_mn_6d,gcm_seas_mn_6d_nw)
+                roc_auc_lower.close()
+                roc_auc_upper.close()
+                #roc_auc_lower_clim.close()
+                #roc_auc_upper_clim.close()
+                roc_auc_lower_skillscore.close()
+                roc_auc_upper_skillscore.close()
+                del(results,pearson_r,pearson_pval,pearson_pval_effn,spearman_r,spearman_pval,spearman_pval_effn,bias,relbias,crps_ensemble,crps_ensemble_skillscore,obs_seas_mn_5d,obs_seas_mn_5d_nw,gcm_seas_mn_5d,gcm_seas_mn_6d,gcm_seas_mn_6d_nw,reliability_lower,reliability_upper,roc_auc_lower,roc_auc_upper,roc_auc_lower_skillscore,roc_auc_upper_skillscore)
             
             #close nc files containing observations
             nc_obs.close()
