@@ -296,7 +296,7 @@ def transform_gcm_variable(ds_f,var_in_f,var_out_f,model_f,version_f):
         valid_f = 1
     return(ds_f, valid_f)
 
-def get_reliability_or_roc(obs_f,gcm_f,gcm_quantile_f,threshold_f,score_f='reliability'):
+def get_reliability_or_roc(obs_f,gcm_f,gcm_quantile_f,threshold_f,score_f='reliability',bin_edges_f=None):
     """ caclulates the mean absolute difference (returned as <reliability>) between the forecast probabilities and corresponding conditional observed probabilities of the reliability plot and the diagonal of the plot
     obs_f (5d in get_skill_season.py) and gcm_f (6d) are xarray data arrays and gcm_quantile_f are pre-caclulated gcm quantiles having the same size as gcm_f - note that the corresponding
     observed quantile values are calculated within the function; threshold_f is a threshold value in decimals. I threshold_f is >= 0.5 then it is asked wether the values in xr_obs_f and
@@ -330,8 +330,11 @@ def get_reliability_or_roc(obs_f,gcm_f,gcm_quantile_f,threshold_f,score_f='relia
     
     #caclulate the score indicated in the <score_f> input parameter
     if score_f == 'reliability': #calculate reliability as defined in Wilks (2006)
-        print('As requested by the user, the RELIABILITY is calculated by the get_reliability_or_roc() function.')        
-        o_cond_y = xs.reliability(obs_bin, gcm_bin.mean("member"), dim='time').drop('samples') #see Wilks 2006, returns the observed relative frequencies (o) conditional to 5 (= default values) forecast probability bins y (0.1, 0.3, 0.5, 0.7, 0.9), see https://xskillscore.readthedocs.io/en/stable/api/xskillscore.reliability.html#xskillscore.reliability 
+        print('As requested by the user, the RELIABILITY is calculated by the get_reliability_or_roc() function.')
+        if bin_edges_f is None: #use default number of bins
+            o_cond_y = xs.reliability(obs_bin, gcm_bin.mean("member"), dim='time').drop('samples') #see Wilks 2006, returns the observed relative frequencies (o) conditional to 5 (= default values) forecast probability bins y (0.1, 0.3, 0.5, 0.7, 0.9), see https://xskillscore.readthedocs.io/en/stable/api/xskillscore.reliability.html#xskillscore.reliability 
+        else: #use bins whose edges are provided by the optional <bin_edges_f> input parameter
+            o_cond_y = xs.reliability(obs_bin, gcm_bin.mean("member"), dim='time',probability_bin_edges=bin_edges_f).drop('samples')
         diagonal = np.tile(o_cond_y.forecast_probability.values,(o_cond_y.shape[0],o_cond_y.shape[1],o_cond_y.shape[2],o_cond_y.shape[3],1)) #this is the diagonal of the reliability diagramm
         reliability = np.abs(o_cond_y - diagonal).mean(dim='forecast_probability') #calculate the residual (i.e. absolute difference) from the diagonal averged over the 5 forecast bins mentioned above
         reliability = reliability.where(~np.isnan(obs_f[0,:,:,:,:])) # re-set the grid-boxes over sea to nan as in the input data values

@@ -28,8 +28,11 @@ file_system = 'lustre' #lustre or myLaptop; used to create the path structure to
 # variables = ['SPEI-3-R','SPEI-3-M','fwi','tp','ssrd','si10','t2m','msl'] #variable names in CDS format
 # ref_dataset = ['era5','era5','era5','era5','era5','era5','era5','era5'] # #list of model or reference observational dataset paired with <variables> input parameter below
 
-variables = ['tp','ssrd','si10','t2m','msl'] #variable names in CDS format
-ref_dataset = ['era5','era5','era5','era5','era5'] # #list of model or reference observational dataset paired with <variables> input parameter below
+#variables = ['tp','ssrd','si10','t2m','msl'] #variable names in CDS format
+#ref_dataset = ['era5','era5','era5','era5','era5'] # #list of model or reference observational dataset paired with <variables> input parameter below
+
+variables = ['SPEI-3-R','SPEI-3-M'] #variable names in CDS format
+ref_dataset = ['era5','era5'] # #list of model or reference observational dataset paired with <variables> input parameter below
 
 domain = 'medcof' #the domain the verfication results have been save on by get_skill_season.py
 sub_domain = 'medcof2' #medcof (corresponds to no sub-domain), medcof2 or iberia; the domain the results are plotted for; if set to <medcof>, then no sub-selection will be applied and the results for the entire medcof domain will be plotted

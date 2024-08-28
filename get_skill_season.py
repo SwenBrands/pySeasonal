@@ -50,6 +50,8 @@ variables_obs = ['SPEI-3','SPEI-3','fwi','msl','t2m','tp','si10','ssrd'] #variab
 datatype = 'float32' #data type of the variables in the output netcdf files
 compression_level = 1
 precip_threshold = 1/30 #monthly mean daily precipitation threshold in mm below which the modelled and quasi-observed monthly precipitation amount is set to 0; Bring the parameter in pred2tercile.py in exact agreement with this script in future versions
+#bin_edges_reliability = np.linspace(0, 1, 4) # probability edges used to calculate the reliability, either <None> in which case the default of xs.reliability() is used (currently 5 bins) or, which should return the same, manually pass 5 bins with np.linspace(0, 1, 6); or 3 bins with np.linspace(0, 1, 4)
+bin_edges_reliability = None
 corr_outlier = 'no'
 aggreg = 'mon' #temporal aggregation of the input files
 domain = 'medcof' #spatial domain
@@ -346,8 +348,8 @@ for det in np.arange(len(detrending)):
                 # reliability = reliability.where(~np.isnan(obs_seas_mn_5d[0,:,:,:,:])) #get grid-boxes over sea to nan as in the input data values, if requested by the user
                 
                 ## reliability
-                reliability_lower = get_reliability_or_roc(obs_seas_mn_5d,gcm_seas_mn_6d,quantile_vals_step,1/3,score_f = 'reliability').rename('reliability_lower_tercile') #calculate reliability for the first tercile
-                reliability_upper = get_reliability_or_roc(obs_seas_mn_5d,gcm_seas_mn_6d,quantile_vals_step,2/3,score_f = 'reliability').rename('reliability_upper_tercile') #calculate reliability for the third tercile
+                reliability_lower = get_reliability_or_roc(obs_seas_mn_5d,gcm_seas_mn_6d,quantile_vals_step,1/3,score_f = 'reliability',bin_edges_f = bin_edges_reliability).rename('reliability_lower_tercile') #calculate reliability for the first tercile
+                reliability_upper = get_reliability_or_roc(obs_seas_mn_5d,gcm_seas_mn_6d,quantile_vals_step,2/3,score_f = 'reliability',bin_edges_f = bin_edges_reliability).rename('reliability_upper_tercile') #calculate reliability for the third tercile
                 ## roc area under the curve
                 roc_auc_lower = get_reliability_or_roc(obs_seas_mn_5d,gcm_seas_mn_6d,quantile_vals_step,1/3,score_f = 'roc_auc').rename('roc_auc_lower_tercile') #calculate roc area under the curve for the first tercile
                 roc_auc_upper = get_reliability_or_roc(obs_seas_mn_5d,gcm_seas_mn_6d,quantile_vals_step,2/3,score_f = 'roc_auc').rename('roc_auc_upper_tercile') #calculate roc area under the curve for the third tercile
