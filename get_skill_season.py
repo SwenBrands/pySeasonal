@@ -19,11 +19,12 @@ import pdb as pdb #then type <pdb.set_trace()> at a given line in the code below
 exec(open('functions_seasonal.py').read()) #reads the <functions_seasonal.py> script containing a set of custom functions needed here
 
 #set input parameters
-vers = 'v1j_mon' #version number of the output netCDF file to be sent to Predictia
+vers = 'v1j_mon_1981_1999' #version number of the output netCDF file to be sent to Predictia
 model = ['ecmwf51'] #interval between meridians and parallels
 obs = ['era5']
 years_model = [1981,2023] #years used in label of model netCDF file, refers to the first and the last year of the monthly model inits
 years_obs = [1981,2022] #years used in label of obs netCDF file; if they differ from <years_model>, then the common intersection of years will be validated.
+years_target = [1981,1999] #target years used for verification
 file_system = 'lustre' #lustre or myLaptop; used to create the path structure to the input and output files
 
 # ##settings for 3-months verification
@@ -135,12 +136,23 @@ for det in np.arange(len(detrending)):
                 dates_obs = dates_obs[dates_bool_obs]
                 dates_gcm = dates_gcm[dates_bool_gcm]
                 
-                #select common time period
-                nc_gcm = nc_gcm.isel(time = dates_bool_gcm)
+                #select common time period in gcm and obs data
                 nc_obs = nc_obs.isel(time = dates_bool_obs)
+                nc_gcm = nc_gcm.isel(time = dates_bool_gcm)                
                 #redefined date vectors for common time period
                 dates_obs = pd.DatetimeIndex(nc_obs.time.values)
                 dates_gcm = pd.DatetimeIndex(nc_gcm.time.values)
+                
+                #select target period in gcm and obs data
+                years_target_arr = np.arange(years_target[0],years_target[1]+1) #array of target years
+                dates_bool_obs_target = dates_obs.year.isin(years_target_arr) #get boolean for overlapping years in obs
+                dates_bool_gcm_target = dates_gcm.year.isin(years_target_arr) #get boolean for overlapping years in gcm
+                nc_obs = nc_obs.isel(time = dates_bool_obs_target)
+                nc_gcm = nc_gcm.isel(time = dates_bool_gcm_target)
+                #redefined date vectors for common time period
+                dates_obs = pd.DatetimeIndex(nc_obs.time.values)
+                dates_gcm = pd.DatetimeIndex(nc_gcm.time.values)
+                
                 #check whether the modelled and observed dates are identical
                 if np.all(dates_obs.isin(dates_gcm)) == True and np.all(dates_gcm.isin(dates_obs)) == True:
                     print('INFO: the modelled and observed date vectors are identical.')

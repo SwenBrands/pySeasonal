@@ -6,7 +6,7 @@
 source ${HOME}/.bashrc
 
 #input parameters
-mode='get_skill' #set Python script to be run. Either 'get_skill' or 'plot'
+mode='plot' #set Python script to be run. Either 'get_skill' or 'plot'
 
 #check python version
 echo "Your Python version is:"
