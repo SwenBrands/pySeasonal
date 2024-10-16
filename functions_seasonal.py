@@ -34,6 +34,32 @@ def assign_season_label(season_list_f):
         raise Exception('ERROR: check entry for <season_list_f> !')
     return(season_label_f)
 
+def get_years_of_subperiod(subperiod_f):
+    ''' obtain target years used for validation as a function of the sole input parameter <subperiod_f>.
+      ENSO years were derived from CPC's ONI index available from https://origin.cpc.ncep.noaa.gov/products/analysis_monitoring/ensostuff/ONI_v5.php,
+      QBO years were derived from CPCs QBO index at 50mb available at https://www.cpc.ncep.noaa.gov/data/indices/qbo.u50.index'''
+    if subperiod_f == 'mod2strong_Nino':    
+        years_val = [1982,1983,1986,1987,1991,1992,1997,1998,2009,2010,2015,2016]
+        print('The model is verified for moderate and strong El Niño years only: '+str(years_val))
+    elif subperiod_f == 'mod2strong_Nina':
+        years_val = [1984,1985,1988,1989,1999,2000,2007,2008,2010,2011,2020,2021,2022]
+        print('The model is verified for moderate and strong La Niña years only: '+str(years_val))
+    elif subperiod_f == 'qbo50_pos':
+        years_val = [1981,1983,1985,1986,1988,1991,1993,1995,1997,1999,2000,2002,2004,2009,2011,2014,2017,2019,2021,2023]
+        print('The model is verified for positive QBO-50 years only: '+str(years_val))
+    elif subperiod_f == 'qbo50_neg':
+        years_val = [1982,1984,1987,1989,1992,1994,1996,1998,2001,2003,2005,2007,2010,2012,2015,2018,2022]
+        print('The model is verified for negative QBO-50 years only: '+str(years_val))
+    elif subperiod_f == 'qbo50_trans':
+        years_val = [1990,2006,2008,2013,2016,2020]
+        print('The model is verified for transition QBO-50 years only: '+str(years_val))
+    elif subperiod_f == 'none':
+        years_val = np.arange(1981,2023,1)
+        print('The full overlapping period between observations and model data is used for verification.')
+    else:
+        raise Exception('ERROR: unkown entry for the <subperiod> entry parameter !')
+    return(years_val)
+
 def haversine(lon1, lat1, lon2, lat2):
     """
     Calculate the great circle distance in kilometers between two points 
@@ -105,7 +131,7 @@ def lin_detrend(xr_ar,rm_mean_f):
 
 #def get_frac_significance(np_arr_pval_f,np_arr_rho_f,critval_f,mode_f='fraction',lat_f=None):
 #def get_spatial_aggregation(np_arr_pval_f,np_arr_rho_f,critval_f,mode_f='fraction',lat_f=None):
-def get_spatial_aggregation(score_f,critval_f=None,pval_f=None,mode_f='fraction',lat_f=None):
+def get_spatial_aggregation(score_f,critval_f=None,pval_f=None,mode_f='fraction_pos',lat_f=None):
     """get the fraction of grid-boxes where significant results are obtained in percentage of all grid-boxes forming the domain; score_f and pval_f a 4d numpy array
     with the dimensions season x lead x lat x lon"""
     
@@ -131,11 +157,24 @@ def get_spatial_aggregation(score_f,critval_f=None,pval_f=None,mode_f='fraction'
         lat_weights = np.delete(lat_weights,nanind_rho_f,axis=0)
         lat_weights = np.tile(lat_weights,[score_step_f.shape[0],score_step_f.shape[1],1])
     
-    if mode_f == 'fraction': #caclulate the areal percentage of significant correlation coefficients
-        sigind_f = (pval_step_f < critval_f) & (score_step_f > 0) 
-        spurind_f = (pval_step_f >= critval_f) | (score_step_f <= 0)
-        pval_step_f[sigind_f] = 1
-        pval_step_f[spurind_f] = 0
+    if mode_f in ('fraction_smaller','fraction_larger','fraction_smaller_pos'): #caclulate the areal percentage of significant correlation coefficients
+        if mode_f == 'fraction_smaller_pos':
+            sigind_f = (pval_step_f < critval_f) & (score_step_f > 0) 
+            spurind_f = (pval_step_f >= critval_f) | (score_step_f <= 0)
+            pval_step_f[sigind_f] = 1
+            pval_step_f[spurind_f] = 0
+        elif mode_f == 'fraction_smaller': #caclulate the areal percentage of significant correlation coefficients
+            sigind_f = pval_step_f < critval_f 
+            spurind_f = pval_step_f >= critval_f
+            pval_step_f[sigind_f] = 1
+            pval_step_f[spurind_f] = 0 
+        elif mode_f == 'fraction_larger': #caclulate the areal percentage of significant correlation coefficients
+            sigind_f = pval_step_f > critval_f 
+            spurind_f = pval_step_f <= critval_f
+            pval_step_f[sigind_f] = 1
+            pval_step_f[spurind_f] = 0
+        else:
+            raise Excpetion('ERROR: The <mode_f> parameter is unknown !')
         if lat_f is not None:
             print('As requested by the user, the latitude-weighted areal-mean value is calculated...')
             pval_step_f = pval_step_f*lat_weights
@@ -298,16 +337,14 @@ def transform_gcm_variable(ds_f,var_in_f,var_out_f,model_f,version_f):
         valid_f = 1
     return(ds_f, valid_f)
 
-def get_reliability_or_roc(obs_f,gcm_f,gcm_quantile_f,threshold_f,score_f='reliability',bin_edges_f=None):
+def get_reliability_or_roc(obs_f,gcm_f,obs_quantile_f,gcm_quantile_f,threshold_f,score_f='reliability',bin_edges_f=None):
     """ caclulates the mean absolute difference (returned as <reliability>) between the forecast probabilities and corresponding conditional observed probabilities of the reliability plot and the diagonal of the plot
-    obs_f (5d in get_skill_season.py) and gcm_f (6d) are xarray data arrays and gcm_quantile_f are pre-caclulated gcm quantiles having the same size as gcm_f - note that the corresponding
-    observed quantile values are calculated within the function; threshold_f is a threshold value in decimals. I threshold_f is >= 0.5 then it is asked wether the values in xr_obs_f and
+    obs_f (5d in get_skill_season.py) and gcm_f (6d) are xarray data arrays, obs_quantile_f and gcm_quantile_f are pre-caclulated observed and gcm quantiles in xarray format,
+    threshold_f is a threshold value in decimals. I threshold_f is >= 0.5 then it is asked wether the values in xr_obs_f and
     xr_gcm_f are greater than the treshold; otherwise it is asked whether they are smaller"""
     
-    #obtain observed quantile thresholds and replicate along the time axis
-    obs_quantile_threshold = obs_f.quantile(threshold_f,dim='time') #calculate the quantiles along the time axis
-    obs_quantile_threshold = np.tile(obs_quantile_threshold,(obs_f.shape[0],1,1,1,1)) #replicate to fit the size of xr_obs_f; this returns a numpy array
-    
+    ## obtain observed quantile thresholds and replicate along the time axis to fit the shape of obs_f
+    obs_quantile_threshold = np.tile(obs_quantile_f.sel(quantile=threshold_f),(obs_f.shape[0],1,1,1,1))    
     #replicate the gcm quantile thresholds passed to this function via <gcm_quantile_f> along the time axis
     gcm_quantile_threshold = np.tile(gcm_quantile_f.sel(quantile=threshold_f),(gcm_f.shape[0],1,1,1,1,1)) #get target threshold value from precalculated threshold values and replicate along the time dimension to fit the size of gcm_f
 
