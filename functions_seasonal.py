@@ -36,23 +36,33 @@ def assign_season_label(season_list_f):
 
 def get_years_of_subperiod(subperiod_f):
     ''' obtain target years used for validation as a function of the sole input parameter <subperiod_f>.
-      ENSO years were derived from CPC's ONI index available from https://origin.cpc.ncep.noaa.gov/products/analysis_monitoring/ensostuff/ONI_v5.php,
+      ENSO years were derived from CPC's ONI index available from https://origin.cpc.ncep.noaa.gov/products/analysis_monitoring/ensostuff/ONI_v5.php
+      or from the NOAA list available at https://psl.noaa.gov/enso/past_events.html 
       QBO years were derived from CPCs QBO index at 50mb available at https://www.cpc.ncep.noaa.gov/data/indices/qbo.u50.index'''
-    if subperiod_f == 'mod2strong_Nino':    
-        years_val = [1982,1983,1986,1987,1991,1992,1997,1998,2009,2010,2015,2016]
-        print('The model is verified for moderate and strong El Niño years only: '+str(years_val))
-    elif subperiod_f == 'mod2strong_Nina':
+    if subperiod_f == 'mod2strong_nino_oni':    
+        years_val = [1982,1983,1986,1987,1991,1992,1997,1998,2009,2010,2015,2016] #Swen Brands selection based no NOAA's ONI index
+        print('The model is verified for moderate and strong El Niño years based on ONI index only: '+str(years_val))
+    elif subperiod_f == 'mod2strong_nina_oni':
         years_val = [1984,1985,1988,1989,1999,2000,2007,2008,2010,2011,2020,2021,2022]
-        print('The model is verified for moderate and strong La Niña years only: '+str(years_val))
+        print('The model is verified for moderate and strong La Niña years based on ONI index only: '+str(years_val))
+    elif subperiod_f == 'enso_nino_noaa':    
+        years_val = [1983,1987,1988,1992,1995,1998,2003,2007,2010,2016]
+        print('The model is verified for the El Niño years declared by NOAA at: https://psl.noaa.gov/enso/past_events.html : '+str(years_val))
+    elif subperiod_f == 'enso_nina_noaa':    
+        years_val = [1989,1999,2000,2008,2011,2012,2021,2022]
+        print('The model is verified for the La Niña years declared by NOAA at: https://psl.noaa.gov/enso/past_events.html : '+str(years_val))
+    elif subperiod_f == 'enso_neutral_noaa':    
+        years_val = [1981,1982,1984,1985,1986,1990,1991,1993,1994,1996,1997,2001,2002,2004,2005,2006,2009,2013,2014,2015,2017,2018,2019,2020] #Swen Brands selection based no NOAA's ONI index
+        print('The model is verified for the neutral ENSO years declared by NOAA at: https://psl.noaa.gov/enso/past_events.html : '+str(years_val))
     elif subperiod_f == 'qbo50_pos':
         years_val = [1981,1983,1985,1986,1988,1991,1993,1995,1997,1999,2000,2002,2004,2009,2011,2014,2017,2019,2021,2023]
-        print('The model is verified for positive QBO-50 years only: '+str(years_val))
+        print('The model is verified for positive QBO-50 years derived from https://www.cpc.ncep.noaa.gov/data/indices/qbo.u50.index only: '+str(years_val))
     elif subperiod_f == 'qbo50_neg':
         years_val = [1982,1984,1987,1989,1992,1994,1996,1998,2001,2003,2005,2007,2010,2012,2015,2018,2022]
-        print('The model is verified for negative QBO-50 years only: '+str(years_val))
+        print('The model is verified for negative QBO-50 years derivded from https://www.cpc.ncep.noaa.gov/data/indices/qbo.u50.index only: '+str(years_val))
     elif subperiod_f == 'qbo50_trans':
         years_val = [1990,2006,2008,2013,2016,2020]
-        print('The model is verified for transition QBO-50 years only: '+str(years_val))
+        print('The model is verified for transition QBO-50 years derived from https://www.cpc.ncep.noaa.gov/data/indices/qbo.u50.index only: '+str(years_val))
     elif subperiod_f == 'none':
         years_val = np.arange(1981,2023,1)
         print('The full overlapping period between observations and model data is used for verification.')

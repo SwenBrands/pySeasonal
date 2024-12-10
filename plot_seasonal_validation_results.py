@@ -23,16 +23,16 @@ model_dataset = ['ecmwf51'] #list of model or reanalysis datasets: era5 or era5_
 corr_outlier = 'no' #load the outlier-correted validation results; yes or no
 detrending = ['no','yes'] #yes or no, linear detrending of the gcm and obs time series prior to validation
 file_years = [1981,2022] #start and end years indicated in the input file name, [1982,2016] for mod2strong_Nino, [1984,2022] for mod2strong_Nina
-subperiod = 'none' # 'mod2strong_Nina', 'mod2strong_Nino', 'qbo50_pos', 'qbo50_neg', 'qbo50_trans' or 'none'; used to select the sub-period used for verification. If set to 'none', the entire time series is used for verification
+subperiod = 'enso_nina_noaa' # #'mod2strong_nina_oni', 'mod2strong_nino_oni', 'enso_nino_noaa', 'enso_nina_noaa', 'enso_neutral_noaa', 'qbo50_pos', 'qbo50_neg', 'qbo50_trans' or 'none'; used to select the sub-period used for verification. If set to 'none', the entire time series is used for verification
 vers = 'v1j_mon'
 #vers = 'as_input_file' # 'as_input_file' searches the version stored in the input files generated before with get_skill_season.py; other entries will be directly passed to the netCDF output file produced here
 file_system = 'lustre' #lustre or myLaptop; used to create the path structure to the input and output files
 
-#variables = ['SPEI-3-R','SPEI-3-M','fwi','tp','ssrd','si10','t2m','msl'] #variable names in CDS format
-#ref_dataset = ['era5','era5','era5','era5','era5','era5','era5','era5'] # #list of model or reference observational dataset paired with <variables> input parameter below
+variables = ['SPEI-3-R','SPEI-3-M','fwi','tp','ssrd','si10','t2m','msl'] #variable names in CDS format
+ref_dataset = ['era5','era5','era5','era5','era5','era5','era5','era5'] # #list of model or reference observational dataset paired with <variables> input parameter below
 
-variables = ['SPEI-3-R','SPEI-3-M'] #variable names in CDS format
-ref_dataset = ['era5','era5'] # #list of model or reference observational dataset paired with <variables> input parameter below
+# variables = ['SPEI-3-R','SPEI-3-M'] #variable names in CDS format
+# ref_dataset = ['era5','era5'] # #list of model or reference observational dataset paired with <variables> input parameter below
 
 domain = 'medcof' #the domain the verfication results have been save on by get_skill_season.py
 sub_domain = 'iberia' #medcof (corresponds to no sub-domain), medcof2 or iberia; the domain the results are plotted for; if set to <medcof>, then no sub-selection will be applied and the results for the entire medcof domain will be plotted
