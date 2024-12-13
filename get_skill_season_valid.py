@@ -24,8 +24,9 @@ model = ['ecmwf51'] #interval between meridians and parallels
 obs = ['era5']
 years_model = [1981,2023] #years used in label of model netCDF file, refers to the first and the last year of the monthly model inits
 years_obs = [1981,2022] #years used in label of obs netCDF file; if they differ from <years_model>, then the common intersection of years will be validated.
-modulator = 'enso' # climate oscillation assumed to modulate the verification results; currently: "enso" or "none"
-phase = 2 # enso phase the validation is condition on: 0 = neutral, 1 = El Niño, 2 = La Niña; is not used if modulator = 'none'
+subperiod = 'none' #'mod2strong_nina_oni', 'mod2strong_nino_oni', 'enso_nino_noaa', 'enso_nina_noaa', 'enso_neutral_noaa', 'qbo50_pos', 'qbo50_neg', 'qbo50_trans' or 'none'; used to select the sub-period used for verification. If set to 'none', the entire time series is used for verification
+modulator = 'none' # climate oscillation assumed to modulate the verification results; currently: "enso" or "none"
+phase = 1 # enso phase the validation is condition on: 0 = neutral, 1 = El Niño, 2 = La Niña
 years_quantile = [1981,2022] #start and end years of the time series used to calculate the quantiles from obserations and model data
 file_system = 'lustre' #lustre or myLaptop; used to create the path structure to the input and output files
 
@@ -34,21 +35,21 @@ file_system = 'lustre' #lustre or myLaptop; used to create the path structure to
 # season = [[12,1,2],[1,2,3],[2,3,4],[3,4,5],[4,5,6],[5,6,7],[6,7,8],[7,8,9],[8,9,10],[9,10,11],[10,11,12],[11,12,1]] #[[12,1,2],[3,4,5],[6,7,8],[9,10,11]]
 # lead = [[0,1,2],[1,2,3],[2,3,4],[3,4,5],[4,5,6]] #[[0,1,2],[0,1,2],[0,1,2],[0,1,2]] #number of months between init and start of forecast interval to be verified, e.g. 1 will discard the first month after init, 2 will discard the first two months after init etc.
 
-##settings for monthly verification
-season_label = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC']
-season = [[1],[2],[3],[4],[5],[6],[7],[8],[9],[10],[11],[12]] #[[12,1,2],[3,4,5],[6,7,8],[9,10,11]]
-lead = [[0],[1],[2],[3],[4],[5],[6]] #[[0,1,2],[0,1,2],[0,1,2],[0,1,2]] #number of months between init and start of forecast interval to be verified, e.g. 1 will discard the first month after init, 2 will discard the first two months after init etc.
-
 # ##settings for monthly verification
-# season_label = ['JAN','FEB']
-# season = [[1],[2]]
-# lead = [[0],[1]]
+# season_label = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC']
+# season = [[1],[2],[3],[4],[5],[6],[7],[8],[9],[10],[11],[12]] #[[12,1,2],[3,4,5],[6,7,8],[9,10,11]]
+# lead = [[0],[1],[2],[3],[4],[5],[6]] #[[0,1,2],[0,1,2],[0,1,2],[0,1,2]] #number of months between init and start of forecast interval to be verified, e.g. 1 will discard the first month after init, 2 will discard the first two months after init etc.
 
-variables_gcm = ['SPEI-3-R','SPEI-3-M','fwi','msl','t2m','tp','si10','ssrd'] #model variable names in CDS format  GCM variable names have been set to ERA5 variable names from CDS in <aggregate_hindcast.py> except for <SPEI-3-M> and <SPEI-3-R>, which are paired with <SPEI-3> in <variables_obs>)
-variables_obs = ['SPEI-3','SPEI-3','fwi','msl','t2m','tp','si10','ssrd'] #variable names in observations; are identical to <variables_gcm> except for <SPEI-3>, which is referred to as <SPEI-3-M> or <SPEI-3-R> in the model depending on whether past values are taken from the model or reanalysis (i.e. quasi-observations)
+##settings for monthly verification
+season_label = ['JAN','FEB']
+season = [[1],[2]]
+lead = [[0],[1]]
 
-# variables_gcm = ['SPEI-3-R','SPEI-3-M'] #model variable names in CDS format  GCM variable names have been set to ERA5 variable names from CDS in <aggregate_hindcast.py> except for <SPEI-3-M> and <SPEI-3-R>, which are paired with <SPEI-3> in <variables_obs>)
-# variables_obs = ['SPEI-3','SPEI-3'] #variable names in observations; are identical to <variables_gcm> except for <SPEI-3>, which is referred to as <SPEI-3-M> or <SPEI-3-R> in the model depending on whether past values are taken from the model or reanalysis (i.e. quasi-observations)
+# variables_gcm = ['SPEI-3-R','SPEI-3-M','fwi','msl','t2m','tp','si10','ssrd'] #model variable names in CDS format  GCM variable names have been set to ERA5 variable names from CDS in <aggregate_hindcast.py> except for <SPEI-3-M> and <SPEI-3-R>, which are paired with <SPEI-3> in <variables_obs>)
+# variables_obs = ['SPEI-3','SPEI-3','fwi','msl','t2m','tp','si10','ssrd'] #variable names in observations; are identical to <variables_gcm> except for <SPEI-3>, which is referred to as <SPEI-3-M> or <SPEI-3-R> in the model depending on whether past values are taken from the model or reanalysis (i.e. quasi-observations)
+
+variables_gcm = ['SPEI-3-R','SPEI-3-M'] #model variable names in CDS format  GCM variable names have been set to ERA5 variable names from CDS in <aggregate_hindcast.py> except for <SPEI-3-M> and <SPEI-3-R>, which are paired with <SPEI-3> in <variables_obs>)
+variables_obs = ['SPEI-3','SPEI-3'] #variable names in observations; are identical to <variables_gcm> except for <SPEI-3>, which is referred to as <SPEI-3-M> or <SPEI-3-R> in the model depending on whether past values are taken from the model or reanalysis (i.e. quasi-observations)
 
 datatype = 'float32' #data type of the variables in the output netcdf files
 compression_level = 1
@@ -103,6 +104,9 @@ if len(season) != len(season_label):
 #check whether the path to create the output netCDF files exists, create it if not
 if os.path.isdir(dir_netcdf) != True:
     os.makedirs(dir_netcdf)
+
+#obtain target years used for validation with the get_subperiod() function
+years_val = get_years_of_subperiod(subperiod)
 
 lead_arr = np.arange(np.array(lead).min(),np.array(lead).max()+1)
 
@@ -171,12 +175,15 @@ for det in np.arange(len(detrending)):
                     #loop through list of monthly lead times
                     for ll in np.arange(len(lead)):
                         #get dates for the inter-annual time series containing the requested seasons
+                        #seasind_obs = nc_obs.time.dt.season == season_label[sea] #get time indices pointing to all months forming the requested season
                         seasind_obs = np.where(np.isin(dates_obs.month,season[sea]))[0] #get time indices pointing to all months forming the requested season
                         nc_obs_isea = nc_obs.isel(time = seasind_obs)
                         dates_isea = pd.DatetimeIndex(nc_obs_isea.time.values)
                         #retain only one date entry per year to pair with seaonal mean averages calculated below
                         seasind_obs_for_dates = np.where(dates_isea.month == season[sea][0])[0]
                         dates_isea = dates_isea[seasind_obs_for_dates]
+                        #nc_obs_isea_for_dates = nc_obs_isea.isel(time = seasind_obs_for_dates)
+                        #dates_isea = pd.DatetimeIndex(nc_obs_isea_for_dates.time.values)
                         
                         #init numpy array which will be filled with seasonal mean values (time x season x lead x member x lat x lon)
                         if sea == 0 and ll == 0:
@@ -257,6 +264,10 @@ for det in np.arange(len(detrending)):
                         obs_seas_mn_5d_nw[:,sea,ll,:,:] = obs_allmon.mean(axis=-1)
                         gcm_seas_mn_6d_nw[:,sea,ll,:,:,:] = gcm_allmon.mean(axis=-1)
                 
+                ##generate 6d numpy array with observations replicated along the <member dimension>; will be used as reference for the member-wise GCM verification
+                #obs_seas_mn_6d = np.expand_dims(obs_seas_mn_5d,axis=3)
+                #obs_seas_mn_6d = np.tile(obs_seas_mn_6d,(1,1,1,len(members),1,1))
+               
                 #convert numpy array into xarray data arrays
                 obs_seas_mn_5d = xr.DataArray(obs_seas_mn_5d,coords=[dates_isea,season_label,lead_label,nc_obs.y,nc_obs.x],dims=['time', 'season', 'lead', 'y', 'x'], name=variables_obs[vv]) #convert to xarray data array
                 #obs_seas_mn_6d = xr.DataArray(obs_seas_mn_6d,coords=[dates_isea,season_label,lead_label,members,nc_obs.y,nc_obs.x],dims=['time', 'season', 'lead', 'member', 'y', 'x'], name=variables_obs[vv])
@@ -266,7 +277,9 @@ for det in np.arange(len(detrending)):
                 #optionally apply linear detrending to the time-series, see https://gist.github.com/rabernat/1ea82bb067c3273a6166d1b1f77d490f
                 if detrending[det] == 'yes':
                     print('INFO: As requested by the user, the gcm and obs time series are linearly detrended.')
+                    #gcm_seas_mn_5d_copy = gcm_seas_mn_5d.copy() #was used to check whether the temporal mean of the detrended gcm_seas_mn_5d xr data array is identical to the temporal mean of this non-detrended copy. This answer is yes! 
                     obs_seas_mn_5d = lin_detrend(obs_seas_mn_5d,'no')
+                    #obs_seas_mn_6d = lin_detrend(obs_seas_mn_6d,'no')
                     gcm_seas_mn_6d = lin_detrend(gcm_seas_mn_6d,'no')
                     gcm_seas_mn_5d = lin_detrend(gcm_seas_mn_5d,'no')
                 elif detrending[det] == 'no':
@@ -283,7 +296,17 @@ for det in np.arange(len(detrending)):
                 gcm_quantile_vals_step = gcm_seas_mn_6d.isel(time = bool_gcm_quantile_years).quantile(quantiles, dim='time')
                 gcm_quantile_vals[det,vv,mm,:,:,:,:,:,:] = gcm_quantile_vals_step.values #here numpy arrays are filled
                 obs_quantile_vals[det,vv,:,:,:,:,:,:] = obs_quantile_vals_step.values #and here too
-
+                #years_quantile = pd.DatetimeIndex(gcm_seas_mn_6d.time).year.values                             
+                              
+                ## select target period in gcm and obs data
+                bool_obs_target_years = pd.DatetimeIndex(obs_seas_mn_5d.time).year.isin(years_val) #get boolean for obs
+                bool_gcm_target_years = pd.DatetimeIndex(gcm_seas_mn_5d.time).year.isin(years_val) #get boolean for gcm
+                #retain target years from xr arrays
+                obs_seas_mn_5d = obs_seas_mn_5d.isel(time = bool_obs_target_years)
+                gcm_seas_mn_5d = gcm_seas_mn_5d.isel(time = bool_gcm_target_years)
+                gcm_seas_mn_6d = gcm_seas_mn_6d.isel(time = bool_gcm_target_years)
+                # redefined date vectors for target time period
+                dates_isea = dates_isea[bool_obs_target_years]
                 dates_obs = pd.DatetimeIndex(obs_seas_mn_5d.time.values)
                 dates_gcm_5d = pd.DatetimeIndex(gcm_seas_mn_5d.time.values)
                 dates_gcm_6d = pd.DatetimeIndex(gcm_seas_mn_6d.time.values)
@@ -307,6 +330,7 @@ for det in np.arange(len(detrending)):
                     raise Exception('ERROR: the modelled and observed date vectors are not identical !')
                 
                 #get overall / ensemble quantiles calculated upon the array with flattened "member" dimension, thereby mimicing a n member times longer time series
+                #gcm_seas_mn_5d_flat_mems = gcm_seas_mn_6d.values.reshape((shape_gcm[0]*shape_gcm[3],shape_gcm[1],shape_gcm[2],shape_gcm[4],shape_gcm[5])) #members are flattened to mimic an extended time dimension, this is a numpy array
                 gcm_seas_mn_5d_flat_mems = gcm_seas_mn_6d.transpose('time','member','season','lead','y','x') #change order of the dimensions
                 shape_gcm = gcm_seas_mn_5d_flat_mems.shape #get new shape
                 gcm_seas_mn_5d_flat_mems = gcm_seas_mn_5d_flat_mems.values.reshape((shape_gcm[0]*shape_gcm[1],shape_gcm[2],shape_gcm[3],shape_gcm[4],shape_gcm[5])) #reshape to concatenate the members along the first / time axis
@@ -334,127 +358,58 @@ for det in np.arange(len(detrending)):
                 else:
                     raise Exception('ERROR: check entry for <skillscore_reference> input parameter !')
                 
-                #get name of the output file containing the verification results
+                #set time index for the requested phase and teleconnection index; currently ENSO only
+                #get index time instances that overlap with the time instances in the observational data array to be verified below, wich in turn must have the same time dimensions than the model data array
+                indices_sub = indices.isel(time=np.isin(indices.time,obs_seas_mn_5d.time))
                 if modulator == 'enso':
-                    savename_results = dir_netcdf+'/validation_results_season_'+variables_gcm[vv]+'_'+model[mm]+'_vs_'+obs[oo]+'_'+domain+'_corroutlier_'+corr_outlier+'_detrended_'+detrending[det]+'_'+str(years_common2label[0])+'_'+str(years_common2label[-1])+'_'+modulator+str(phase)+'init_'+vers+'.nc'
+                    phase_ind = (indices_sub.oni2enso == phase).values #index of the time instances the requested teleconnection index is in the requested phase
+                    savename_results = dir_netcdf+'/validation_results_season_'+variables_gcm[vv]+'_'+model[mm]+'_vs_'+obs[oo]+'_'+domain+'_corroutlier_'+corr_outlier+'_detrended_'+detrending[det]+'_'+str(years_common2label[0])+'_'+str(years_common2label[-1])+'_'+modulator+str(phase)+'_'+vers+'.nc'
                 elif modulator == 'none':
+                    phase_ind = np.array([True]*len(obs_seas_mn_5d.time)) #set all indices to True
                     savename_results = dir_netcdf+'/validation_results_season_'+variables_gcm[vv]+'_'+model[mm]+'_vs_'+obs[oo]+'_'+domain+'_corroutlier_'+corr_outlier+'_detrended_'+detrending[det]+'_'+str(years_common2label[0])+'_'+str(years_common2label[-1])+'_'+modulator+'_'+vers+'.nc'
                 else:
                     raise Exception('ERROR: unknown entry for <modulator> input parameter !')
 
                 ##start verification
-                #init numpy arrays to be filled along the "lead" dimension
-                pearson_r_np = np.zeros((len(season),len(lead),len(gcm_seas_mn_5d.y),len(gcm_seas_mn_5d.x)))
-                pearson_pval_np = np.copy(pearson_r_np)
-                pearson_pval_effn_np = np.copy(pearson_r_np)
-                spearman_r_np = np.copy(pearson_r_np)
-                spearman_pval_np = np.copy(pearson_r_np)
-                spearman_pval_effn_np = np.copy(pearson_r_np)
-                bias_np = np.copy(pearson_r_np)
-                relbias_np = np.copy(pearson_r_np)
-                crps_ensemble_np = np.copy(pearson_r_np)
-                reliability_lower_np = np.copy(pearson_r_np)
-                reliability_upper_np = np.copy(pearson_r_np)
-                roc_auc_lower_np = np.copy(pearson_r_np)
-                roc_auc_upper_np = np.copy(pearson_r_np)
-                rpc_np = np.copy(pearson_r_np)
+                ##calculalate hindcast correlation coefficient for the inter-annual seasonal-mean time series (observations vs. ensemble mean) and corresponding p-values based on the effective sample size
+                #determinstic validation measures
 
-                #get conditional verficiation results per lead-time
-                for ll in np.arange(len(lead_label)):
-                    if modulator == 'enso':
-                        indices_sub = indices.shift(time=int(lead_label[ll])) #shift the values in indices towards the future by lead_label[ll] months
-                        indices_sub = indices_sub.isel(time=np.isin(indices_sub.time,obs_seas_mn_5d.time)) #get common time period with observations, which in turn was syncronized with model data above
-                        phase_ind = (indices_sub.oni2enso == phase).values
-                    elif modulator == 'none':
-                        indices_sub = indices.isel(time=np.isin(indices.time,obs_seas_mn_5d.time)) #is not used below any more if modulator = 'none'
-                        phase_ind = np.array([True]*len(obs_seas_mn_5d.time)) #set all indices to True
-                    else:
-                        raise Exception('ERROR: unknown entry for <modulator> input parameter !')
-                    
-                    #get xarray data array for each lead time
-                    pearson_r = xs.pearson_r(obs_seas_mn_5d.isel(time=phase_ind).sel(lead=lead_label[ll]),gcm_seas_mn_5d.isel(time=phase_ind).sel(lead=lead_label[ll]),dim='time',skipna=True).rename('pearson_r')
-                    pearson_pval = xs.pearson_r_p_value(obs_seas_mn_5d.isel(time=phase_ind).sel(lead=lead_label[ll]),gcm_seas_mn_5d.isel(time=phase_ind).sel(lead=lead_label[ll]),dim='time',skipna=True).rename('pearson_pval')
-                    pearson_pval_effn = xs.pearson_r_eff_p_value(obs_seas_mn_5d.isel(time=phase_ind).sel(lead=lead_label[ll]),gcm_seas_mn_5d.isel(time=phase_ind).sel(lead=lead_label[ll]),dim='time',skipna=True).rename('pearson_pval_effn')
-                    spearman_r = xs.spearman_r(obs_seas_mn_5d.isel(time=phase_ind).sel(lead=lead_label[ll]),gcm_seas_mn_5d.isel(time=phase_ind).sel(lead=lead_label[ll]),dim='time',skipna=True).rename('spearman_r')
-                    spearman_pval = xs.spearman_r_p_value(obs_seas_mn_5d.isel(time=phase_ind).sel(lead=lead_label[ll]),gcm_seas_mn_5d.isel(time=phase_ind).sel(lead=lead_label[ll]),dim='time',skipna=True).rename('spearman_pval')
-                    spearman_pval_effn = xs.spearman_r_eff_p_value(obs_seas_mn_5d.isel(time=phase_ind).sel(lead=lead_label[ll]),gcm_seas_mn_5d.isel(time=phase_ind).sel(lead=lead_label[ll]),dim='time',skipna=True).rename('spearman_pval_effn')
-                    bias = xs.me(obs_seas_mn_5d.isel(time=phase_ind).sel(lead=lead_label[ll]),gcm_seas_mn_5d.isel(time=phase_ind).sel(lead=lead_label[ll]),dim='time',skipna=True).rename('bias') #in xskillscore the bias is termed me
-                    relbias = (bias/obs_seas_mn_5d.isel(time=phase_ind).sel(lead=lead_label[ll]).mean(dim='time')*100).rename('relbias')
-                    
-                    crps_ensemble = xs.crps_ensemble(obs_seas_mn_5d.isel(time=phase_ind).sel(lead=lead_label[ll]),gcm_seas_mn_6d.isel(time=phase_ind).sel(lead=lead_label[ll]),member_weights=None,issorted=False,member_dim='member',dim='time',weights=None,keep_attrs=False).rename('crps_ensemble')
-                    reliability_lower = get_reliability_or_roc(obs_seas_mn_5d.isel(time=phase_ind).sel(lead=lead_label[ll]),gcm_seas_mn_6d.isel(time=phase_ind).sel(lead=lead_label[ll]),obs_quantile_vals_step.sel(lead=lead_label[ll]),gcm_quantile_vals_step.sel(lead=lead_label[ll]),1/3,score_f = 'reliability',bin_edges_f = bin_edges_reliability).rename('reliability_lower_tercile') #calculate reliability for the first tercile
-                    reliability_upper = get_reliability_or_roc(obs_seas_mn_5d.isel(time=phase_ind).sel(lead=lead_label[ll]),gcm_seas_mn_6d.isel(time=phase_ind).sel(lead=lead_label[ll]),obs_quantile_vals_step.sel(lead=lead_label[ll]),gcm_quantile_vals_step.sel(lead=lead_label[ll]),2/3,score_f = 'reliability',bin_edges_f = bin_edges_reliability).rename('reliability_upper_tercile') #calculate reliability for the third tercile
-                    roc_auc_lower = get_reliability_or_roc(obs_seas_mn_5d.isel(time=phase_ind).sel(lead=lead_label[ll]),gcm_seas_mn_6d.isel(time=phase_ind).sel(lead=lead_label[ll]),obs_quantile_vals_step.sel(lead=lead_label[ll]),gcm_quantile_vals_step.sel(lead=lead_label[ll]),1/3,score_f = 'roc_auc').rename('roc_auc_lower_tercile') #calculate roc area under the curve for the first tercile
-                    roc_auc_upper = get_reliability_or_roc(obs_seas_mn_5d.isel(time=phase_ind).sel(lead=lead_label[ll]),gcm_seas_mn_6d.isel(time=phase_ind).sel(lead=lead_label[ll]),obs_quantile_vals_step.sel(lead=lead_label[ll]),gcm_quantile_vals_step.sel(lead=lead_label[ll]),2/3,score_f = 'roc_auc').rename('roc_auc_upper_tercile') #calculate roc area under the curve for the third tercile
-                    
-                    ## calculate ratio of predictable components following Cottrell et al. 2024, https://doi.org/10.1002/asl.1212
-                    pearson_r_mod = xs.pearson_r(gcm_seas_mn_6d.isel(time=phase_ind).sel(lead=lead_label[ll]),gcm_seas_mn_5d.isel(time=phase_ind).sel(lead=lead_label[ll]),dim='time',skipna=True).rename('pearson_r_mod')
-                    #rpc = (pearson_r / np.sqrt(gcm_seas_mn_5d.isel(time=phase_ind).sel(lead=lead_label[ll]).var(dim='time') / gcm_seas_mn_6d.isel(time=phase_ind).sel(lead=lead_label[ll]).var(dim='time').mean(dim='member'))).rename('rpc')
-                    rpc = (pearson_r / pearson_r_mod.mean(dim='member')).rename('rpc')
-
-                    #transform to nump and fill the full dimensional numpy data arrays    
-                    pearson_r_np[:,ll,:,:] = pearson_r.values
-                    pearson_pval_np[:,ll,:,:] = pearson_pval.values
-                    pearson_pval_effn_np[:,ll,:,:] = pearson_pval_effn.values
-                    spearman_r_np[:,ll,:,:] = spearman_r.values
-                    spearman_pval_np[:,ll,:,:] = spearman_pval.values
-                    spearman_pval_effn_np[:,ll,:,:] = spearman_pval_effn.values
-                    bias_np[:,ll,:,:] = bias.values
-                    relbias_np[:,ll,:,:] = relbias.values
-                    crps_ensemble_np[:,ll,:,:] = crps_ensemble.values
-                    reliability_lower_np[:,ll,:,:] = reliability_lower.values
-                    reliability_upper_np[:,ll,:,:] = reliability_upper.values
-                    roc_auc_lower_np[:,ll,:,:] = roc_auc_lower.values
-                    roc_auc_upper_np[:,ll,:,:] = roc_auc_upper.values
-                    rpc_np[:,ll,:,:] = rpc.values
-
-                    #close the temporary xarray data arrays
-                    pearson_r.close()
-                    pearson_pval.close()
-                    pearson_pval_effn.close()
-                    spearman_r.close()
-                    spearman_pval.close()
-                    spearman_pval_effn.close()
-                    bias.close()
-                    relbias.close()
-                    crps_ensemble.close()
-                    reliability_lower.close()
-                    reliability_upper.close()
-                    roc_auc_lower.close()
-                    roc_auc_upper.close()
-                    pearson_r_mod.close()
-                    rpc.close()
-                    del(phase_ind,pearson_r,pearson_pval,pearson_pval_effn,spearman_r,spearman_pval,spearman_pval_effn,bias,relbias,crps_ensemble,reliability_lower,reliability_upper,roc_auc_lower,roc_auc_upper,pearson_r_mod,rpc)
-
-                #transform numpy arrays to xarray data arrays
-                pearson_r = xr.DataArray(pearson_r_np, coords=[obs_seas_mn_5d.season,obs_seas_mn_5d.lead,obs_seas_mn_5d.y,obs_seas_mn_5d.x], dims=['season','lead','y','x'], name='pearson_r')
-                pearson_pval = xr.DataArray(pearson_pval_np, coords=[obs_seas_mn_5d.season,obs_seas_mn_5d.lead,obs_seas_mn_5d.y,obs_seas_mn_5d.x], dims=['season','lead','y','x'], name='pearson_pval')
-                pearson_pval_effn = xr.DataArray(pearson_pval_effn_np, coords=[obs_seas_mn_5d.season,obs_seas_mn_5d.lead,obs_seas_mn_5d.y,obs_seas_mn_5d.x], dims=['season','lead','y','x'], name='pearson_pval_effn')
-                spearman_r = xr.DataArray(spearman_r_np, coords=[obs_seas_mn_5d.season,obs_seas_mn_5d.lead,obs_seas_mn_5d.y,obs_seas_mn_5d.x], dims=['season','lead','y','x'], name='spearman_r')
-                spearman_pval = xr.DataArray(spearman_pval_np, coords=[obs_seas_mn_5d.season,obs_seas_mn_5d.lead,obs_seas_mn_5d.y,obs_seas_mn_5d.x], dims=['season','lead','y','x'], name='spearman_pval')
-                spearman_pval_effn = xr.DataArray(spearman_pval_effn_np, coords=[obs_seas_mn_5d.season,obs_seas_mn_5d.lead,obs_seas_mn_5d.y,obs_seas_mn_5d.x], dims=['season','lead','y','x'], name='spearman_pval_effn')
-                bias = xr.DataArray(bias_np, coords=[obs_seas_mn_5d.season,obs_seas_mn_5d.lead,obs_seas_mn_5d.y,obs_seas_mn_5d.x], dims=['season','lead','y','x'], name='bias')
-                relbias = xr.DataArray(relbias_np, coords=[obs_seas_mn_5d.season,obs_seas_mn_5d.lead,obs_seas_mn_5d.y,obs_seas_mn_5d.x], dims=['season','lead','y','x'], name='relbias')
-                crps_ensemble = xr.DataArray(crps_ensemble_np, coords=[obs_seas_mn_5d.season,obs_seas_mn_5d.lead,obs_seas_mn_5d.y,obs_seas_mn_5d.x], dims=['season','lead','y','x'], name='crps_ensemble')
-                reliability_lower = xr.DataArray(reliability_lower_np, coords=[obs_seas_mn_5d.season,obs_seas_mn_5d.lead,obs_seas_mn_5d.y,obs_seas_mn_5d.x], dims=['season','lead','y','x'], name='reliability_lower_tercile')
-                reliability_upper = xr.DataArray(reliability_upper_np, coords=[obs_seas_mn_5d.season,obs_seas_mn_5d.lead,obs_seas_mn_5d.y,obs_seas_mn_5d.x], dims=['season','lead','y','x'], name='reliability_upper_tercile')
-                roc_auc_lower = xr.DataArray(roc_auc_lower_np, coords=[obs_seas_mn_5d.season,obs_seas_mn_5d.lead,obs_seas_mn_5d.y,obs_seas_mn_5d.x], dims=['season','lead','y','x'], name='roc_auc_lower_tercile')
-                roc_auc_upper = xr.DataArray(roc_auc_upper_np, coords=[obs_seas_mn_5d.season,obs_seas_mn_5d.lead,obs_seas_mn_5d.y,obs_seas_mn_5d.x], dims=['season','lead','y','x'], name='roc_auc_upper_tercile')
-                rpc = xr.DataArray(rpc_np, coords=[obs_seas_mn_5d.season,obs_seas_mn_5d.lead,obs_seas_mn_5d.y,obs_seas_mn_5d.x], dims=['season','lead','y','x'], name='rpc')
-                
-                #set possible infinite values in relbias to nan
+                pearson_r = xs.pearson_r(obs_seas_mn_5d.isel(time=phase_ind),gcm_seas_mn_5d.isel(time=phase_ind),dim='time',skipna=True).rename('pearson_r')
+                pearson_pval = xs.pearson_r_p_value(obs_seas_mn_5d.isel(time=phase_ind),gcm_seas_mn_5d.isel(time=phase_ind),dim='time',skipna=True).rename('pearson_pval')
+                pearson_pval_effn = xs.pearson_r_eff_p_value(obs_seas_mn_5d.isel(time=phase_ind),gcm_seas_mn_5d.isel(time=phase_ind),dim='time',skipna=True).rename('pearson_pval_effn')
+                spearman_r = xs.spearman_r(obs_seas_mn_5d.isel(time=phase_ind),gcm_seas_mn_5d.isel(time=phase_ind),dim='time',skipna=True).rename('spearman_r')
+                spearman_pval = xs.spearman_r_p_value(obs_seas_mn_5d.isel(time=phase_ind),gcm_seas_mn_5d.isel(time=phase_ind),dim='time',skipna=True).rename('spearman_pval')
+                spearman_pval_effn = xs.spearman_r_eff_p_value(obs_seas_mn_5d.isel(time=phase_ind),gcm_seas_mn_5d.isel(time=phase_ind),dim='time',skipna=True).rename('spearman_pval_effn')
+                bias = xs.me(obs_seas_mn_5d.isel(time=phase_ind),gcm_seas_mn_5d.isel(time=phase_ind),dim='time',skipna=True).rename('bias') #in xskillscore the bias is termed me
+                relbias = (bias/obs_seas_mn_5d.isel(time=phase_ind).mean(dim='time')*100).rename('relbias')
                 infmask = np.isinf(relbias.values)
                 relbias.values[infmask] = np.nan
                 del(infmask) #delete to save memory
 
                 ##Continuous Ranked Probability Score and respective skill score
+                #crps_ensemble = xs.crps_ensemble(obs_seas_mn_5d,gcm_seas_mn_6d,member_weights=None,issorted=False,member_dim='member',dim='time',weights=None,keep_attrs=False).rename('crps_ensemble')
+                crps_ensemble = xs.crps_ensemble(obs_seas_mn_5d.isel(time=phase_ind),gcm_seas_mn_6d.isel(time=phase_ind),member_weights=None,issorted=False,member_dim='member',dim='time',weights=None,keep_attrs=False).rename('crps_ensemble')
                 crps_ensemble_clim = xs.crps_ensemble(obs_seas_mn_5d,ref_forecast,member_weights=None,issorted=False,member_dim='member',dim='time',weights=None,keep_attrs=False).rename('crps_ensemble_'+skillscore_reference)
                 crps_ensemble_skillscore = 1 - (crps_ensemble/crps_ensemble_clim)
                 #close and delete unnecesarry objects to save mem
                 crps_ensemble_clim.close()
                 del(crps_ensemble_clim)
 
-                # close and delete xarray objects not needed any more 
+                ## reliability
+                # reliability_lower = get_reliability_or_roc(obs_seas_mn_5d,gcm_seas_mn_6d,obs_quantile_vals_step,gcm_quantile_vals_step,1/3,score_f = 'reliability',bin_edges_f = bin_edges_reliability).rename('reliability_lower_tercile') #calculate reliability for the first tercile
+                # reliability_upper = get_reliability_or_roc(obs_seas_mn_5d,gcm_seas_mn_6d,obs_quantile_vals_step,gcm_quantile_vals_step,2/3,score_f = 'reliability',bin_edges_f = bin_edges_reliability).rename('reliability_upper_tercile') #calculate reliability for the third tercile
+                reliability_lower = get_reliability_or_roc(obs_seas_mn_5d.isel(time=phase_ind),gcm_seas_mn_6d.isel(time=phase_ind),obs_quantile_vals_step,gcm_quantile_vals_step,1/3,score_f = 'reliability',bin_edges_f = bin_edges_reliability).rename('reliability_lower_tercile') #calculate reliability for the first tercile
+                reliability_upper = get_reliability_or_roc(obs_seas_mn_5d.isel(time=phase_ind),gcm_seas_mn_6d.isel(time=phase_ind),obs_quantile_vals_step,gcm_quantile_vals_step,2/3,score_f = 'reliability',bin_edges_f = bin_edges_reliability).rename('reliability_upper_tercile') #calculate reliability for the third tercile
+
+                ## roc area under the curve
+                # roc_auc_lower = get_reliability_or_roc(obs_seas_mn_5d,gcm_seas_mn_6d,obs_quantile_vals_step,gcm_quantile_vals_step,1/3,score_f = 'roc_auc').rename('roc_auc_lower_tercile') #calculate roc area under the curve for the first tercile
+                # roc_auc_upper = get_reliability_or_roc(obs_seas_mn_5d,gcm_seas_mn_6d,obs_quantile_vals_step,gcm_quantile_vals_step,2/3,score_f = 'roc_auc').rename('roc_auc_upper_tercile') #calculate roc area under the curve for the third tercile
+                roc_auc_lower = get_reliability_or_roc(obs_seas_mn_5d.isel(time=phase_ind),gcm_seas_mn_6d.isel(time=phase_ind),obs_quantile_vals_step,gcm_quantile_vals_step,1/3,score_f = 'roc_auc').rename('roc_auc_lower_tercile') #calculate roc area under the curve for the first tercile
+                roc_auc_upper = get_reliability_or_roc(obs_seas_mn_5d.isel(time=phase_ind),gcm_seas_mn_6d.isel(time=phase_ind),obs_quantile_vals_step,gcm_quantile_vals_step,2/3,score_f = 'roc_auc').rename('roc_auc_upper_tercile') #calculate roc area under the curve for the third tercile
+
+                ## ratio of predictable components following Eade et al. 2014, GRL, doi:10.1002/2014GL061146, equation 1
+                rpc = (pearson_r / np.sqrt(gcm_seas_mn_5d.var(dim='time') / gcm_seas_mn_6d.var(dim='time').mean(dim='member'))).rename('rpc')
+
                 obs_quantile_vals_step.close()
                 gcm_quantile_vals_step.close()
                 del(obs_quantile_vals_step,gcm_quantile_vals_step)
@@ -478,6 +433,10 @@ for det in np.arange(len(detrending)):
                 infmask_roc_auc_upper = np.isinf(roc_auc_upper_skillscore.values)
                 roc_auc_upper_skillscore.values[infmask_roc_auc_upper] = np.nan
                 del(infmask_roc_auc_upper)
+                
+                # crps_ensemble_skillscore = crps_ensemble_skillscore.where(~np.isinf(crps_ensemble_skillscore))
+                # roc_auc_lower_skillscore = roc_auc_lower_skillscore.where(~np.isinf(roc_auc_lower_skillscore))
+                # roc_auc_upper_skillscore = roc_auc_upper_skillscore.where(~np.isinf(roc_auc_upper_skillscore))
                 
                 #add attribures
                 pearson_r.attrs['units'] = 'dimensionless'
@@ -508,30 +467,26 @@ for det in np.arange(len(detrending)):
                 results = xr.merge((pearson_r,pearson_pval,pearson_pval_effn,spearman_r,spearman_pval,spearman_pval_effn,bias,relbias,crps_ensemble,crps_ensemble_skillscore,reliability_lower,reliability_upper,roc_auc_lower,roc_auc_upper,roc_auc_lower_skillscore,roc_auc_upper_skillscore,rpc)) #merge xr dataarrays into a single xr dataset
                 del results.attrs['units'] #delete global attributge <units>, which is unexpectedly created by xr.merge() in the previous line; <units> are preserved as variable attribute. 
                 #set global and variable attributes
-                start_year = str(dates_isea[0])[0:5].replace('-','') #start year considered in the skill assessment
-                end_year = str(dates_isea[-1])[0:5].replace('-','') #end year considered in the skill assessment
+                start_year = str(dates_isea[phase_ind][0])[0:5].replace('-','') #start year considered in the skill assessment
+                end_year = str(dates_isea[phase_ind][-1])[0:5].replace('-','') #end year considered in the skill assessment
                 results.x['standard_name'] = 'longitude'
                 results.y['standard_name'] = 'latitude'
                 results.attrs['variable'] = variables_gcm[vv]
                 results.attrs['prediction_system'] = model[mm]
                 results.attrs['reference_observations'] = obs[oo]
                 results.attrs['domain'] = domain
-                results.attrs['validation_period'] = start_year+' to '+end_year
-                results.attrs['modulation'] = modulator+' in phase '+str(phase)+' as defined in oni2enso.py'
-                
-                #set attributes related to modulation through low-frequency climate oscillations
-                if modulator == 'none':
-                    results.attrs['modulation'] = modulator
-                else:
-                    results.attrs['modulation'] = modulator+' in phase '+str(phase)+' as defined in oni2enso.py'
-                    results.attrs['modulation_time'] = 'model initializtion' #refers to the fact that the forecasts are conditioned on climate oscillation phases valid for the initialization month 
-
+                #results.attrs['validation_period'] = start_year+' to '+end_year
+                results.attrs['validation_period'] = str([str(dates_isea[phase_ind][ii]) for ii in np.arange(len(dates_isea[phase_ind]))]) #this is an exact listing of all years used for verficaiton, this list may be dis-continuous
+                results.attrs['validation_period_info'] = modulator+' in phase '+str(phase)+' as defined in oni2enso.py'
                 results.attrs['time_series_detrending'] = detrending[det]
                 results.attrs['outlier_correction'] = corr_outlier
                 results.attrs['version'] = vers
                 results.attrs['author'] = 'Swen Brands, brandssf@ifca.unican.es or swen.brands@gmail.com'
                 
-                #save the results
+                ##then save to netCDF and close
+                #savename_results = dir_netcdf+'/validation_results_season_'+variables_gcm[vv]+'_'+model[mm]+'_vs_'+obs[oo]+'_'+domain+'_corroutlier_'+corr_outlier+'_detrended_'+detrending[det]+'_'+start_year+'_'+end_year+'_'+subperiod+'_'+vers+'.nc'
+                #savename_results = dir_netcdf+'/validation_results_season_'+variables_gcm[vv]+'_'+model[mm]+'_vs_'+obs[oo]+'_'+domain+'_corroutlier_'+corr_outlier+'_detrended_'+detrending[det]+'_'+str(years_common2label[0])+'_'+str(years_common2label[-1])+'_'+subperiod+'_'+vers+'.nc'
+                
                 results.to_netcdf(savename_results)
                 
                 #retain dimensions used to store quantiles before deleting and closing the respective objects
@@ -568,7 +523,7 @@ for det in np.arange(len(detrending)):
                 roc_auc_upper_skillscore.close()
                 rpc.close()
                 indices_sub.close()
-                del(results,pearson_r,pearson_pval,pearson_pval_effn,spearman_r,spearman_pval,spearman_pval_effn,bias,relbias,crps_ensemble,crps_ensemble_skillscore,obs_seas_mn_5d,obs_seas_mn_5d_nw,gcm_seas_mn_5d,gcm_seas_mn_6d,gcm_seas_mn_6d_nw,reliability_lower,reliability_upper,roc_auc_lower,roc_auc_upper,roc_auc_lower_skillscore,roc_auc_upper_skillscore,rpc,indices_sub)
+                del(results,pearson_r,pearson_pval,pearson_pval_effn,spearman_r,spearman_pval,spearman_pval_effn,bias,relbias,crps_ensemble,crps_ensemble_skillscore,obs_seas_mn_5d,obs_seas_mn_5d_nw,gcm_seas_mn_5d,gcm_seas_mn_6d,gcm_seas_mn_6d_nw,reliability_lower,reliability_upper,roc_auc_lower,roc_auc_upper,roc_auc_lower_skillscore,roc_auc_upper_skillscore,rpc,indices_sub,phase_ind)
             
             #close nc files containing observations
             nc_obs.close()

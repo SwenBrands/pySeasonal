@@ -23,7 +23,7 @@ model_dataset = ['ecmwf51'] #list of model or reanalysis datasets: era5 or era5_
 corr_outlier = 'no' #load the outlier-correted validation results; yes or no
 detrending = ['no','yes'] #yes or no, linear detrending of the gcm and obs time series prior to validation
 file_years = [1981,2022] #start and end years indicated in the input file name, [1982,2016] for mod2strong_Nino, [1984,2022] for mod2strong_Nina
-subperiod = 'enso_nina_noaa' # #'mod2strong_nina_oni', 'mod2strong_nino_oni', 'enso_nino_noaa', 'enso_nina_noaa', 'enso_neutral_noaa', 'qbo50_pos', 'qbo50_neg', 'qbo50_trans' or 'none'; used to select the sub-period used for verification. If set to 'none', the entire time series is used for verification
+subperiod = 'enso2init' # a string defining the modulating oscillation and its phase, constructed from the <modulator> and <phase> input arguments in get_skill_season.py; currently "none", "enso0init", "enso1init" or "enso2init"
 vers = 'v1j_mon'
 #vers = 'as_input_file' # 'as_input_file' searches the version stored in the input files generated before with get_skill_season.py; other entries will be directly passed to the netCDF output file produced here
 file_system = 'lustre' #lustre or myLaptop; used to create the path structure to the input and output files
@@ -109,10 +109,11 @@ for det in np.arange(len(detrending)):
             colormaps_meanvals_spatial = []
             #load netcdf files containing the verification results
             if model_dataset[dd] == 'ecmwf51':
-                if subperiod == '':
-                    filename_input = 'validation_results_season_'+variables[vv]+'_'+model_dataset[dd]+'_vs_'+ref_dataset[dd]+'_'+domain+'_corroutlier_'+corr_outlier+'_detrended_'+detrending[det]+'_'+str(file_years[0])+'_'+str(file_years[1])+'_'+vers+'.nc'
-                else:
-                    filename_input = filename_input = 'validation_results_season_'+variables[vv]+'_'+model_dataset[dd]+'_vs_'+ref_dataset[dd]+'_'+domain+'_corroutlier_'+corr_outlier+'_detrended_'+detrending[det]+'_'+str(file_years[0])+'_'+str(file_years[1])+'_'+subperiod+'_'+vers+'.nc'
+                filename_input = filename_input = 'validation_results_season_'+variables[vv]+'_'+model_dataset[dd]+'_vs_'+ref_dataset[dd]+'_'+domain+'_corroutlier_'+corr_outlier+'_detrended_'+detrending[det]+'_'+str(file_years[0])+'_'+str(file_years[1])+'_'+subperiod+'_'+vers+'.nc'
+                # if subperiod == '':
+                #     filename_input = 'validation_results_season_'+variables[vv]+'_'+model_dataset[dd]+'_vs_'+ref_dataset[dd]+'_'+domain+'_corroutlier_'+corr_outlier+'_detrended_'+detrending[det]+'_'+str(file_years[0])+'_'+str(file_years[1])+'_'+vers+'.nc'
+                # else:
+                #     filename_input = filename_input = 'validation_results_season_'+variables[vv]+'_'+model_dataset[dd]+'_vs_'+ref_dataset[dd]+'_'+domain+'_corroutlier_'+corr_outlier+'_detrended_'+detrending[det]+'_'+str(file_years[0])+'_'+str(file_years[1])+'_'+subperiod+'_'+vers+'.nc'
             else:
                 raise Exception('ERROR: unknown entry for <model_dataset> !')
             nc_results = xr.open_dataset(dir_netcdf+'/'+filename_input) #load the input dataset
@@ -342,7 +343,7 @@ for det in np.arange(len(detrending)):
                     else:
                         raise Exception('ERROR: check entry in <scores[sc]> !')
                     #areal percentage of significant grid-box scale correlation coefficients is calculated and plotted
-                    savename_fraction = dir_figs+'/'+variables[vv]+'/pcolor_siggridboxes_'+variables[vv]+'_'+scores[sc]+'_'+domain+'_'+sub_domain+'_'+model_dataset[dd]+'_vs_'+score_ref+'_corr_outlier_'+corr_outlier+'_detrended_'+detrending[det]+'_testlvl_'+str(round(critval_rho*100))+'_'+str(file_years[0])+'_'+str(file_years[1])+'_'+subperiod+'_'+vers+'.'+figformat
+                    savename_fraction = dir_figs+'/'+variables[vv]+'/pcolor_arealfraction_'+variables[vv]+'_'+scores[sc]+'_'+domain+'_'+sub_domain+'_'+model_dataset[dd]+'_vs_'+score_ref+'_corr_outlier_'+corr_outlier+'_detrended_'+detrending[det]+'_testlvl_'+str(round(critval_rho*100))+'_'+str(file_years[0])+'_'+str(file_years[1])+'_'+subperiod+'_'+vers+'.'+figformat
                     savename_mean = dir_figs+'/'+variables[vv]+'/pcolor_arealmean_'+variables[vv]+'_'+scores[sc]+'_'+domain+'_'+sub_domain+'_'+model_dataset[dd]+'_vs_'+score_ref+'_corr_outlier_'+corr_outlier+'_detrended_'+detrending[det]+'_testlvl_'+str(round(critval_rho*100))+'_'+str(file_years[0])+'_'+str(file_years[1])+'_'+subperiod+'_'+vers+'.'+figformat
                     pval = nc_results[score_pval].values
                     rho = nc_results[scores[sc]].values

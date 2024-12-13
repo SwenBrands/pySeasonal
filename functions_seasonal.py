@@ -353,10 +353,18 @@ def get_reliability_or_roc(obs_f,gcm_f,obs_quantile_f,gcm_quantile_f,threshold_f
     threshold_f is a threshold value in decimals. I threshold_f is >= 0.5 then it is asked wether the values in xr_obs_f and
     xr_gcm_f are greater than the treshold; otherwise it is asked whether they are smaller"""
     
-    ## obtain observed quantile thresholds and replicate along the time axis to fit the shape of obs_f
-    obs_quantile_threshold = np.tile(obs_quantile_f.sel(quantile=threshold_f),(obs_f.shape[0],1,1,1,1))    
-    #replicate the gcm quantile thresholds passed to this function via <gcm_quantile_f> along the time axis
-    gcm_quantile_threshold = np.tile(gcm_quantile_f.sel(quantile=threshold_f),(gcm_f.shape[0],1,1,1,1,1)) #get target threshold value from precalculated threshold values and replicate along the time dimension to fit the size of gcm_f
+    if len(obs_f.dims) == 4:
+        ## obtain observed quantile thresholds and replicate along the time axis to fit the shape of obs_f
+        obs_quantile_threshold = np.tile(obs_quantile_f.sel(quantile=threshold_f),(obs_f.shape[0],1,1,1))    
+        #replicate the gcm quantile thresholds passed to this function via <gcm_quantile_f> along the time axis
+        gcm_quantile_threshold = np.tile(gcm_quantile_f.sel(quantile=threshold_f),(gcm_f.shape[0],1,1,1,1)) #get target threshold value from precalculated threshold values and replicate along the time dimension to fit the size of gcm_f
+    elif len(obs_f.dims) == 5:
+        ## obtain observed quantile thresholds and replicate along the time axis to fit the shape of obs_f
+        obs_quantile_threshold = np.tile(obs_quantile_f.sel(quantile=threshold_f),(obs_f.shape[0],1,1,1,1))    
+        #replicate the gcm quantile thresholds passed to this function via <gcm_quantile_f> along the time axis
+        gcm_quantile_threshold = np.tile(gcm_quantile_f.sel(quantile=threshold_f),(gcm_f.shape[0],1,1,1,1,1)) #get target threshold value from precalculated threshold values and replicate along the time dimension to fit the size of gcm_f
+    else:
+        raise Exception('Error in get_reliability_or_roc(): check the number of dimenions in <obs_f>!')    
 
     #get binary time series, quantile is exceeded yes (1) or no (0)
     if threshold_f >= 0.5:
@@ -384,9 +392,18 @@ def get_reliability_or_roc(obs_f,gcm_f,obs_quantile_f,gcm_quantile_f,threshold_f
             o_cond_y = xs.reliability(obs_bin, gcm_bin.mean("member"), dim='time').drop('samples') #see Wilks 2006, returns the observed relative frequencies (o) conditional to 5 (= default values) forecast probability bins y (0.1, 0.3, 0.5, 0.7, 0.9), see https://xskillscore.readthedocs.io/en/stable/api/xskillscore.reliability.html#xskillscore.reliability 
         else: #use bins whose edges are provided by the optional <bin_edges_f> input parameter
             o_cond_y = xs.reliability(obs_bin, gcm_bin.mean("member"), dim='time',probability_bin_edges=bin_edges_f).drop('samples')
-        diagonal = np.tile(o_cond_y.forecast_probability.values,(o_cond_y.shape[0],o_cond_y.shape[1],o_cond_y.shape[2],o_cond_y.shape[3],1)) #this is the diagonal of the reliability diagramm
-        reliability = np.abs(o_cond_y - diagonal).mean(dim='forecast_probability') #calculate the residual (i.e. absolute difference) from the diagonal averged over the 5 forecast bins mentioned above
-        reliability = reliability.where(~np.isnan(obs_f[0,:,:,:,:])) # re-set the grid-boxes over sea to nan as in the input data values
+        
+        #process as a function of the number of dimension in obs_f, gcm_f, obs_quantile_f and gcm_quantile_f
+        if len(obs_f.dims) == 4:
+            diagonal = np.tile(o_cond_y.forecast_probability.values,(o_cond_y.shape[0],o_cond_y.shape[1],o_cond_y.shape[2],1)) #this is the diagonal of the reliability diagramm
+            reliability = np.abs(o_cond_y - diagonal).mean(dim='forecast_probability') #calculate the residual (i.e. absolute difference) from the diagonal averged over the 5 forecast bins mentioned above
+            reliability = reliability.where(~np.isnan(obs_f[0,:,:,:])) # re-set the grid-boxes over sea to nan as in the input data values
+        elif len(obs_f.dims) == 5:
+            diagonal = np.tile(o_cond_y.forecast_probability.values,(o_cond_y.shape[0],o_cond_y.shape[1],o_cond_y.shape[2],o_cond_y.shape[3],1)) #this is the diagonal of the reliability diagramm
+            reliability = np.abs(o_cond_y - diagonal).mean(dim='forecast_probability') #calculate the residual (i.e. absolute difference) from the diagonal averged over the 5 forecast bins mentioned above
+            reliability = reliability.where(~np.isnan(obs_f[0,:,:,:,:])) # re-set the grid-boxes over sea to nan as in the input data values
+        else:
+            raise Exception('Error in get_reliability_or_roc(): check the number of dimenions in obs_f, gcm_f, obs_quantile_f and gcm_quantile_f !')
         out_score = reliability
     elif score_f == 'roc_auc': #caclulate roc area under the curve
         print('As requested by the user, the ROC area under the curve is calculated by the get_reliability_or_roc() function.')
@@ -394,5 +411,12 @@ def get_reliability_or_roc(obs_f,gcm_f,obs_quantile_f,gcm_quantile_f,threshold_f
         out_score = roc
     else:
         raise Exception('ERROR: unknown entry for <score_f> input parameter in get_reliability_or_roc() function !')
-    out_score = out_score.where(~np.isnan(obs_f[0,:,:,:,:])) # re-set the grid-boxes over sea to nan as in the input data values
+    
+    if len(obs_f.dims) == 4:
+        out_score = out_score.where(~np.isnan(obs_f[0,:,:,:])) # re-set the grid-boxes over sea to nan as in the input data values
+    elif len(obs_f.dims) == 5:
+        out_score = out_score.where(~np.isnan(obs_f[0,:,:,:,])) # re-set the grid-boxes over sea to nan as in the input data values
+    else:
+        raise Exception('Error in get_reliability_or_roc(): check the number of dimenions in <obs_f>!')
+    
     return(out_score)
