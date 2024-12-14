@@ -19,36 +19,37 @@ import pdb as pdb #then type <pdb.set_trace()> at a given line in the code below
 exec(open('functions_seasonal.py').read()) #reads the <functions_seasonal.py> script containing a set of custom functions needed here
 
 #set input parameters
-vers = 'v1j_mon' #version number of the output netCDF file to be sent to Predictia
+vers = 'v1j' #version number of the output netCDF file to be sent to Predictia; will be extended by "_mon" or "_seas" depending on whether 1-month or 3-month values will be verified
 model = ['ecmwf51'] #interval between meridians and parallels
 obs = ['era5']
 years_model = [1981,2023] #years used in label of model netCDF file, refers to the first and the last year of the monthly model inits
 years_obs = [1981,2022] #years used in label of obs netCDF file; if they differ from <years_model>, then the common intersection of years will be validated.
 modulator = 'enso' # climate oscillation assumed to modulate the verification results; currently: "enso" or "none"
 phase = 2 # enso phase the validation is condition on: 0 = neutral, 1 = El Niño, 2 = La Niña; is not used if modulator = 'none'
+modulator_ref = 'init' #init or valid; the time instance the modulation in valid for. If set to 'init', then the time series are modulated with the teleconnection index valid at the initalization month. If set to 'valid', they are modulated with the index valid at the time the forecast is valid.
 years_quantile = [1981,2022] #start and end years of the time series used to calculate the quantiles from obserations and model data
 file_system = 'lustre' #lustre or myLaptop; used to create the path structure to the input and output files
 
-# ##settings for 3-months verification
-# season_label = ['DJF','JFM','FMA','MAM','AMJ','MJJ','JJA','JAS','ASO','SON','OND','NDJ']
-# season = [[12,1,2],[1,2,3],[2,3,4],[3,4,5],[4,5,6],[5,6,7],[6,7,8],[7,8,9],[8,9,10],[9,10,11],[10,11,12],[11,12,1]] #[[12,1,2],[3,4,5],[6,7,8],[9,10,11]]
-# lead = [[0,1,2],[1,2,3],[2,3,4],[3,4,5],[4,5,6]] #[[0,1,2],[0,1,2],[0,1,2],[0,1,2]] #number of months between init and start of forecast interval to be verified, e.g. 1 will discard the first month after init, 2 will discard the first two months after init etc.
+##settings for 3-months verification
+season_label = ['DJF','JFM','FMA','MAM','AMJ','MJJ','JJA','JAS','ASO','SON','OND','NDJ']
+season = [[12,1,2],[1,2,3],[2,3,4],[3,4,5],[4,5,6],[5,6,7],[6,7,8],[7,8,9],[8,9,10],[9,10,11],[10,11,12],[11,12,1]] #[[12,1,2],[3,4,5],[6,7,8],[9,10,11]]
+lead = [[0,1,2],[1,2,3],[2,3,4],[3,4,5],[4,5,6]] #[[0,1,2],[0,1,2],[0,1,2],[0,1,2]] #number of months between init and start of forecast interval to be verified, e.g. 1 will discard the first month after init, 2 will discard the first two months after init etc.
 
-##settings for monthly verification
-season_label = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC']
-season = [[1],[2],[3],[4],[5],[6],[7],[8],[9],[10],[11],[12]] #[[12,1,2],[3,4,5],[6,7,8],[9,10,11]]
-lead = [[0],[1],[2],[3],[4],[5],[6]] #[[0,1,2],[0,1,2],[0,1,2],[0,1,2]] #number of months between init and start of forecast interval to be verified, e.g. 1 will discard the first month after init, 2 will discard the first two months after init etc.
+# ##settings for monthly verification
+# season_label = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC']
+# season = [[1],[2],[3],[4],[5],[6],[7],[8],[9],[10],[11],[12]] #[[12,1,2],[3,4,5],[6,7,8],[9,10,11]]
+# lead = [[0],[1],[2],[3],[4],[5],[6]] #[[0,1,2],[0,1,2],[0,1,2],[0,1,2]] #number of months between init and start of forecast interval to be verified, e.g. 1 will discard the first month after init, 2 will discard the first two months after init etc.
 
 # ##settings for monthly verification
 # season_label = ['JAN','FEB']
 # season = [[1],[2]]
 # lead = [[0],[1]]
 
-variables_gcm = ['SPEI-3-R','SPEI-3-M','fwi','msl','t2m','tp','si10','ssrd'] #model variable names in CDS format  GCM variable names have been set to ERA5 variable names from CDS in <aggregate_hindcast.py> except for <SPEI-3-M> and <SPEI-3-R>, which are paired with <SPEI-3> in <variables_obs>)
-variables_obs = ['SPEI-3','SPEI-3','fwi','msl','t2m','tp','si10','ssrd'] #variable names in observations; are identical to <variables_gcm> except for <SPEI-3>, which is referred to as <SPEI-3-M> or <SPEI-3-R> in the model depending on whether past values are taken from the model or reanalysis (i.e. quasi-observations)
+# variables_gcm = ['SPEI-3-R','SPEI-3-M','fwi','msl','t2m','tp','si10','ssrd'] #model variable names in CDS format  GCM variable names have been set to ERA5 variable names from CDS in <aggregate_hindcast.py> except for <SPEI-3-M> and <SPEI-3-R>, which are paired with <SPEI-3> in <variables_obs>)
+# variables_obs = ['SPEI-3','SPEI-3','fwi','msl','t2m','tp','si10','ssrd'] #variable names in observations; are identical to <variables_gcm> except for <SPEI-3>, which is referred to as <SPEI-3-M> or <SPEI-3-R> in the model depending on whether past values are taken from the model or reanalysis (i.e. quasi-observations)
 
-# variables_gcm = ['SPEI-3-R','SPEI-3-M'] #model variable names in CDS format  GCM variable names have been set to ERA5 variable names from CDS in <aggregate_hindcast.py> except for <SPEI-3-M> and <SPEI-3-R>, which are paired with <SPEI-3> in <variables_obs>)
-# variables_obs = ['SPEI-3','SPEI-3'] #variable names in observations; are identical to <variables_gcm> except for <SPEI-3>, which is referred to as <SPEI-3-M> or <SPEI-3-R> in the model depending on whether past values are taken from the model or reanalysis (i.e. quasi-observations)
+variables_gcm = ['SPEI-3-R','SPEI-3-M'] #model variable names in CDS format  GCM variable names have been set to ERA5 variable names from CDS in <aggregate_hindcast.py> except for <SPEI-3-M> and <SPEI-3-R>, which are paired with <SPEI-3> in <variables_obs>)
+variables_obs = ['SPEI-3','SPEI-3'] #variable names in observations; are identical to <variables_gcm> except for <SPEI-3>, which is referred to as <SPEI-3-M> or <SPEI-3-R> in the model depending on whether past values are taken from the model or reanalysis (i.e. quasi-observations)
 
 datatype = 'float32' #data type of the variables in the output netcdf files
 compression_level = 1
@@ -80,29 +81,36 @@ if file_system == 'myLaptop':
     rundir = home+'/datos/tareas/proyectos/pticlima/pyPTIclima/pySeasonal'
     path_obs_base = home+'/datos/tareas/proyectos/pticlima/seasonal/results/obs/regridded'
     path_gcm_base = home+'/datos/tareas/proyectos/pticlima/seasonal/results/gcm/aggregated'
-    dir_netcdf = home+'/datos/tareas/proyectos/pticlima/seasonal/results/validation/'+vers
+    dir_netcdf = home+'/datos/tareas/proyectos/pticlima/seasonal/results/validation'
 elif file_system == 'lustre':
     home = '/lustre/gmeteo/PTICLIMA'
     rundir = home+'/Scripts/SBrands/pyPTIclima/pySeasonal'
     path_obs_base = home+'/Results/seasonal/obs/regridded'
     path_gcm_base = home+'/Results/seasonal/gcm/aggregated' 
-    dir_netcdf = home+'/Results/seasonal/validation/'+vers
+    dir_netcdf = home+'/Results/seasonal/validation/'
     dir_telcon = home+'/Results/seasonal/indices' #directory of the netCDF file containing the phases of known teleconnection indices; currently ENSO only, as generated with oni2enso.py
     filename_telcon = 'oni2enso_195001_202410.nc' #name of the file located in <dir_telcon>
 else:
     raise Exception('ERROR: unknown entry for <file_system> input parameter!')
     
-#create output directory if it does not exist.
-if os.path.isdir(dir_netcdf) != True:
-    os.makedirs(dir_netcdf)
-
 #check consistency of some input parameters
 if len(season) != len(season_label):
     raise Exception('ERROR: the length of the list <season> does not equal the length of the list <season_label> !')
 
-#check whether the path to create the output netCDF files exists, create it if not
+#create output directory if it does not exist.
 if os.path.isdir(dir_netcdf) != True:
     os.makedirs(dir_netcdf)
+
+#check whether 1-month or 3-month values are to be verified and append the <version> input parameter with the suffix "mon" or "seas" respectively
+if len(season_label[0]) == 3:
+    print('3-month values will be verified and the results will be stored in the directory '+vers+'_seas')
+    vers = vers+'_seas'
+elif len(season_label[0]) == 1:
+    print('1-month values will be verified and the results will be stored in the directory '+vers+'_mon')
+    vers = vers+'_mon'
+else:
+    raise Exception('ERROR: check entry for <season_label[0]> !')
+dir_netcdf = dir_netcdf+'/'+vers #dir_netcdf is extended with the version directory
 
 lead_arr = np.arange(np.array(lead).min(),np.array(lead).max()+1)
 
@@ -336,7 +344,7 @@ for det in np.arange(len(detrending)):
                 
                 #get name of the output file containing the verification results
                 if modulator == 'enso':
-                    savename_results = dir_netcdf+'/validation_results_season_'+variables_gcm[vv]+'_'+model[mm]+'_vs_'+obs[oo]+'_'+domain+'_corroutlier_'+corr_outlier+'_detrended_'+detrending[det]+'_'+str(years_common2label[0])+'_'+str(years_common2label[-1])+'_'+modulator+str(phase)+'init_'+vers+'.nc'
+                    savename_results = dir_netcdf+'/validation_results_season_'+variables_gcm[vv]+'_'+model[mm]+'_vs_'+obs[oo]+'_'+domain+'_corroutlier_'+corr_outlier+'_detrended_'+detrending[det]+'_'+str(years_common2label[0])+'_'+str(years_common2label[-1])+'_'+modulator+str(phase)+modulator_ref+'_'+vers+'.nc'
                 elif modulator == 'none':
                     savename_results = dir_netcdf+'/validation_results_season_'+variables_gcm[vv]+'_'+model[mm]+'_vs_'+obs[oo]+'_'+domain+'_corroutlier_'+corr_outlier+'_detrended_'+detrending[det]+'_'+str(years_common2label[0])+'_'+str(years_common2label[-1])+'_'+modulator+'_'+vers+'.nc'
                 else:
@@ -362,8 +370,15 @@ for det in np.arange(len(detrending)):
                 #get conditional verficiation results per lead-time
                 for ll in np.arange(len(lead_label)):
                     if modulator == 'enso':
-                        indices_sub = indices.shift(time=int(lead_label[ll])) #shift the values in indices towards the future by lead_label[ll] months
-                        indices_sub = indices_sub.isel(time=np.isin(indices_sub.time,obs_seas_mn_5d.time)) #get common time period with observations, which in turn was syncronized with model data above
+                        #check where the modulation is valid and shift the indices time series in case it is valid at the time of model initialization. Then get the time period common to the teleconnection index and the modelled and observed time series
+                        if modulator_ref == 'init':
+                            # indices_sub = indices.shift(time=int(lead_label[ll])) #shift the values in indices towards the future by lead_label[ll] months
+                            indices_sub = indices.shift(time=int(lead_label[ll][0])) #shift the values in indices towards the future by lead_label[ll] months
+                            indices_sub = indices_sub.isel(time=np.isin(indices_sub.time,obs_seas_mn_5d.time)) #get common time period with observations, which in turn was syncronized with model data above
+                        elif modulator_ref == 'valid':
+                            indices_sub = indices.isel(time=np.isin(indices.time,obs_seas_mn_5d.time)) #get common time period with observations, which in turn was syncronized with model data above
+                        else:
+                            raise Exception('ERROR: check entry for <modulator_ref> input parameter !')
                         phase_ind = (indices_sub.oni2enso == phase).values
                     elif modulator == 'none':
                         indices_sub = indices.isel(time=np.isin(indices.time,obs_seas_mn_5d.time)) #is not used below any more if modulator = 'none'
