@@ -379,11 +379,11 @@ def get_reliability_or_roc(obs_f,gcm_f,obs_quantile_f,gcm_quantile_f,threshold_f
     # obs_bin = obs_bin.where(~np.isnan(obs_f)) #xs.reliability and xs.roc do not work with nans in the input arrays, so this line is commented so far
     # gcm_bin = gcm_bin.where(~np.isnan(gcm_f)) #xs.reliability and xs.roc do not work with nans in the input arrays, so this line is commented so far
     
-    #manually remove the first time instant so far, as long as xskill does not treat nans for this function
-    if pd.DatetimeIndex(gcm_f.time).year[0] == 1981:
-        print('WARNING: the first year in the observed (obs_bin) and forecasted occurrence / absence (gcm_bin) time series is 1981 and is removed by the get_reliability() function because of nans present in <gcm_bin> during the first year of evaluation that cannot be handled by xskillscore.reliability() so far.') 
-        obs_bin = obs_bin.isel(time=slice(1, None))
-        gcm_bin = gcm_bin.isel(time=slice(1, None))
+    # #manually remove the first time instant so far, as long as xskill does not treat nans for this function
+    # if pd.DatetimeIndex(gcm_f.time).year[0] == 1981:
+    #     print('WARNING: the first year in the observed (obs_bin) and forecasted occurrence / absence (gcm_bin) time series is 1981 and is removed by the get_reliability() function because of nans present in <gcm_bin> during the first year of evaluation that cannot be handled by xskillscore.reliability() so far.') 
+    #     obs_bin = obs_bin.isel(time=slice(1, None))
+    #     gcm_bin = gcm_bin.isel(time=slice(1, None))
     
     #caclulate the score indicated in the <score_f> input parameter
     if score_f == 'reliability': #calculate reliability as defined in Wilks (2006)
@@ -397,11 +397,11 @@ def get_reliability_or_roc(obs_f,gcm_f,obs_quantile_f,gcm_quantile_f,threshold_f
         if len(obs_f.dims) == 4:
             diagonal = np.tile(o_cond_y.forecast_probability.values,(o_cond_y.shape[0],o_cond_y.shape[1],o_cond_y.shape[2],1)) #this is the diagonal of the reliability diagramm
             reliability = np.abs(o_cond_y - diagonal).mean(dim='forecast_probability') #calculate the residual (i.e. absolute difference) from the diagonal averged over the 5 forecast bins mentioned above
-            reliability = reliability.where(~np.isnan(obs_f[0,:,:,:])) # re-set the grid-boxes over sea to nan as in the input data values
+            #reliability = reliability.where(~np.isnan(obs_f[0,:,:,:])) # re-set the grid-boxes over sea to nan as in the input data values
         elif len(obs_f.dims) == 5:
             diagonal = np.tile(o_cond_y.forecast_probability.values,(o_cond_y.shape[0],o_cond_y.shape[1],o_cond_y.shape[2],o_cond_y.shape[3],1)) #this is the diagonal of the reliability diagramm
             reliability = np.abs(o_cond_y - diagonal).mean(dim='forecast_probability') #calculate the residual (i.e. absolute difference) from the diagonal averged over the 5 forecast bins mentioned above
-            reliability = reliability.where(~np.isnan(obs_f[0,:,:,:,:])) # re-set the grid-boxes over sea to nan as in the input data values
+            #reliability = reliability.where(~np.isnan(obs_f[0,:,:,:,:])) # re-set the grid-boxes over sea to nan as in the input data values
         else:
             raise Exception('Error in get_reliability_or_roc(): check the number of dimenions in obs_f, gcm_f, obs_quantile_f and gcm_quantile_f !')
         out_score = reliability
@@ -413,9 +413,9 @@ def get_reliability_or_roc(obs_f,gcm_f,obs_quantile_f,gcm_quantile_f,threshold_f
         raise Exception('ERROR: unknown entry for <score_f> input parameter in get_reliability_or_roc() function !')
     
     if len(obs_f.dims) == 4:
-        out_score = out_score.where(~np.isnan(obs_f[0,:,:,:])) # re-set the grid-boxes over sea to nan as in the input data values
+        out_score = out_score.where(~np.isnan(obs_f[1,:,:,:])) # re-set the grid-boxes over sea to nan as in the input data values, index must be set to 1 because index = 0 coincides with nan for DJF and NDJ seasons !!
     elif len(obs_f.dims) == 5:
-        out_score = out_score.where(~np.isnan(obs_f[0,:,:,:,])) # re-set the grid-boxes over sea to nan as in the input data values
+        out_score = out_score.where(~np.isnan(obs_f[1,:,:,:,])) # re-set the grid-boxes over sea to nan as in the input data values, index must be set to 1 because index = 0 coincides with nan for DJF and NDJ seasons !!
     else:
         raise Exception('Error in get_reliability_or_roc(): check the number of dimenions in <obs_f>!')
     

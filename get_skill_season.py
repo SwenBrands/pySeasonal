@@ -19,7 +19,7 @@ import pdb as pdb #then type <pdb.set_trace()> at a given line in the code below
 exec(open('functions_seasonal.py').read()) #reads the <functions_seasonal.py> script containing a set of custom functions needed here
 
 #set input parameters
-vers = 'v1j' #version number of the output netCDF file to be sent to Predictia; will be extended by "_mon" or "_seas" depending on whether 1-month or 3-month values will be verified
+vers = 'v1k' #version number of the output netCDF file to be sent to Predictia; will be extended by "_mon" or "_seas" depending on whether 1-month or 3-month values will be verified
 model = ['ecmwf51'] #interval between meridians and parallels
 obs = ['era5']
 years_model = [1981,2023] #years used in label of model netCDF file, refers to the first and the last year of the monthly model inits
@@ -45,11 +45,11 @@ lead = [[0,1,2],[1,2,3],[2,3,4],[3,4,5],[4,5,6]] #[[0,1,2],[0,1,2],[0,1,2],[0,1,
 # season = [[1],[2]]
 # lead = [[0],[1]]
 
-# variables_gcm = ['SPEI-3-R','SPEI-3-M','fwi','msl','t2m','tp','si10','ssrd'] #model variable names in CDS format  GCM variable names have been set to ERA5 variable names from CDS in <aggregate_hindcast.py> except for <SPEI-3-M> and <SPEI-3-R>, which are paired with <SPEI-3> in <variables_obs>)
-# variables_obs = ['SPEI-3','SPEI-3','fwi','msl','t2m','tp','si10','ssrd'] #variable names in observations; are identical to <variables_gcm> except for <SPEI-3>, which is referred to as <SPEI-3-M> or <SPEI-3-R> in the model depending on whether past values are taken from the model or reanalysis (i.e. quasi-observations)
+variables_gcm = ['SPEI-3-R','SPEI-3-M','fwi','msl','t2m','tp','si10','ssrd'] #model variable names in CDS format  GCM variable names have been set to ERA5 variable names from CDS in <aggregate_hindcast.py> except for <SPEI-3-M> and <SPEI-3-R>, which are paired with <SPEI-3> in <variables_obs>)
+variables_obs = ['SPEI-3','SPEI-3','fwi','msl','t2m','tp','si10','ssrd'] #variable names in observations; are identical to <variables_gcm> except for <SPEI-3>, which is referred to as <SPEI-3-M> or <SPEI-3-R> in the model depending on whether past values are taken from the model or reanalysis (i.e. quasi-observations)
 
-variables_gcm = ['SPEI-3-R','SPEI-3-M'] #model variable names in CDS format  GCM variable names have been set to ERA5 variable names from CDS in <aggregate_hindcast.py> except for <SPEI-3-M> and <SPEI-3-R>, which are paired with <SPEI-3> in <variables_obs>)
-variables_obs = ['SPEI-3','SPEI-3'] #variable names in observations; are identical to <variables_gcm> except for <SPEI-3>, which is referred to as <SPEI-3-M> or <SPEI-3-R> in the model depending on whether past values are taken from the model or reanalysis (i.e. quasi-observations)
+# variables_gcm = ['SPEI-3-R','SPEI-3-M'] #model variable names in CDS format  GCM variable names have been set to ERA5 variable names from CDS in <aggregate_hindcast.py> except for <SPEI-3-M> and <SPEI-3-R>, which are paired with <SPEI-3> in <variables_obs>)
+# variables_obs = ['SPEI-3','SPEI-3'] #variable names in observations; are identical to <variables_gcm> except for <SPEI-3>, which is referred to as <SPEI-3-M> or <SPEI-3-R> in the model depending on whether past values are taken from the model or reanalysis (i.e. quasi-observations)
 
 datatype = 'float32' #data type of the variables in the output netcdf files
 compression_level = 1
@@ -100,6 +100,8 @@ if len(season) != len(season_label):
 #create output directory if it does not exist.
 if os.path.isdir(dir_netcdf) != True:
     os.makedirs(dir_netcdf)
+
+print('Starting model verification for '+str(model)+' vs. '+str(obs)+', model years '+str(years_model)+', obs years '+str(years_obs)+', quantile years '+str(years_quantile)+' for modulation with '+modulator+' in phase '+str(phase)+'...')
 
 #check whether 1-month or 3-month values are to be verified and append the <version> input parameter with the suffix "mon" or "seas" respectively
 if len(season_label[0]) == 3:
@@ -399,6 +401,7 @@ for det in np.arange(len(detrending)):
                     crps_ensemble = xs.crps_ensemble(obs_seas_mn_5d.isel(time=phase_ind).sel(lead=lead_label[ll]),gcm_seas_mn_6d.isel(time=phase_ind).sel(lead=lead_label[ll]),member_weights=None,issorted=False,member_dim='member',dim='time',weights=None,keep_attrs=False).rename('crps_ensemble')
                     reliability_lower = get_reliability_or_roc(obs_seas_mn_5d.isel(time=phase_ind).sel(lead=lead_label[ll]),gcm_seas_mn_6d.isel(time=phase_ind).sel(lead=lead_label[ll]),obs_quantile_vals_step.sel(lead=lead_label[ll]),gcm_quantile_vals_step.sel(lead=lead_label[ll]),1/3,score_f = 'reliability',bin_edges_f = bin_edges_reliability).rename('reliability_lower_tercile') #calculate reliability for the first tercile
                     reliability_upper = get_reliability_or_roc(obs_seas_mn_5d.isel(time=phase_ind).sel(lead=lead_label[ll]),gcm_seas_mn_6d.isel(time=phase_ind).sel(lead=lead_label[ll]),obs_quantile_vals_step.sel(lead=lead_label[ll]),gcm_quantile_vals_step.sel(lead=lead_label[ll]),2/3,score_f = 'reliability',bin_edges_f = bin_edges_reliability).rename('reliability_upper_tercile') #calculate reliability for the third tercile
+                    #pdb.set_trace()
                     roc_auc_lower = get_reliability_or_roc(obs_seas_mn_5d.isel(time=phase_ind).sel(lead=lead_label[ll]),gcm_seas_mn_6d.isel(time=phase_ind).sel(lead=lead_label[ll]),obs_quantile_vals_step.sel(lead=lead_label[ll]),gcm_quantile_vals_step.sel(lead=lead_label[ll]),1/3,score_f = 'roc_auc').rename('roc_auc_lower_tercile') #calculate roc area under the curve for the first tercile
                     roc_auc_upper = get_reliability_or_roc(obs_seas_mn_5d.isel(time=phase_ind).sel(lead=lead_label[ll]),gcm_seas_mn_6d.isel(time=phase_ind).sel(lead=lead_label[ll]),obs_quantile_vals_step.sel(lead=lead_label[ll]),gcm_quantile_vals_step.sel(lead=lead_label[ll]),2/3,score_f = 'roc_auc').rename('roc_auc_upper_tercile') #calculate roc area under the curve for the third tercile
                     

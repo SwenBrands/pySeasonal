@@ -2,7 +2,7 @@
 
 '''transforms NOAA's Oceanic Niño index downloaded in netCDF format from 'https://psl.noaa.gov/data/correlation/oni.nc' to categorical data indicating
 Niño (1), Niña (2) and neutral (0) conditions indices and stores the results in netcdf format. Niño or Niño conditions are declared if the ONI index (which itself
-is a 3-months running-mean values) is above or below +0.5 or -0.5 during 5 consecutive months)'''
+is a 3-months running-mean values) is above or below +0.5 or -0.5 during 5 consecutive months, following https://www.ncei.noaa.gov/access/monitoring/enso/sst/'''
 
 #load packages
 import numpy as np
