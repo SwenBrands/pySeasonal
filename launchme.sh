@@ -1,8 +1,8 @@
 #!/bin/bash
 
 #send to queue with e.g.:
-#qsub -N get_skill -l walltime=05:00:00 -l mem=16gb -q himem -e error.log -o out.log -l nodes=1:ppn=1 launchme.sh
-sbatch --job-name=job_swen --partition=meteo_long --mem=32G --time=14:00:00 --nodes= --ntasks-per-node=1 launchme.sh
+#sbatch --job-name=get_skill_pvpot_enso1 --partition=meteo_long --mem=32G --time=02:00:00 --nodes=1 --ntasks-per-node=1 --cpus-per-task=1 launchme.sh
+
 #load your software
 source ${HOME}/.bashrc
 

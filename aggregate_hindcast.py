@@ -34,7 +34,7 @@ variables_new = ['pvpot'] #new variable names; as provided by ERA5 data from CDS
 time_name = ['time'] #name of the time dimension in the netCDF files for this variable, corresponds to <variables> input parameter and must have the same length
 lon_name = ['lon']
 lat_name = ['lat']
-file_start = ['seasonal-original-single-levels_masked']
+file_start = ['seasonal-original-single-levels']
 
 years = [1981,2023] #years to be regridded, the output files will be filled with monthly values, aggregated from daily values in this script, covering all months beginning in January of the indicated start year and ending in December of the indicated end year. If no daily input data is found for a given month, nans will be placed in the monthly output netCDF files.
 
@@ -97,7 +97,7 @@ for mm in np.arange(len(model)):
         datelist = [] #init date list
         
         #construct path to input GCM files as a function of the variable set in variables[vv]
-        if variables[vv] in ('fwi'):
+        if variables[vv] in ('fwi','pvpot'):
             path_gcm_base_var = path_gcm_base_derived
         elif variables[vv] in ('SPEI-3','SPEI-3-M','SPEI-3-R'):
             path_gcm_base_var = path_gcm_base_masked
@@ -122,7 +122,7 @@ for mm in np.arange(len(model)):
                 if variables[vv] in ('SPEI-3','SPEI-3-M','SPEI-3-R'):
                     #path_gcm_data = path_gcm_base_var+'/'+domain+'/'+product+'/'+variables[vv]+'/'+model[mm]+'/'+version[mm]+'/coefs_all_members/'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'/'+file_start[vv]+'_'+domain+'_'+product+'_'+variables[vv]+'_'+model[mm]+'_'+version[mm]+'_'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'.nc'
                     path_gcm_data = path_gcm_base_var+'/'+domain+'/'+product+'/'+variables[vv]+'/'+model[mm]+'/'+version[mm]+'/coefs_pool_members/'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'/'+file_start[vv]+'_'+domain+'_'+product+'_'+variables[vv]+'_'+model[mm]+'_'+version[mm]+'_'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'.nc'
-                elif variables[vv] == 'fwi':
+                elif variables[vv] in ('fwi','pvpot'):
                     path_gcm_data = path_gcm_base_var+'/'+domain+'/'+product+'/'+variables[vv]+'/'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'/'+file_start[vv]+'_'+domain+'_'+product+'_'+variables[vv]+'_'+model[mm]+'_'+version[mm]+'_'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'.nc'
                 elif variables[vv] in ('psl','sfcWind','tas','pr','rsds'):
                     path_gcm_data = path_gcm_base_var+'/'+domain+'/'+product+'/'+variables[vv]+'/'+model[mm]+'/'+version[mm]+'/'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'/'+file_start[vv]+'_'+domain+'_'+product+'_'+variables[vv]+'_'+model[mm]+'_'+version[mm]+'_'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'.nc'
@@ -167,7 +167,16 @@ for mm in np.arange(len(model)):
                     data_mon[:] = np.nan
 
                     ##get dimensions and metadata to save in output netCDF file below
-                    var_units = nc[variables_nc[vv]].units
+                    try:
+                        var_units = nc[variables_nc[vv]].units
+                    except:
+                        print('WARNING: no units have been stored in netcdf input file for '+variables[vv]+' located at '+path_gcm_data)
+                        if variables_nc[vv] == 'pvpot':
+                            print('Units are set to: zero-bound index')
+                            var_units = 'zero-bound index'
+                        else:
+                            raise Exception('ERROR: no units are defined for '+variables[vv]+' !!')
+                        
                     #var_name = nc[variables_nc[vv]].name #optionally use variable name from input netCDF files
                     
                     ##get members from the input file and transform the variety of possible formats to integer

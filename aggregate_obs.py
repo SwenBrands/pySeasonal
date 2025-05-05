@@ -18,8 +18,10 @@ obs = 'era5' #name of the observational / reanalysis dataset that will be regrid
 agg_src = 'day' #temporal aggregation of the observational input files, pertains to the <obs> loop indicated with <oo> below
 startyear_file = 1981 #start year of the obs file as indicated in filename
 endyear_file = 2022 #corresponding end year
-variables = ['SPEI-3','fwi'] #variables to be regridded
-variables_nc = ['SPEI-3','FWI'] #variable names with the netCDF file
+#variables = ['pvpot','SPEI-3','fwi'] #variables to be regridded
+#variables_nc = ['pvpot','SPEI-3','FWI'] #variable names with the netCDF file
+variables = ['pvpot'] #variables to be regridded
+variables_nc = ['pvpot'] #variable names with the netCDF file
 years = [1981,2022] #years to be regridded
 int_method = 'conservative_normed' #'conservative_normed', interpolation method used to regrid the observations which already are provided on the model grid
 file_system = 'lustre' #lustre or myLaptop; used to create the path structure to the input and output files
@@ -58,8 +60,10 @@ for vv in np.arange(len(variables)):
     
     #define path to the file and loading function as a function of the variable (variables may come from different providers using distinct rules)
     if variables[vv] == 'fwi':
-        #path_obs_data = path_obs_base+'/'+obs+'/'+agg_src+'/'+domain+'_'+resolution+'/'+variables[vv]+'/'+variables[vv]+'_'+domain+'_'+resolution+'.nc'
         path_obs_data = path_obs_base+'/'+obs.upper()+'/data_derived/'+domain+'_'+resolution+'/'+variables[vv]+'12/'+variables[vv]+'_'+domain+'_'+resolution+'.nc'
+        nc = xr.open_dataset(path_obs_data)
+    elif variables[vv] == 'pvpot':
+        path_obs_data = path_obs_base+'/'+obs.upper()+'/data_derived/'+domain+'_'+resolution+'/'+variables[vv]+'/'+variables[vv]+'_'+domain+'_'+resolution+'_DM.nc'
         nc = xr.open_dataset(path_obs_data)
     elif variables[vv] == 'SPEI-3':
         #path_obs_data = path_obs_base+'/'+obs+'/'+agg_src+'/'+domain+'_'+resolution+'/'+variables[vv]+'/'+variables[vv]+'_'+obs.upper()+'_'+agg_src+'_*.nc' #SPEI-3_ERA5_day_2021.nc
@@ -92,6 +96,13 @@ for vv in np.arange(len(variables)):
     nc = nc.reindex(lat=list(reversed(nc.lat))) #brings latitudes to descending order
     nc = nc.rename_dims(lon='x',lat='y') #note that this does not rename the indices !
     nc = nc.rename_vars(lon='x',lat='y')
+    # add exception for pvpot, which currently comes without units
+    if variables[vv] == 'pvpot':
+        try:
+            print(nc[variables[vv]].units)
+        except:
+            print('Warning: Units for '+variables[vv]+' are missing and will be added now !')
+            nc[variables[vv]].attrs['units'] = 'index value ranging from 0 to 1'
     # nc.x.attrs('standard_name') = 'longitude'
     # nc.x.attrs('long_name') = 'longitude'
     # nc.x.attrs('units') = 'degrees_east'

@@ -24,8 +24,8 @@ model = ['ecmwf51'] #interval between meridians and parallels
 obs = ['era5']
 years_model = [1981,2023] #years used in label of model netCDF file, refers to the first and the last year of the monthly model inits
 years_obs = [1981,2022] #years used in label of obs netCDF file; if they differ from <years_model>, then the common intersection of years will be validated.
-modulator = 'enso' # climate oscillation assumed to modulate the verification results; currently: "enso" or "none"
-phase = 2 # enso phase the validation is condition on: 0 = neutral, 1 = El Niño, 2 = La Niña; is not used if modulator = 'none'
+modulator = 'none' # climate oscillation assumed to modulate the verification results; currently: "enso" or "none"
+phase = 1 # enso phase the validation is condition on: 0 = neutral, 1 = El Niño, 2 = La Niña; is not used if modulator = 'none'
 modulator_ref = 'init' #init or valid; the time instance the modulation in valid for. If set to 'init', then the time series are modulated with the teleconnection index valid at the initalization month. If set to 'valid', they are modulated with the index valid at the time the forecast is valid.
 years_quantile = [1981,2022] #start and end years of the time series used to calculate the quantiles from obserations and model data
 file_system = 'lustre' #lustre or myLaptop; used to create the path structure to the input and output files
@@ -45,11 +45,11 @@ lead = [[0,1,2],[1,2,3],[2,3,4],[3,4,5],[4,5,6]] #[[0,1,2],[0,1,2],[0,1,2],[0,1,
 # season = [[1],[2]]
 # lead = [[0],[1]]
 
-variables_gcm = ['SPEI-3-R','SPEI-3-M','fwi','msl','t2m','tp','si10','ssrd'] #model variable names in CDS format  GCM variable names have been set to ERA5 variable names from CDS in <aggregate_hindcast.py> except for <SPEI-3-M> and <SPEI-3-R>, which are paired with <SPEI-3> in <variables_obs>)
-variables_obs = ['SPEI-3','SPEI-3','fwi','msl','t2m','tp','si10','ssrd'] #variable names in observations; are identical to <variables_gcm> except for <SPEI-3>, which is referred to as <SPEI-3-M> or <SPEI-3-R> in the model depending on whether past values are taken from the model or reanalysis (i.e. quasi-observations)
+variables_gcm = ['pvpot','SPEI-3-R','SPEI-3-M','fwi','msl','t2m','tp','si10','ssrd'] #model variable names in CDS format  GCM variable names have been set to ERA5 variable names from CDS in <aggregate_hindcast.py> except for <SPEI-3-M> and <SPEI-3-R>, which are paired with <SPEI-3> in <variables_obs>)
+variables_obs = ['pvpot','SPEI-3','SPEI-3','fwi','msl','t2m','tp','si10','ssrd'] #variable names in observations; are identical to <variables_gcm> except for <SPEI-3>, which is referred to as <SPEI-3-M> or <SPEI-3-R> in the model depending on whether past values are taken from the model or reanalysis (i.e. quasi-observations)
 
-# variables_gcm = ['SPEI-3-R','SPEI-3-M'] #model variable names in CDS format  GCM variable names have been set to ERA5 variable names from CDS in <aggregate_hindcast.py> except for <SPEI-3-M> and <SPEI-3-R>, which are paired with <SPEI-3> in <variables_obs>)
-# variables_obs = ['SPEI-3','SPEI-3'] #variable names in observations; are identical to <variables_gcm> except for <SPEI-3>, which is referred to as <SPEI-3-M> or <SPEI-3-R> in the model depending on whether past values are taken from the model or reanalysis (i.e. quasi-observations)
+# variables_gcm = ['pvpot'] #model variable names in CDS format  GCM variable names have been set to ERA5 variable names from CDS in <aggregate_hindcast.py> except for <SPEI-3-M> and <SPEI-3-R>, which are paired with <SPEI-3> in <variables_obs>)
+# variables_obs = ['pvpot'] #variable names in observations; are identical to <variables_gcm> except for <SPEI-3>, which is referred to as <SPEI-3-M> or <SPEI-3-R> in the model depending on whether past values are taken from the model or reanalysis (i.e. quasi-observations)
 
 datatype = 'float32' #data type of the variables in the output netcdf files
 compression_level = 1
@@ -101,7 +101,7 @@ if len(season) != len(season_label):
 if os.path.isdir(dir_netcdf) != True:
     os.makedirs(dir_netcdf)
 
-print('Starting model verification for '+str(model)+' vs. '+str(obs)+', model years '+str(years_model)+', obs years '+str(years_obs)+', quantile years '+str(years_quantile)+' for modulation with '+modulator+' in phase '+str(phase)+'...')
+print('Starting verification for '+str(variables_gcm)+' from '+str(model)+' vs. '+str(obs)+', model years '+str(years_model)+', obs years '+str(years_obs)+', quantile years '+str(years_quantile)+' for modulation with '+modulator+' in phase '+str(phase)+'...')
 
 #check whether 1-month or 3-month values are to be verified and append the <version> input parameter with the suffix "mon" or "seas" respectively
 if len(season_label[0]) == 3:

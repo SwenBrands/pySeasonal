@@ -27,24 +27,24 @@ else:
     print(date.today())
 print(year_init, month_init)
 
-# year_init = 2024 #a list containing the years the forecast are initialized on, will be looped through with yy
-# month_init = 3 #a list containing the corresponding months the forecast are initialized on, will be called while looping through <year_init> (with yy), i.e. must have the same length
+year_init = 2024 #a list containing the years the forecast are initialized on, will be looped through with yy
+month_init = 10 #a list containing the corresponding months the forecast are initialized on, will be called while looping through <year_init> (with yy), i.e. must have the same length
 
 #set input parameters
-quantile_version = '1j' #version number of the quantiles file used here
+quantile_version = 'v1k_seas' #version number of the quantiles file used here
 model = 'ecmwf' #interval between meridians and parallels
 version = '51'
 
 years_quantile = [1981,2022] #years used to calculate the quantiles with get_skill_season.py
 season_length = 3 #length of the season, e.g. 3 for DJF, JFM, etc.
 
-variable_qn = ['SPEI-3-M','fwi','msl','t2m','tp','si10','ssrd'] # variable name used inside and outside of the quantile file. This is my work and is thus homegeneous.
-variable_fc = ['SPEI-3-M','fwi','psl','tas','pr','sfcWind','rsds'] # variable name used in the file name, i.e. outside the file, ask collegues for data format harmonization
-variable_fc_nc = ['SPEI-3-M','FWI','psl','tas','pr','sfcWind','rsds'] # variable name within the model netcdf file, may vary depending on source
-time_name = ['time','time','forecast_time','forecast_time','forecast_time','forecast_time','forecast_time'] #name of the time dimension within the model netcdf file, may vary depending on source
-lon_name = ['lon','lon','x','x','x','x','x']
-lat_name = ['lat','lat','y','y','y','y','y']
-file_start = ['seasonal-original-single-levels_masked','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels'] #start string of the file names
+variable_qn = ['pvpot','SPEI-3-M','fwi','msl','t2m','tp','si10','ssrd'] # variable name used inside and outside of the quantile file. This is my work and is thus homegeneous.
+variable_fc = ['pvpot','SPEI-3-M','fwi','psl','tas','pr','sfcWind','rsds'] # variable name used in the file name, i.e. outside the file, ask collegues for data format harmonization
+variable_fc_nc = ['pvpot','SPEI-3-M','FWI','psl','tas','pr','sfcWind','rsds'] # variable name within the model netcdf file, may vary depending on source
+time_name = ['time','time','time','forecast_time','forecast_time','forecast_time','forecast_time','forecast_time'] #name of the time dimension within the model netcdf file, may vary depending on source
+lon_name = ['lon','lon','lon','x','x','x','x','x']
+lat_name = ['lat','lat','lat','y','y','y','y','y']
+file_start = ['seasonal-original-single-levels','seasonal-original-single-levels_masked','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels'] #start string of the file names
 
 precip_threshold = 1/90 #seasonal mean daily precipitation threshold in mm below which the modelled and quasi-observed monthly precipitation amount is set to 0. Bring this in exact agreement with get_skill_season.py in future versions
 datatype = 'float32' #data type of the variables in the output netcdf files
@@ -58,7 +58,7 @@ dpival = 300 #resolution of output figures
 south_ext_lambert = 0 #extend the southern limit of the box containing the Lambert Conformal Projection
 
 #set basic path structure for observations and gcms
-gcm_store = 'argo' #argo, laptop, F, extdisk2 or lustre
+gcm_store = 'lustre' #argo, laptop, F, extdisk2 or lustre
 product = 'forecast'
 
 ## EXECUTE #############################################################
@@ -111,7 +111,7 @@ if os.path.isdir(dir_forecast) != True:
     os.makedirs(dir_forecast)
 
 #load the quantiles file
-filename_quantiles = dir_quantile+'/quantiles_pticlima_'+domain+'_'+str(years_quantile[0])+'_'+str(years_quantile[1])+'_v'+quantile_version+'.nc'
+filename_quantiles = dir_quantile+'/'+quantile_version+'/quantiles_pticlima_'+domain+'_'+str(years_quantile[0])+'_'+str(years_quantile[1])+'_'+quantile_version+'.nc'
 nc_quantile = xr.open_dataset(filename_quantiles)
 
 #make forecast for each variable
@@ -119,7 +119,7 @@ for vv in np.arange(len(variable_fc)):
     #load forecast file
     if variable_fc[vv] in ('SPEI-3','SPEI-3-M','SPEI-3-R'):
         filename_forecast = path_gcm_base_masked+'/'+domain+'/'+product+'/'+variable_fc[vv]+'/'+model+'/'+version+'/coefs_pool_members/'+str(year_init)+str(month_init).zfill(2)+'/'+file_start[vv]+'_'+domain+'_'+product+'_'+variable_fc[vv]+'_'+model+'_'+version+'_'+str(year_init)+str(month_init).zfill(2)+'.nc'
-    elif variable_fc[vv] == 'fwi':
+    elif variable_fc[vv] in ('fwi','pvpot'):
         filename_forecast = path_gcm_base_derived+'/'+domain+'/'+product+'/'+variable_fc[vv]+'/'+str(year_init)+str(month_init).zfill(2)+'/'+file_start[vv]+'_'+domain+'_'+product+'_'+variable_fc[vv]+'_'+model+'_'+version+'_'+str(year_init)+str(month_init).zfill(2)+'.nc'
     elif variable_fc[vv] in ('psl','sfcWind','tas','pr','rsds'):
         filename_forecast = path_gcm_base+'/'+domain+'/'+product+'/'+variable_fc[vv]+'/'+model+'/'+version+'/'+str(year_init)+str(month_init).zfill(2)+'/'+file_start[vv]+'_'+domain+'_'+product+'_'+variable_fc[vv]+'_'+model+'_'+version+'_'+str(year_init)+str(month_init).zfill(2)+'.nc'
@@ -237,7 +237,7 @@ out_arr = out_arr.to_dataset()
 out_arr['rtime'].attrs['standard_name'] = 'forecast_reference_time'
 out_arr['rtime'].attrs['long_name'] = 'initialization date of the forecast'
 out_arr['tercile'].attrs['long_name'] = 'terciles in ascending order, 1 = lower, 2 = center, 3 = upper'
-out_arr['tercile'].attrs['tercile_period'] = nc_quantile.validation_period
+out_arr['tercile'].attrs['tercile_period'] = nc_quantile.reference_period
 out_arr['tercile'].attrs['tercile_version'] = nc_quantile.version
 out_arr['variable'].attrs['long_name'] = 'name of the meteorological variable'
 out_arr['season'].attrs['long_name'] = 'season the forecast is valid for'
