@@ -20,30 +20,44 @@ import pdb as pdb #then type <pdb.set_trace()> at a given line in the code below
 exec(open('functions_seasonal.py').read()) #reads the <functions_seasonal.py> script containing a set of custom functions needed here
 
 ##set input parameters for model dataset to be aggregated
-# variables = ['SPEI-3-R','SPEI-3-M','fwi','psl','sfcWind','tas','pr','rsds'] #variable names in directories and file names
-# variables_nc = ['SPEI-3-R','SPEI-3-M','FWI','psl','sfcWind','tas','pr','rsds'] #variable names within the netCDF files, differs in case of msi (msi is used within the file, but psl is used in the file name)
-# variables_new = ['SPEI-3-R','SPEI-3-M','fwi','msl','si10','t2m','tp','ssrd'] #new variable names; as provided by ERA5 data from CDS
-# time_name = ['time','time','time','forecast_time','forecast_time','forecast_time','forecast_time','forecast_time'] #name of the time dimension in the netCDF files for this variable, corresponds to <variables> input parameter and must have the same length
-# lon_name = ['lon','lon','lon','x','x','x','x','x']
-# lat_name = ['lat','lat','lat','y','y','y','y','y']
-# file_start = ['seasonal-original-single-levels_masked','seasonal-original-single-levels_masked','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels'] #start string of the file names
+# variables = ['pvpot','SPEI-3-R','SPEI-3-M','fwi','psl','sfcWind','tas','pr','rsds'] #variable names in directories and file names
+# variables_nc = ['pvpot','SPEI-3-R','SPEI-3-M','FWI','psl','sfcWind','tas','pr','rsds'] #variable names within the netCDF files, differs in case of msi (msi is used within the file, but psl is used in the file name)
+# variables_new = ['pvpot','SPEI-3-R','SPEI-3-M','fwi','msl','si10','t2m','tp','ssrd'] #new variable names; as provided by ERA5 data from CDS
+# time_name = ['time','time','time','time','forecast_time','forecast_time','forecast_time','forecast_time','forecast_time'] #name of the time dimension in the netCDF files for this variable, corresponds to <variables> input parameter and must have the same length
+# lon_name = ['lon','lon','lon','lon','x','x','x','x','x']
+# lat_name = ['lat','lat','lat','lat','y','y','y','y','y']
+# file_start = ['seasonal-original-single-levels','seasonal-original-single-levels_masked','seasonal-original-single-levels_masked','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels'] #start string of the file names
 
-variables = ['pvpot'] #variable names in directories and file names
-variables_nc = ['pvpot'] #variable names within the netCDF files, differs in case of fwi msi (msi / FWI is used within the file, but psl / fwi is used in the file name)
-variables_new = ['pvpot'] #new variable names; as provided by ERA5 data from CDS
-time_name = ['time'] #name of the time dimension in the netCDF files for this variable, corresponds to <variables> input parameter and must have the same length
+variables = ['SPEI-3-R_eqm_pullLMs-TRUE'] #variable names in directories and file names
+variables_nc = ['SPEI-3-R'] #variable names within the netCDF files, differs in case of fwi msi (msi / FWI is used within the file, but psl / fwi is used in the file name)
+variables_new = ['SPEI-3-R-C1'] #new variable names; as provided by ERA5 data from CDS
 lon_name = ['lon']
 lat_name = ['lat']
 file_start = ['seasonal-original-single-levels']
 
 years = [1981,2023] #years to be regridded, the output files will be filled with monthly values, aggregated from daily values in this script, covering all months beginning in January of the indicated start year and ending in December of the indicated end year. If no daily input data is found for a given month, nans will be placed in the monthly output netCDF files.
+# years = [2000,2006] #years to be regridded, the output files will be filled with monthly values, aggregated from daily values in this script, covering all months beginning in January of the indicated start year and ending in December of the indicated end year. If no daily input data is found for a given month, nans will be placed in the monthly output netCDF files.
 
 #set input parameters for model datasets, only used to get the land-sea mask of the models listed in <model>
+
+## parameters passing through loops
+
+#setup for various models
+# model = ['cmcc','ecmwf'] #seasonal forecast model
+# version = ['35','51'] #and version thereof; pertains to <model> loop indicated with <mm> below
+# time_name = [['forecast_time'],['forecast_time']] #one entry per model and variable; recurrs the <model> and <variables> loops below; one list per model, the list items refer to the time name set for the variable from that model; name of the time dimension in the netCDF files for this variable, corresponds to <variables> input parameter and must have the same length
+# nr_mem = [40,25] #number of considered ensemble members, pertains to <model> loop. For instance, ECMWF51 has 25 hindcast and 51 forecast members so <nr_mem = 25> should be set if hindcasts and forecasts are combined in the skill evaluation. The first nr_mem members are selected.
+# n_lead = [7,8] #considered lead-time in months, pertains to <model> loop indicated with <mm> below, CMCC 3.5 hindcasts provide 183 forecast days, SEAS5.1 provide 215
+
+#setup for a single model
 model = ['ecmwf'] #seasonal forecast model
 version = ['51'] #and version thereof; pertains to <model> loop indicated with <mm> below
+time_name = [['time']] #one entry per model and variable; recurrs the <model> and <variables> loops below; one list per model, the list items refer to the time name set for the variable from that model; name of the time dimension in the netCDF files for this variable, corresponds to <variables> input parameter and must have the same length
 nr_mem = [25] #number of considered ensemble members, pertains to <model> loop. For instance, ECMWF51 has 25 hindcast and 51 forecast members so <nr_mem = 25> should be set if hindcasts and forecasts are combined in the skill evaluation. The first nr_mem members are selected.
+n_lead = [8] #considered lead-time in months, pertains to <model> loop indicated with <mm> below, CMCC 3.5 hindcasts provide 183 forecast days, SEAS5.1 provide 215
+
+#fixed parameters not passing through loops
 imonth = [1,2,3,4,5,6,7,8,9,10,11,12] #month the forecasts are initialized on, 1 refers to the January 1st, 2 to Febrary 1st etc.
-n_lead = 8 #considered lead-time in months
 
 #set MEDCOF domain
 domain = 'medcof' #spatial domain the model data is available on. So far, this is just a label used to find the input files and name the output files.
@@ -87,8 +101,8 @@ else:
 print('The GCM files will be loaded from the base directory '+path_gcm_base+'...')
 
 years_vec = np.arange(years[0],years[1]+1) #create an array of year
-n_mon = len(years_vec)*12+n_lead-1 #length of the monthly time series in the output data array generated by this script, 12 is hard-coded because it refers to the number of months per year and therefore is a static variable, if the initialization is not provided in <imonth> the output data is set to nan
 for mm in np.arange(len(model)):
+    n_mon = len(years_vec)*12+n_lead[mm]-1 #length of the monthly time series in the output data array generated by this script, 12 is hard-coded because it refers to the number of months per year and therefore is a static variable, if the initialization is not provided in <imonth> the output data is set to nan
     #create directory of the output netcdf files if necessary
     if os.path.isdir(savepath_base+'/'+model[mm]+version[mm]) != True:
         os.makedirs(savepath_base+'/'+model[mm]+version[mm])
@@ -99,7 +113,7 @@ for mm in np.arange(len(model)):
         #construct path to input GCM files as a function of the variable set in variables[vv]
         if variables[vv] in ('fwi','pvpot'):
             path_gcm_base_var = path_gcm_base_derived
-        elif variables[vv] in ('SPEI-3','SPEI-3-M','SPEI-3-R'):
+        elif variables[vv] in ('SPEI-3','SPEI-3-M','SPEI-3-R','SPEI-3-R_eqm_pullLMs-TRUE'):
             path_gcm_base_var = path_gcm_base_masked
         elif variables[vv] in ('psl','sfcWind','tas','pr','rsds'):
             path_gcm_base_var = path_gcm_base
@@ -122,6 +136,8 @@ for mm in np.arange(len(model)):
                 if variables[vv] in ('SPEI-3','SPEI-3-M','SPEI-3-R'):
                     #path_gcm_data = path_gcm_base_var+'/'+domain+'/'+product+'/'+variables[vv]+'/'+model[mm]+'/'+version[mm]+'/coefs_all_members/'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'/'+file_start[vv]+'_'+domain+'_'+product+'_'+variables[vv]+'_'+model[mm]+'_'+version[mm]+'_'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'.nc'
                     path_gcm_data = path_gcm_base_var+'/'+domain+'/'+product+'/'+variables[vv]+'/'+model[mm]+'/'+version[mm]+'/coefs_pool_members/'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'/'+file_start[vv]+'_'+domain+'_'+product+'_'+variables[vv]+'_'+model[mm]+'_'+version[mm]+'_'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'.nc'
+                elif variables[vv] in ('SPEI-3-R_eqm_pullLMs-TRUE'):
+                    path_gcm_data = path_gcm_base_var+'/'+domain+'/'+product+'/'+variables[vv]+'/'+model[mm]+'/'+version[mm]+'/coefs_of_reanalysis/'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'/'+file_start[vv]+'_'+domain+'_'+product+'_SPEI-3-R_'+model[mm]+'_'+version[mm]+'_'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'.nc'
                 elif variables[vv] in ('fwi','pvpot'):
                     path_gcm_data = path_gcm_base_var+'/'+domain+'/'+product+'/'+variables[vv]+'/'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'/'+file_start[vv]+'_'+domain+'_'+product+'_'+variables[vv]+'_'+model[mm]+'_'+version[mm]+'_'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'.nc'
                 elif variables[vv] in ('psl','sfcWind','tas','pr','rsds'):
@@ -159,11 +175,11 @@ for mm in np.arange(len(model)):
                 print('INFO: Selecting the first '+str(nr_mem[mm])+' ensemble members from a total of '+str(nc.member.shape[0])+' members...') 
                 nc = nc.isel(member=np.arange(nr_mem[mm]))
                 
-                nc_mon = nc[variables_nc[vv]].resample(time="1MS").mean(dim=time_name[vv]) #https://stackoverflow.com/questions/50564459/using-xarray-to-make-monthly-average
+                nc_mon = nc[variables_nc[vv]].resample(time="1MS").mean(dim=time_name[mm][vv]) #https://stackoverflow.com/questions/50564459/using-xarray-to-make-monthly-average
                 dates_mon = pd.DatetimeIndex(nc_mon.time)
                 datelist = datelist+list(nc_mon.time.values) #concatenate the date list to create a monthly unique date vector covering the whole period considered in <years>; see below.
                 if yy == 0 and im == 0:
-                    data_mon = np.zeros((n_mon,n_lead,nc_mon.shape[1],nc_mon.shape[2],nc_mon.shape[3]))
+                    data_mon = np.zeros((n_mon,n_lead[mm],nc_mon.shape[1],nc_mon.shape[2],nc_mon.shape[3]))
                     data_mon[:] = np.nan
 
                     ##get dimensions and metadata to save in output netCDF file below
@@ -250,12 +266,12 @@ for mm in np.arange(len(model)):
         ## generate pandas Datetime object with all unique dates, create xarray DataArray and save to netCDF
         datelist = pd.DatetimeIndex(datelist).unique()
         startdate = str(datelist.year[0])+'-01-01 00:00:00' #the start calendar day of the output nc file is fixed at 1st of January for ECMWF
-        enddate = str(years[-1]+1)+'-'+str(n_lead-1).zfill(2)+startdate[-12:] #the end calendar day of the output nc file is fixed at 1st of July for ECMWF51 due to the 8-month leadtime (from December 1 of the previous year to July 1 of the end year)
-        leads = np.arange(n_lead)
+        enddate = str(years[-1]+1)+'-'+str(n_lead[mm]-1).zfill(2)+startdate[-12:] #the end calendar day of the output nc file is fixed at 1st of July for ECMWF51 due to the 8-month leadtime (from December 1 of the previous year to July 1 of the end year)
+        leads = np.arange(n_lead[mm])
         daterange = pd.date_range(start=startdate, end=enddate, freq='MS') #MS = month start frequency, see https://pandas.pydata.org/docs/user_guide/timeseries.html#timeseries-offset-aliases
         outnc = xr.DataArray(data_mon, coords=[daterange, leads, members, lats, lons], dims=['time', 'lead', 'member', 'y', 'x'], name=variables_new[vv])
         
-        ##cut out the last n_lead-1 months to harmonize the time dimension with observations, currently not used because this is done afterwards in <get_skill.py> 
+        ##cut out the last n_lead[mm]-1 months to harmonize the time dimension with observations, currently not used because this is done afterwards in <get_skill.py> 
         #yearbool = (daterange.year >= years[0]) & (daterange.year <= years[1])
         #outnc = outnc.isel(time = yearbool)
         

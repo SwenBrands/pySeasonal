@@ -30,26 +30,26 @@ modulator_ref = 'init' #init or valid; the time instance the modulation in valid
 years_quantile = [1981,2022] #start and end years of the time series used to calculate the quantiles from obserations and model data
 file_system = 'lustre' #lustre or myLaptop; used to create the path structure to the input and output files
 
-##settings for 3-months verification
-season_label = ['DJF','JFM','FMA','MAM','AMJ','MJJ','JJA','JAS','ASO','SON','OND','NDJ']
-season = [[12,1,2],[1,2,3],[2,3,4],[3,4,5],[4,5,6],[5,6,7],[6,7,8],[7,8,9],[8,9,10],[9,10,11],[10,11,12],[11,12,1]] #[[12,1,2],[3,4,5],[6,7,8],[9,10,11]]
-lead = [[0,1,2],[1,2,3],[2,3,4],[3,4,5],[4,5,6]] #[[0,1,2],[0,1,2],[0,1,2],[0,1,2]] #number of months between init and start of forecast interval to be verified, e.g. 1 will discard the first month after init, 2 will discard the first two months after init etc.
+# ##settings for 3-months verification
+# season_label = ['DJF','JFM','FMA','MAM','AMJ','MJJ','JJA','JAS','ASO','SON','OND','NDJ']
+# season = [[12,1,2],[1,2,3],[2,3,4],[3,4,5],[4,5,6],[5,6,7],[6,7,8],[7,8,9],[8,9,10],[9,10,11],[10,11,12],[11,12,1]] #[[12,1,2],[3,4,5],[6,7,8],[9,10,11]]
+# lead = [[0,1,2],[1,2,3],[2,3,4],[3,4,5],[4,5,6]] #[[0,1,2],[0,1,2],[0,1,2],[0,1,2]] #number of months between init and start of forecast interval to be verified, e.g. 1 will discard the first month after init, 2 will discard the first two months after init etc.
 
-# ##settings for monthly verification
-# season_label = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC']
-# season = [[1],[2],[3],[4],[5],[6],[7],[8],[9],[10],[11],[12]] #[[12,1,2],[3,4,5],[6,7,8],[9,10,11]]
-# lead = [[0],[1],[2],[3],[4],[5],[6]] #[[0,1,2],[0,1,2],[0,1,2],[0,1,2]] #number of months between init and start of forecast interval to be verified, e.g. 1 will discard the first month after init, 2 will discard the first two months after init etc.
+##settings for monthly verification
+season_label = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC']
+season = [[1],[2],[3],[4],[5],[6],[7],[8],[9],[10],[11],[12]] #[[12,1,2],[3,4,5],[6,7,8],[9,10,11]]
+lead = [[0],[1],[2],[3],[4],[5],[6]] #[[0,1,2],[0,1,2],[0,1,2],[0,1,2]] #number of months between init and start of forecast interval to be verified, e.g. 1 will discard the first month after init, 2 will discard the first two months after init etc.
 
 # ##settings for monthly verification
 # season_label = ['JAN','FEB']
 # season = [[1],[2]]
 # lead = [[0],[1]]
 
-variables_gcm = ['pvpot','SPEI-3-R','SPEI-3-M','fwi','msl','t2m','tp','si10','ssrd'] #model variable names in CDS format  GCM variable names have been set to ERA5 variable names from CDS in <aggregate_hindcast.py> except for <SPEI-3-M> and <SPEI-3-R>, which are paired with <SPEI-3> in <variables_obs>)
-variables_obs = ['pvpot','SPEI-3','SPEI-3','fwi','msl','t2m','tp','si10','ssrd'] #variable names in observations; are identical to <variables_gcm> except for <SPEI-3>, which is referred to as <SPEI-3-M> or <SPEI-3-R> in the model depending on whether past values are taken from the model or reanalysis (i.e. quasi-observations)
+# variables_gcm = ['SPEI-3-R-C1','pvpot','SPEI-3-R','SPEI-3-M','fwi','msl','t2m','tp','si10','ssrd'] #model variable names in CDS format  GCM variable names have been set to ERA5 variable names from CDS in <aggregate_hindcast.py> except for <SPEI-3-M> and <SPEI-3-R>, which are paired with <SPEI-3> in <variables_obs>)
+# variables_obs = ['SPEI-3','pvpot','SPEI-3','SPEI-3','fwi','msl','t2m','tp','si10','ssrd'] #variable names in observations; are identical to <variables_gcm> except for <SPEI-3>, which is referred to as <SPEI-3-M> or <SPEI-3-R> in the model depending on whether past values are taken from the model or reanalysis (i.e. quasi-observations)
 
-# variables_gcm = ['pvpot'] #model variable names in CDS format  GCM variable names have been set to ERA5 variable names from CDS in <aggregate_hindcast.py> except for <SPEI-3-M> and <SPEI-3-R>, which are paired with <SPEI-3> in <variables_obs>)
-# variables_obs = ['pvpot'] #variable names in observations; are identical to <variables_gcm> except for <SPEI-3>, which is referred to as <SPEI-3-M> or <SPEI-3-R> in the model depending on whether past values are taken from the model or reanalysis (i.e. quasi-observations)
+variables_gcm = ['SPEI-3-R-C1','SPEI-3-R'] #model variable names in CDS format  GCM variable names have been set to ERA5 variable names from CDS in <aggregate_hindcast.py> except for <SPEI-3-M> and <SPEI-3-R>, which are paired with <SPEI-3> in <variables_obs>)
+variables_obs = ['SPEI-3','SPEI-3'] #variable names in observations; are identical to <variables_gcm> except for <SPEI-3>, which is referred to as <SPEI-3-M> or <SPEI-3-R> in the model depending on whether past values are taken from the model or reanalysis (i.e. quasi-observations)
 
 datatype = 'float32' #data type of the variables in the output netcdf files
 compression_level = 1
@@ -97,22 +97,23 @@ else:
 if len(season) != len(season_label):
     raise Exception('ERROR: the length of the list <season> does not equal the length of the list <season_label> !')
 
-#create output directory if it does not exist.
-if os.path.isdir(dir_netcdf) != True:
-    os.makedirs(dir_netcdf)
-
 print('Starting verification for '+str(variables_gcm)+' from '+str(model)+' vs. '+str(obs)+', model years '+str(years_model)+', obs years '+str(years_obs)+', quantile years '+str(years_quantile)+' for modulation with '+modulator+' in phase '+str(phase)+'...')
 
 #check whether 1-month or 3-month values are to be verified and append the <version> input parameter with the suffix "mon" or "seas" respectively
-if len(season_label[0]) == 3:
+if len(season[0]) == 3:
     print('3-month values will be verified and the results will be stored in the directory '+vers+'_seas')
     vers = vers+'_seas'
-elif len(season_label[0]) == 1:
+elif len(season[0]) == 1:
     print('1-month values will be verified and the results will be stored in the directory '+vers+'_mon')
     vers = vers+'_mon'
 else:
     raise Exception('ERROR: check entry for <season_label[0]> !')
+
 dir_netcdf = dir_netcdf+'/'+vers #dir_netcdf is extended with the version directory
+
+#create output directory if it does not exist.
+if os.path.isdir(dir_netcdf) != True:
+    os.makedirs(dir_netcdf)
 
 lead_arr = np.arange(np.array(lead).min(),np.array(lead).max()+1)
 
