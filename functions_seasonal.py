@@ -126,6 +126,11 @@ def calc_roll_seasmean(xr_ds):
 
 def lin_detrend(xr_ar,rm_mean_f):
     """also used in pyLamb package; performs linear detrending of the xarray DataArray xr_ar along the time dimension, rm_mean_f specifies whether the mean is removed yes or no"""
+
+    #raise an error if time is not the first dimension in xr_ar
+    if  xr_ar.dims.index('time') != 0:
+        ValueError('The first dimension in the xarray data array xr_ar must be "time" !')
+
     coeff = xr_ar.polyfit(dim='time',deg=1) #deg = 1 for linear detrending
     fit = xr.polyval(xr_ar['time'], coeff.polyfit_coefficients)
     if rm_mean_f == 'yes':
@@ -241,7 +246,7 @@ def get_sub_domain(xr_ds_f,domain_f):
 def plot_pcolormesh_seasonal(xr_ar_f,minval_f,maxval_f,savename_f,colormap_f,dpival_f):
     '''Plots matrix of the verfication results contained in xarray data array <xr_ar_f>, seasons are plotted on the x axis, lead months on the y axis.'''
     fig = plt.figure()
-    ax = xr_ar_f.plot.pcolormesh(cmap = colormap_f, x = 'season', y = 'lead', vmin = minval_f, vmax = maxval_f, add_colorbar=False)
+    ax = xr_ar_f.plot.pcolormesh(cmap = colormap_f, x = 'season', y = 'lead', vmin = minval_f, vmax = maxval_f, add_colorbar=False, rasterized=True)
     ax.axes.set_yticks(xr_ar_f.lead.values)
     ax.axes.set_yticklabels(xr_ar_f.lead_label,fontsize=8)
     ax.axes.set_xticks(xr_ar_f.season.values)
@@ -281,7 +286,7 @@ def get_map_lowfreq_var(pattern_f,xx_f,yy_f,agree_ind_f,minval_f,maxval_f,dpival
     ax.set_extent([xx_f.min()-halfres, xx_f.max()+halfres_f, yy.min()-halfres_f, yy_f.max()+halfres_f], ccrs.PlateCarree())
     ax.add_feature(cartopy.feature.COASTLINE, zorder=4, color='black')
             
-    image = ax.pcolormesh(xx_f, yy_f, pattern_f, vmin=minval_f, vmax=maxval_f, cmap=colormap_f, transform=ccrs.PlateCarree(), shading = 'nearest', zorder=3)
+    image = ax.pcolormesh(xx_f, yy_f, pattern_f, vmin=minval_f, vmax=maxval_f, cmap=colormap_f, transform=ccrs.PlateCarree(), shading = 'nearest', zorder=3, rasterized=True)
     #get size of the points indicating significance
     if halfres_f < 1.:
         pointsize_f = 0.25
@@ -316,8 +321,10 @@ def get_map_lowfreq_var(pattern_f,xx_f,yy_f,agree_ind_f,minval_f,maxval_f,dpival
 def transform_gcm_variable(ds_f,var_in_f,var_out_f,model_f,version_f):
     '''transforms GCM variable names and units to be compatible with CDS nomenclature; input: <ds_f> is an xarray dataset, <var_in_f> is the name
     of the input meteorological variable, <var_out_f> is the new name (or output name) of this variable; <model_f> and <version_f> are the name
-     and version of the modelling system; output: xarray dataset <ds_f> with corrected variable names and units.'''    
-    if (var_in_f == 'tas') & (model_f == 'ecmwf') & (version_f == '51'):
+     and version of the modelling system; output: xarray dataset <ds_f> with corrected variable names and units.'''
+
+    # go through exceptions depending on the variable, model, version, etc.    
+    if (var_in_f == 'tas') & (model_f in ('ecmwf','cmcc')) & (version_f in ('51','35')):
         #bring temperature data to Kelvin, taking into account Predictia's double transformation error in all forecasts from 201701 to 202311
         if (ds_f[var_in_f].mean().values <= 100) & (ds_f[var_in_f].mean().values > -100):
             print('Info: Adding 273.15 to '+var_in_f+' data from '+model_f+version_f+' to transform degress Celsius into Kelvin.')
@@ -331,9 +338,10 @@ def transform_gcm_variable(ds_f,var_in_f,var_out_f,model_f,version_f):
         else:
             raise Exception('ERROR: Unknown value for <ds_f[var_in_f]> !')
         ds_f[var_in_f].attrs['units'] = 'daily mean '+var_out_f+' in Kelvin'
-    elif (var_in_f in ('pr','rsds')) & (model_f == 'ecmwf') & (version_f == '51'):
+    elif (var_in_f in ('pr','rsds')) & (model_f in ('ecmwf','cmcc')) & (version_f in ('51','35')):
         print('Info: Disaggregate '+var_in_f+' accumulated over the '+str(len(ds_f.time))+' days forecast period from '+model_f+version_f+' to daily sums.')
         vals_disagg = np.diff(ds_f[var_in_f].values,n=1,axis=0)
+        vals_disagg[vals_disagg < 0] = 0 #set negative flux values to 0
         shape_disagg = vals_disagg.shape
         add_day = np.expand_dims(vals_disagg[-1,:,:,:],axis=0) #get last available difference to place on the last day
         #add_day = np.zeros((1,shape_disagg[1],shape_disagg[2],shape_disagg[3])) #optionally create a nan to be placed on the last day
