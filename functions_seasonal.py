@@ -30,6 +30,30 @@ def assign_season_label(season_list_f):
         season_label_f = 'NDJ'
     elif season_list_f == [12,1,2]:
         season_label_f = 'DJF'
+    elif season_list_f == [1]:
+        season_label_f = 'JAN'
+    elif season_list_f == [2]:
+        season_label_f = 'FEB'
+    elif season_list_f == [3]:
+        season_label_f = 'MAR'
+    elif season_list_f == [4]:
+        season_label_f = 'APR'
+    elif season_list_f == [5]:
+        season_label_f = 'MAY'
+    elif season_list_f == [6]:
+        season_label_f = 'JUN'
+    elif season_list_f == [7]:
+        season_label_f = 'JUL'
+    elif season_list_f == [8]:
+        season_label_f = 'AUG'
+    elif season_list_f == [9]:
+        season_label_f = 'SEP'
+    elif season_list_f == [10]:
+        season_label_f = 'OCT'
+    elif season_list_f == [11]:
+        season_label_f = 'NOV'
+    elif season_list_f == [12]:
+        season_label_f = 'DEC'
     else:
         raise Exception('ERROR: check entry for <season_list_f> !')
     return(season_label_f)
