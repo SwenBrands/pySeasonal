@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ''' This is the operational verions of pred2tercile.py, which is called from bash via <generate_forecast.sh>.
-The script loads a forecast at a given init passed via the <year_init> and <month_init> input parameters, aggregates the raw values to seasonal averages and transforms them into terciles.
+The script loads a forecast at a given init passed via the <year_init> and <month_init> input parameters, aggregates the raw values to seasonal averages and transforms them into tercile probabilities.
 The main difference to pred2tercile.py is that only one init is processed, meaning that the yy loop has been deleted here.'''
 
 #load packages
@@ -11,6 +11,7 @@ import os
 import pandas as pd
 import dask
 import sys
+import pdb
 exec(open('functions_seasonal.py').read()) #reads the <functions_seasonal.py> script containing a set of custom functions needed here
 
 #the init of the forecast (year and month) can passed by bash; if nothing is passed these parameters will be set by python
@@ -32,8 +33,8 @@ month_init = 10 #a list containing the corresponding months the forecast are ini
 
 #set input parameters
 quantile_version = 'v1l_mon' #version number of the quantiles file used here
-model = ['cmcc','ecmwf'] #models to be assessed
-version = ['35','51'] # version of these models
+model = ['ecmwf'] # ['cmcc','ecmwf'] models to be assessed
+version = ['51'] # ['35','51'] version of these models
 
 years_quantile = [[1993,2022],[1993,2022]] #years used to calculate the quantiles with get_skill_season.py; list containing as many sublists as they are models
 season_length = 1 #length of the season in months, e.g. 3 for DJF, JFM, etc.
@@ -54,14 +55,13 @@ season_length = 1 #length of the season in months, e.g. 3 for DJF, JFM, etc.
 # lat_name = ['y','y','y','y','y']
 # file_start = ['seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels'] #start string of the file names
 
-variable_qn = ['tp'] # variable name used inside and outside of the quantile file. This is my work and is thus homegeneous.
-variable_fc = ['pr'] # variable name used in the file name, i.e. outside the file, ask collegues for data format harmonization
-variable_fc_nc = ['pr'] # variable name within the model netcdf file, may vary depending on source
-time_name = ['forecast_time'] #name of the time dimension within the model netcdf file, may vary depending on source
-lon_name = ['x']
-lat_name = ['y']
-file_start = ['seasonal-original-single-levels'] #start string of the file names
-
+variable_qn = ['SPEI-3-M','tp','t2m'] # variable name used inside and outside of the quantile file. This is my work and is thus homegeneous.
+variable_fc = ['SPEI-3-M','pr','tas'] # variable name used in the file name, i.e. outside the file, ask collegues for data format harmonization; cuurrently, these are also the variable names used in the output nc file
+variable_fc_nc = ['SPEI-3-M','pr','tas'] # variable name within the model netcdf file, may vary depending on source
+time_name = ['time','forecast_time','forecast_time'] #name of the time dimension within the model netcdf file, may vary depending on source
+lon_name = ['lon','x','x']
+lat_name = ['lat','y','y']
+file_start = ['seasonal-original-single-levels_masked','seasonal-original-single-levels','seasonal-original-single-levels'] #start string of the file names
 
 precip_threshold = 1/90 #seasonal mean daily precipitation threshold in mm below which the modelled and quasi-observed monthly precipitation amount is set to 0. Bring this in exact agreement with get_skill_season.py in future versions
 datatype = 'float32' #data type of the variables in the output netcdf files
@@ -210,58 +210,58 @@ for mm in np.arange(len(model)):
             center_ind = (seas_mean >= lower_np) & (seas_mean <= upper_np) & (~np.isnan(upper_np))
             lower_ind = (seas_mean < lower_np) & (~np.isnan(lower_np))
             
-            #sum members in each category
+            #sum members in each category and devide by the number of members, thus obtaining the probability
             nr_mem = upper_ind.shape[0]
-            upper_nr = upper_ind.sum(dim='member')/nr_mem
-            center_nr = center_ind.sum(dim='member')/nr_mem
-            lower_nr = lower_ind.sum(dim='member')/nr_mem
+            upper_prob = upper_ind.sum(dim='member')/nr_mem
+            center_prob = center_ind.sum(dim='member')/nr_mem
+            lower_prob = lower_ind.sum(dim='member')/nr_mem
             
             ##set ocean points to nan
-            # upper_nr = upper_nr.where(~np.isnan(lower_xr.values))
-            # center_nr = center_nr.where(~np.isnan(lower_xr.values))
-            # lower_nr = lower_nr.where(~np.isnan(lower_xr.values))
+            # upper_prob = upper_prob.where(~np.isnan(lower_xr.values))
+            # center_prob = center_prob.where(~np.isnan(lower_xr.values))
+            # lower_prob = lower_prob.where(~np.isnan(lower_xr.values))
             
             #stack and turn to numpy format
-            terciles = np.stack((lower_nr.values,center_nr.values,upper_nr.values),axis=0)
-            terciles_nan = np.zeros((terciles.shape))
-            terciles_nan[:] = np.nan
+            probab = np.stack((lower_prob.values,center_prob.values,upper_prob.values),axis=0)
+            probab_nan = np.zeros((probab.shape))
+            probab_nan[:] = np.nan
             #get index of the tercile having the maximum forecast probability at each grid box; save this probability at the given tercile; at the other terciles the nan value will be kept.
-            for ii in np.arange(terciles.shape[1]):
-                for jj in np.arange(terciles.shape[2]):
-                    maxind = np.argmax(terciles[:,ii,jj])
-                    terciles_nan[maxind,ii,jj] = terciles[maxind,ii,jj]
-                    terciles_nan[terciles_nan == 0] = np.nan #set 0 probabilities to nan
-            #terciles_nan[maxprob_ind] = terciles[maxprob_ind,:,:]
-            out_arr[vv,:,mo,:,:] = terciles_nan
+            for ii in np.arange(probab.shape[1]):
+                for jj in np.arange(probab.shape[2]):
+                    maxind = np.argmax(probab[:,ii,jj])
+                    probab_nan[maxind,ii,jj] = probab[maxind,ii,jj]
+                    probab_nan[probab_nan == 0] = np.nan #set 0 probabilities to nan
+            #probab_nan[maxprob_ind] = probab[maxprob_ind,:,:]
+            out_arr[vv,:,mo,:,:] = probab_nan
             season.append(season_i)
             season_label.append(season_i_label)
 
     #create xarray data array and save to netCDF format
     date_init = [nc_fc.time[0].values.astype(str)]
     out_arr = np.expand_dims(out_arr,axis=0) #add "rtime" dimension to add the date of the forecast init
-    out_arr = xr.DataArray(out_arr, coords=[date_init,variable_fc,np.array((1,2,3)),season_label,nc_fc[lat_name[-1]],nc_fc[lon_name[-1]]], dims=['rtime','variable','tercile','season','y','x'], name='terciles')
+    out_arr = xr.DataArray(out_arr, coords=[date_init,variable_fc,np.array((1,2,3)),season_label,nc_fc[lat_name[-1]],nc_fc[lon_name[-1]]], dims=['rtime','variable','tercile','season','y','x'], name='probability')
     out_arr = out_arr.to_dataset()
     #set dimension attributes
     out_arr['rtime'].attrs['standard_name'] = 'forecast_reference_time'
     out_arr['rtime'].attrs['long_name'] = 'initialization date of the forecast'
     out_arr['tercile'].attrs['long_name'] = 'terciles in ascending order, 1 = lower, 2 = center, 3 = upper'
-    out_arr['tercile'].attrs['tercile_period'] = nc_quantile.reference_period
+    out_arr['tercile'].attrs['tercile_period'] = years_quantile[mm]
     out_arr['tercile'].attrs['tercile_version'] = nc_quantile.version[mm]
     out_arr['variable'].attrs['long_name'] = 'name of the meteorological variable'
     out_arr['season'].attrs['long_name'] = 'season the forecast is valid for'
+    out_arr['season'].attrs['length_in_months'] = season_length
     #set variable attributes
-    out_arr['terciles'].attrs['units'] = 'forecast probability ('+str(np.round(out_arr['terciles'].min().values,3))+' - '+str(np.round(out_arr['terciles'].max().values,3))+') for the most probable tercile, otherwise nan'
-    out_arr['terciles'].attrs['detrended'] = detrended
+    out_arr['probability'].attrs['units'] = 'forecast probability ('+str(np.round(out_arr['probability'].min().values,3))+' - '+str(np.round(out_arr['probability'].max().values,3))+') for the most probable tercile, otherwise nan'
+    out_arr['probability'].attrs['detrended'] = detrended
     #set global attributes
-    out_arr.attrs['model_system'] = model[mm]
-    out_arr.attrs['model_version'] = version[mm]
-    #out_arr.attrs['init'] = date_init
+    out_arr.attrs['model'] = model[mm]+version[mm]
+    out_arr.attrs['init'] = str(date_init[0])
     out_arr.attrs['file_author'] = nc_quantile.author
 
     ##set chunking and save the file
     #out_arr = out_arr.chunk({"variable":1, "tercile":1, "season":1, "y":len(nc_fc[lat_name[-1]]), "x":len(nc_fc[lon_name[-1]])})
-    encoding = dict(terciles=dict(chunksizes=(1, 1, 1, 1, len(nc_fc[lat_name[-1]]), len(nc_fc[lon_name[-1]])))) #https://docs.xarray.dev/en/stable/user-guide/io.html#writing-encoded-data
-    savename = dir_forecast+'/terciles_'+model[mm]+version[mm]+'_init_'+str(year_init)+str(month_init).zfill(2)+'_'+str(season_length)+'mon_dtr_'+detrended+'_refyears_'+str(years_quantile[mm][0])+'_'+str(years_quantile[mm][1])+'.nc'
+    encoding = dict(probability=dict(chunksizes=(1, 1, 1, 1, len(nc_fc[lat_name[-1]]), len(nc_fc[lon_name[-1]])))) #https://docs.xarray.dev/en/stable/user-guide/io.html#writing-encoded-data
+    savename = dir_forecast+'/probability_'+model[mm]+version[mm]+'_init_'+str(year_init)+str(month_init).zfill(2)+'_'+str(season_length)+'mon_dtr_'+detrended+'_refyears_'+str(years_quantile[mm][0])+'_'+str(years_quantile[mm][1])+'.nc'
     out_arr.to_netcdf(savename,encoding=encoding)
 
     #close all xarray objects

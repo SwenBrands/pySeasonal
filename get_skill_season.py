@@ -20,11 +20,13 @@ exec(open('functions_seasonal.py').read()) #reads the <functions_seasonal.py> sc
 
 #set input parameters
 vers = 'v1l' #version number of the output netCDF file to be sent to Predictia; will be extended by "_mon" or "_seas" depending on whether 1-month or 3-month values will be verified
-model = ['cmcc35','ecmwf51'] #interval between meridians and parallels
-nr_mem = [40,25] #considered ensemble members
+model = ['ecmwf51'] #['cmcc35','ecmwf51'] list of models and versions thereof
+nr_mem = [25] # [40,25] considered ensemble members
 obs = ['era5'] #list of observational datasets used as reference for verification. Currently, only ERA5 is admitted, i.e. the list has a single item.
-years_model = [[1993,2023],[1981,2023]] #list containing as many sub-lists as there are models to be validated; Years used in label of model netCDF file, refers to the first and the last year of the monthly model inits
+years_model = [[1981,2023]] # [[1993,2023],[1981,2023]] list containing as many sub-lists as there are models to be validated; Years used in label of model netCDF file, refers to the first and the last year of the monthly model inits
 years_obs = [1981,2022] #years used in label of obs netCDF file; if they differ from <years_model>, then the common intersection of years will be validated.
+lead = [[[0],[1],[2],[3],[4],[5],[6]]] #[[[0],[1],[2],[3],[4],[5]],[[0],[1],[2],[3],[4],[5],[6]]] #list containing as many sub-lists as there are models available; each sub-lists contains the number of months between the init and start of the forecast interval to be verified, e.g. 1 will discard the first month after init, 2 will discard the first two months after init etc.
+
 modulator = 'none' # climate oscillation assumed to modulate the verification results; currently: "enso" or "none"
 phase = 1 # enso phase the validation is condition on: 0 = neutral, 1 = El Niño, 2 = La Niña; is not used if modulator = 'none'
 modulator_ref = 'init' #init or valid; the time instance the modulation in valid for. If set to 'init', then the time series are modulated with the teleconnection index valid at the initalization month. If set to 'valid', they are modulated with the index valid at the time the forecast is valid.
@@ -39,7 +41,6 @@ file_system = 'lustre' #lustre or myLaptop; used to create the path structure to
 ##settings for monthly verification
 season_label = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC']
 season = [[1],[2],[3],[4],[5],[6],[7],[8],[9],[10],[11],[12]] #[[12,1,2],[3,4,5],[6,7,8],[9,10,11]]
-lead = [[[0],[1],[2],[3],[4],[5]],[[0],[1],[2],[3],[4],[5],[6]]] #[[0,1,2],[0,1,2],[0,1,2],[0,1,2]] #list containing as many sub-lists as there are models available; each sub-lists contains the number of months between the init and start of the forecast interval to be verified, e.g. 1 will discard the first month after init, 2 will discard the first two months after init etc.
 
 # ##settings for monthly verification
 # season_label = ['JAN','FEB']
@@ -49,8 +50,8 @@ lead = [[[0],[1],[2],[3],[4],[5]],[[0],[1],[2],[3],[4],[5],[6]]] #[[0,1,2],[0,1,
 # variables_gcm = ['SPEI-3-R-C1','pvpot','SPEI-3-R','SPEI-3-M','fwi','msl','t2m','tp','si10','ssrd'] #model variable names in CDS format  GCM variable names have been set to ERA5 variable names from CDS in <aggregate_hindcast.py> except for <SPEI-3-M> and <SPEI-3-R>, which are paired with <SPEI-3> in <variables_obs>)
 # variables_obs = ['SPEI-3','pvpot','SPEI-3','SPEI-3','fwi','msl','t2m','tp','si10','ssrd'] #variable names in observations; are identical to <variables_gcm> except for <SPEI-3>, which is referred to as <SPEI-3-M> or <SPEI-3-R> in the model depending on whether past values are taken from the model or reanalysis (i.e. quasi-observations)
 
-variables_gcm = ['msl','t2m','tp','si10','ssrd'] #model variable names in CDS format  GCM variable names have been set to ERA5 variable names from CDS in <aggregate_hindcast.py> except for <SPEI-3-M> and <SPEI-3-R>, which are paired with <SPEI-3> in <variables_obs>)
-variables_obs = ['msl','t2m','tp','si10','ssrd'] #variable names in observations; are identical to <variables_gcm> except for <SPEI-3>, which is referred to as <SPEI-3-M> or <SPEI-3-R> in the model depending on whether past values are taken from the model or reanalysis (i.e. quasi-observations)
+variables_gcm = ['SPEI-3-M','t2m','tp'] #model variable names in CDS format  GCM variable names have been set to ERA5 variable names from CDS in <aggregate_hindcast.py> except for <SPEI-3-M> and <SPEI-3-R>, which are paired with <SPEI-3> in <variables_obs>)
+variables_obs = ['SPEI-3','t2m','tp'] #variable names in observations; are identical to <variables_gcm> except for <SPEI-3>, which is referred to as <SPEI-3-M> or <SPEI-3-R> in the model depending on whether past values are taken from the model or reanalysis (i.e. quasi-observations)
 
 datatype = 'float32' #data type of the variables in the output netcdf files
 compression_level = 1
