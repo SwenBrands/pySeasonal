@@ -58,6 +58,25 @@ def assign_season_label(season_list_f):
         raise Exception('ERROR: check entry for <season_list_f> !')
     return(season_label_f)
 
+# def get_forecast_prob(nc_quantile,seas_mean):
+def get_forecast_prob(seas_mean,lower_xr,upper_xr):
+    '''Obtains probability forecasts for each tercile in <seas_mean>, using the quantiles stored in <nc_quantile>; all 3 are xarray data arrays;
+    seas_mean is 3D with time x lat x lon, lower_xr and upper_xr are 2d with lat x lon'''
+
+    lower_np = np.tile(lower_xr.values,(seas_mean.shape[0],1,1))
+    upper_np = np.tile(upper_xr.values,(seas_mean.shape[0],1,1))
+    
+    upper_ind = (seas_mean > upper_np) & (~np.isnan(upper_np))
+    center_ind = (seas_mean >= lower_np) & (seas_mean <= upper_np) & (~np.isnan(upper_np))
+    lower_ind = (seas_mean < lower_np) & (~np.isnan(lower_np))
+                    
+    #sum members in each category and devide by the number of members, thus obtaining the probability
+    nr_mem = upper_ind.shape[0]
+    upper_prob = upper_ind.sum(dim='member')/nr_mem
+    center_prob = center_ind.sum(dim='member')/nr_mem
+    lower_prob = lower_ind.sum(dim='member')/nr_mem
+    return(nr_mem,upper_prob,center_prob,lower_prob)
+
 def get_years_of_subperiod(subperiod_f):
     ''' obtain target years used for validation as a function of the sole input parameter <subperiod_f>.
       ENSO years were derived from CPC's ONI index available from https://origin.cpc.ncep.noaa.gov/products/analysis_monitoring/ensostuff/ONI_v5.php

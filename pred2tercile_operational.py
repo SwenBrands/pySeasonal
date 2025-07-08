@@ -193,33 +193,12 @@ for ag in np.arange(len(agg_label)):
                     zero_mask = seas_mean.values < precip_threshold
                     seas_mean.values[zero_mask] = 0.
 
-                #get the ensemble quantiles for this season and leadtime (note that the season and leadtime have the same index !)
+                # get the ensemble terciles for this season and leadtime (note that the season and leadtime have the same index !)
                 lower_xr = nc_quantile.sel(detrended=detrended,quantile_threshold=quantile_threshold[0],variable=variable_qn[vv],season=season_i_label).quantile_ensemble.isel(lead=mo) #is a 2D xarray data array
                 upper_xr = nc_quantile.sel(detrended=detrended,quantile_threshold=quantile_threshold[1],variable=variable_qn[vv],season=season_i_label).quantile_ensemble.isel(lead=mo)
-                lower_np = np.tile(lower_xr.values,(seas_mean.shape[0],1,1))
-                upper_np = np.tile(upper_xr.values,(seas_mean.shape[0],1,1))
-                
-                # upper_ind = seas_mean.where(seas_mean > upper_np)
-                # upper_ind = upper_ind.where(np.isnan(upper_ind),other=1)
-                # center_ind = seas_mean.where((seas_mean >= lower_np) & (seas_mean <= upper_np))
-                # center_ind = center_ind.where(np.isnan(center_ind),other=1)
-                # lower_ind = seas_mean.where(seas_mean < upper_np)
-                # lower_ind = lower_ind.where(np.isnan(lower_ind),other=1)
-                
-                # upper_ind = seas_mean > upper_np
-                # center_ind = (seas_mean >= lower_np) & (seas_mean <= upper_np)
-                # lower_ind = seas_mean < lower_np
+                # calculate the forecast probabilities with these terciles
+                nr_mem,upper_prob,center_prob,lower_prob = get_forecast_prob(seas_mean,lower_xr,upper_xr)
 
-                upper_ind = (seas_mean > upper_np) & (~np.isnan(upper_np))
-                center_ind = (seas_mean >= lower_np) & (seas_mean <= upper_np) & (~np.isnan(upper_np))
-                lower_ind = (seas_mean < lower_np) & (~np.isnan(lower_np))
-                
-                #sum members in each category and devide by the number of members, thus obtaining the probability
-                nr_mem = upper_ind.shape[0]
-                upper_prob = upper_ind.sum(dim='member')/nr_mem
-                center_prob = center_ind.sum(dim='member')/nr_mem
-                lower_prob = lower_ind.sum(dim='member')/nr_mem
-                
                 ##set ocean points to nan
                 # upper_prob = upper_prob.where(~np.isnan(lower_xr.values))
                 # center_prob = center_prob.where(~np.isnan(lower_xr.values))
@@ -269,7 +248,7 @@ for ag in np.arange(len(agg_label)):
         savename = dir_forecast+'/probability_'+agg_label[ag]+'_'+model[mm]+version[mm]+'_init_'+str(year_init)+str(month_init).zfill(2)+'_'+str(season_length)+'mon_dtr_'+detrended+'_refyears_'+str(years_quantile[mm][0])+'_'+str(years_quantile[mm][1])+'.nc'
         out_arr.to_netcdf(savename,encoding=encoding)
 
-        #close all xarray objects
+        # close all xarray objects
         lower_xr.close()
         upper_xr.close()
         seas_mean.close()

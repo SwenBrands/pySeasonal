@@ -15,7 +15,7 @@ import xesmf
 import pandas as pd
 import dask
 from scipy.signal import detrend
-import pdb as pdb #then type <pdb.set_trace()> at a given line in the code below
+import pdb #then type <pdb.set_trace()> at a given line in the code below
 exec(open('functions_seasonal.py').read()) #reads the <functions_seasonal.py> script containing a set of custom functions needed here
 
 #set input parameters
@@ -26,8 +26,11 @@ obs = ['era5'] #list of observational datasets used as reference for verificatio
 years_model = [[1993,2023],[1981,2023]] # [[1993,2023],[1981,2023]] list containing as many sub-lists as there are models to be validated; Years used in label of model netCDF file, refers to the first and the last year of the monthly model inits
 years_obs = [1981,2022] #years used in label of obs netCDF file; if they differ from <years_model>, then the common intersection of years will be validated.
 
-modulator = ['none','enso','enso','enso'] # list containing modulators climate oscillation assumed to modulate the verification results; currently: "enso" or "none"
-phase = ['none',0,1,2] # enso phase the validation is condition on: 0 = neutral, 1 = El Niño, 2 = La Niña; 'none' indicates that none is used; must have the same length as <modulator>
+# modulator = ['none','enso','enso','enso'] # list containing modulators climate oscillation assumed to modulate the verification results; currently: "enso" or "none"
+# phase = ['none',0,1,2] # enso phase the validation is condition on: 0 = neutral, 1 = El Niño, 2 = La Niña; 'none' indicates that none is used; must have the same length as <modulator>
+
+modulator = ['none','enso'] # list containing modulators climate oscillation assumed to modulate the verification results; currently: "enso" or "none"
+phase = ['none',0] # enso phase the validation is condition on: 0 = neutral, 1 = El Niño, 2 = La Niña; 'none' indicates that none is used; must have the same length as <modulator>
 
 modulator_ref = 'init' #init or valid; the time instance the modulation in valid for. If set to 'init', then the time series are modulated with the teleconnection index valid at the initalization month. If set to 'valid', they are modulated with the index valid at the time the forecast is valid.
 years_quantile = [1993,2022] #start and end years of the time series used to calculate the quantiles from obserations and model data
@@ -160,6 +163,7 @@ for mo in np.arange(len(modulator)):
 
                     leads = nc_gcm.lead.values
                     dates_gcm = pd.DatetimeIndex(nc_gcm.time.values)
+
                     for oo in np.arange(len(obs)):
                         # path_obs = path_obs_base+'/'+obs[oo]+'/'+variables_obs[vv]+'_'+aggreg+'_'+obs[oo]+'_on_'+model[mm]+'_grid_'+int_method+'_'+domain+'_'+str(years_obs[0])+'_'+str(years_obs[-1])+'.nc'
                         path_obs = path_obs_base+'/'+obs[oo]+'/'+variables_obs[vv]+'_'+aggreg+'_'+obs[oo]+'_on_ecmwf51_grid_'+int_method+'_'+domain+'_'+str(years_obs[0])+'_'+str(years_obs[-1])+'.nc'
@@ -229,6 +233,10 @@ for mo in np.arange(len(modulator)):
                                     #these inits are for the non weighted (nw) seasonal mean values which will be calculated alongside the weighted values below for comparison
                                     obs_seas_mn_5d_nw = np.copy(obs_seas_mn_5d)
                                     gcm_seas_mn_6d_nw = np.copy(gcm_seas_mn_6d)
+                                    if oo == 0 and vv == 0:
+                                        #init numpy arrays to store forecast probabilities per tercile
+                                        tercile_prob_gcm_6d = np.zeros((nr_years,nr_seas,nr_leads,len(quantiles)+1,nr_lats,nr_lons))
+                                        tercile_bin_obs_5d = np.zeros((nr_years,nr_seas,nr_leads,nr_lats,nr_lons))
                                 
                                 #init numpy array which will be filled with tercile values (tercile x season x lead x member x lat x lon)
                                 #if det == 0 and vv == 0 and mm == 0 and sea == 0 and ll == 0:
@@ -241,6 +249,11 @@ for mo in np.arange(len(modulator)):
                                     quantile_vals_ens = np.zeros((len(detrending),len(variables_gcm),len(quantiles),nr_seas,nr_leads,nr_lats,nr_lons),dtype='single')
                                     quantile_vals_ens[:] = np.nan
                                     obs_quantile_vals = np.copy(quantile_vals_ens)
+
+                                    #init arrays to be filled with the binary observed terciles
+                                    lower_tercile_obs = np.zeros((len(detrending),len(variables_gcm),nr_years,nr_seas,nr_leads,nr_lats,nr_lons),dtype='int')
+                                    center_tercile_obs = np.copy(lower_tercile_obs)
+                                    upper_tercile_obs = np.copy(lower_tercile_obs)
                                 
                                 #and loop through each month of this season to calculate the seasonal mean values in both the model and observations
                                 for mon in np.arange(len(season[ag][sea])):
@@ -324,6 +337,26 @@ for mo in np.arange(len(modulator)):
                         gcm_quantile_vals[det,vv,:,:,:,:,:,:] = gcm_quantile_vals_step.values #here numpy arrays are filled
                         obs_quantile_vals[det,vv,:,:,:,:,:] = obs_quantile_vals_step.values #and here too
 
+                        #get observed tercile thresholds
+                        t1_obs = np.expand_dims(obs_quantile_vals_step.sel(quantile=0.33,method='nearest').values,axis=0).repeat(obs_seas_mn_5d.shape[0],axis=0)
+                        t2_obs = np.expand_dims(obs_quantile_vals_step.sel(quantile=0.66,method='nearest').values,axis=0).repeat(obs_seas_mn_5d.shape[0],axis=0)
+
+                        #get binary arrays
+                        lower_tercile_obs_step = (obs_seas_mn_5d < t1_obs).astype('single')
+                        center_tercile_obs_step = ((obs_seas_mn_5d >= t1_obs) & (obs_seas_mn_5d < t2_obs)).astype('single')
+                        upper_tercile_obs_step = (obs_seas_mn_5d >= t1_obs).astype('single')
+
+                        #recover nans lost in the former 3 lines
+                        nanmask = np.isnan(obs_seas_mn_5d)
+                        lower_tercile_obs_step.values[nanmask] = np.nan
+                        center_tercile_obs_step.values[nanmask] = np.nan
+                        upper_tercile_obs_step.values[nanmask] = np.nan
+
+                        #fill the pre-initialized numpy arrays
+                        lower_tercile_obs[det,vv,:,:,:,:,:] = lower_tercile_obs_step
+                        center_tercile_obs[det,vv,:,:,:,:,:] = center_tercile_obs_step
+                        upper_tercile_obs[det,vv,:,:,:,:,:] = upper_tercile_obs_step
+
                         dates_obs = pd.DatetimeIndex(obs_seas_mn_5d.time.values)
                         dates_gcm_5d = pd.DatetimeIndex(gcm_seas_mn_5d.time.values)
                         dates_gcm_6d = pd.DatetimeIndex(gcm_seas_mn_6d.time.values)
@@ -353,6 +386,43 @@ for mo in np.arange(len(modulator)):
                         quantile_vals_ens_step = np.nanquantile(gcm_seas_mn_5d_flat_mems,quantiles,axis=0)
                         # quantile_vals_ens[det,vv,mm,:,:,:,:,:] = quantile_vals_ens_step
                         quantile_vals_ens[det,vv,:,:,:,:,:] = quantile_vals_ens_step
+
+                        # turn numpy array into xarray data array
+                        quantile_vals_ens_step = xr.DataArray(quantile_vals_ens_step, coords=[quantiles,gcm_seas_mn_6d.season,gcm_seas_mn_6d.lead,gcm_seas_mn_6d.y,gcm_seas_mn_6d.x], dims=['quantile_threshold','season','lead','y','x'], name='quantile_ensemble')
+                        
+                        #get year-to-year tercile probability forecasts for the non conditioned time series
+                        if modulator[mo] == 'none':
+                            print('Calculating tercile probability forecasts for temporal aggregation '+agg_label[ag]+', '+model[mm]+', variable '+variables_gcm[vv]+' and modulator '+modulator[mo])
+                            lower_xr = quantile_vals_ens_step.sel(quantile_threshold=0.33,method='nearest')
+                            upper_xr = quantile_vals_ens_step.sel(quantile_threshold=0.66,method='nearest')
+                            time_ind = gcm_seas_mn_6d.dims.index('time')
+                            mem_ind = gcm_seas_mn_6d.dims.index('member')
+
+                            lower_np = np.expand_dims(np.expand_dims(lower_xr.values,axis=0),axis=-3)
+                            lower_np = lower_np.repeat(repeats=gcm_seas_mn_6d.shape[time_ind], axis=time_ind).repeat(repeats=gcm_seas_mn_6d.shape[mem_ind], axis=mem_ind)
+
+                            upper_np = np.expand_dims(np.expand_dims(upper_xr.values,axis=0),axis=-3)
+                            upper_np = upper_np.repeat(repeats=gcm_seas_mn_6d.shape[time_ind], axis=time_ind).repeat(repeats=gcm_seas_mn_6d.shape[mem_ind], axis=mem_ind)
+
+                            upper_ind = (gcm_seas_mn_6d > upper_np) & (~np.isnan(upper_np))
+                            center_ind = (gcm_seas_mn_6d >= lower_np) & (gcm_seas_mn_6d <= upper_np) & (~np.isnan(upper_np))
+                            lower_ind = (gcm_seas_mn_6d < lower_np) & (~np.isnan(lower_np))
+                        
+                            #sum members in each category and devide by the number of members, thus obtaining the probability
+                            nr_mem_step = len(gcm_seas_mn_6d.member)
+                            upper_prob = (upper_ind.sum(dim='member')/nr_mem_step).rename('upper_tercile_probability')
+                            center_prob = (center_ind.sum(dim='member')/nr_mem_step).rename('center_tercile_probability')
+                            lower_prob = (lower_ind.sum(dim='member')/nr_mem_step).rename('lower_tercile_probability')
+
+                            #initialize numpy arrays to be filled with probability forecasts per tercile
+                            if det == 0 and vv == 0 and oo == 0:
+                                upper_prob_np = np.zeros((len(detrending),len(variables_gcm),upper_prob.shape[0],upper_prob.shape[1],upper_prob.shape[2],upper_prob.shape[3],upper_prob.shape[4]))
+                                center_prob_np = np.copy(upper_prob_np)
+                                lower_prob_np = np.copy(upper_prob_np)
+                            
+                            upper_prob_np[det,vv,:,:,:,:,:] = upper_prob.values
+                            center_prob_np[det,vv,:,:,:,:,:] = center_prob.values
+                            lower_prob_np[det,vv,:,:,:,:,:] = lower_prob.values
 
                         #generate 6d numpy array with observations replicated along the <member dimension>; will be used as reference for the member-wise GCM verification
                         if skillscore_reference == 'clim': #use climatological mean observations as reference forecast
@@ -432,7 +502,6 @@ for mo in np.arange(len(modulator)):
                             crps_ensemble = xs.crps_ensemble(obs_seas_mn_5d.isel(time=phase_ind).sel(lead=lead_label[ll]),gcm_seas_mn_6d.isel(time=phase_ind).sel(lead=lead_label[ll]),member_weights=None,issorted=False,member_dim='member',dim='time',weights=None,keep_attrs=False).rename('crps_ensemble')
                             reliability_lower = get_reliability_or_roc(obs_seas_mn_5d.isel(time=phase_ind).sel(lead=lead_label[ll]),gcm_seas_mn_6d.isel(time=phase_ind).sel(lead=lead_label[ll]),obs_quantile_vals_step.sel(lead=lead_label[ll]),gcm_quantile_vals_step.sel(lead=lead_label[ll]),1/3,score_f = 'reliability',bin_edges_f = bin_edges_reliability).rename('reliability_lower_tercile') #calculate reliability for the first tercile
                             reliability_upper = get_reliability_or_roc(obs_seas_mn_5d.isel(time=phase_ind).sel(lead=lead_label[ll]),gcm_seas_mn_6d.isel(time=phase_ind).sel(lead=lead_label[ll]),obs_quantile_vals_step.sel(lead=lead_label[ll]),gcm_quantile_vals_step.sel(lead=lead_label[ll]),2/3,score_f = 'reliability',bin_edges_f = bin_edges_reliability).rename('reliability_upper_tercile') #calculate reliability for the third tercile
-                            #pdb.set_trace()
                             roc_auc_lower = get_reliability_or_roc(obs_seas_mn_5d.isel(time=phase_ind).sel(lead=lead_label[ll]),gcm_seas_mn_6d.isel(time=phase_ind).sel(lead=lead_label[ll]),obs_quantile_vals_step.sel(lead=lead_label[ll]),gcm_quantile_vals_step.sel(lead=lead_label[ll]),1/3,score_f = 'roc_auc').rename('roc_auc_lower_tercile') #calculate roc area under the curve for the first tercile
                             roc_auc_upper = get_reliability_or_roc(obs_seas_mn_5d.isel(time=phase_ind).sel(lead=lead_label[ll]),gcm_seas_mn_6d.isel(time=phase_ind).sel(lead=lead_label[ll]),obs_quantile_vals_step.sel(lead=lead_label[ll]),gcm_quantile_vals_step.sel(lead=lead_label[ll]),2/3,score_f = 'roc_auc').rename('roc_auc_upper_tercile') #calculate roc area under the curve for the third tercile
                             
@@ -626,8 +695,39 @@ for mo in np.arange(len(modulator)):
                 y_attrs = nc_gcm.x.attrs
                 nc_gcm.close()
                 del(nc_gcm)
+            
+            #save tercile probabilities into an xarray data array separately for each aggregation time and model
+            if modulator[mo] == 'none':
+                #merge and save model terciles
+                upper_prob = xr.DataArray(upper_prob_np, coords=[detrending,variables_gcm,upper_prob.time,upper_prob.season,upper_prob.lead,upper_prob.y,upper_prob.x], dims=['detrended','variable',upper_prob.dims[0],upper_prob.dims[1],upper_prob.dims[2],upper_prob.dims[3],upper_prob.dims[4]],name='upper_tercile_probability')
+                center_prob = xr.DataArray(center_prob_np, coords=[detrending,variables_gcm,center_prob.time,center_prob.season,center_prob.lead,center_prob.y,center_prob.x], dims=['detrended','variable',center_prob.dims[0],center_prob.dims[1],center_prob.dims[2],center_prob.dims[3],center_prob.dims[4]],name='center_tercile_probability')
+                lower_prob = xr.DataArray(lower_prob_np, coords=[detrending,variables_gcm,lower_prob.time,lower_prob.season,lower_prob.lead,lower_prob.y,lower_prob.x], dims=['detrended','variable',lower_prob.dims[0],lower_prob.dims[1],lower_prob.dims[2],lower_prob.dims[3],lower_prob.dims[4]],name='lower_tercile_probability')
+                tercile_prob = xr.merge((lower_prob,center_prob,upper_prob))
+                savename_tercile_prob = dir_netcdf_agg+'/tercile_prob_pticlima_'+agg_label[ag]+'_'+model[mm]+'_'+domain+'_'+str(years_common2label[0])+'_'+str(years_common2label[-1])+'_'+vers+'.nc'
+                encoding = {'upper_tercile_probability': {'zlib': True, 'complevel': compression_level}, 'center_tercile_probability': {'zlib': True, 'complevel': compression_level}, 'lower_tercile_probability': {'zlib': True, 'complevel': compression_level}}
+                tercile_prob.to_netcdf(savename_tercile_prob,encoding=encoding)
 
-            #save the quantiles separately for each model
+                #merge and save observed terciles
+                lower_tercile_obs = xr.DataArray(lower_tercile_obs, coords=[detrending,variables_gcm,lower_prob.time,lower_prob.season,lower_prob.lead,lower_prob.y,lower_prob.x], dims=['detrended','variable',lower_prob.dims[2],lower_prob.dims[3],lower_prob.dims[4],lower_prob.dims[5],lower_prob.dims[6]],name='lower_tercile_binary')
+                center_tercile_obs = xr.DataArray(center_tercile_obs, coords=[detrending,variables_gcm,center_prob.time,center_prob.season,center_prob.lead,center_prob.y,center_prob.x], dims=['detrended','variable',center_prob.dims[2],center_prob.dims[3],center_prob.dims[4],center_prob.dims[5],center_prob.dims[6]],name='center_tercile_binary')
+                upper_tercile_obs = xr.DataArray(upper_tercile_obs, coords=[detrending,variables_gcm,upper_prob.time,upper_prob.season,upper_prob.lead,upper_prob.y,upper_prob.x], dims=['detrended','variable',upper_prob.dims[2],upper_prob.dims[3],upper_prob.dims[4],upper_prob.dims[5],upper_prob.dims[6]],name='upper_tercile_binary')
+                tercile_bin_obs = xr.merge((lower_tercile_obs,center_tercile_obs,upper_tercile_obs))
+                savename_tercile_obs = dir_netcdf_agg+'/tercile_bin_pticlima_'+agg_label[ag]+'_'+obs[oo]+'_'+domain+'_'+str(years_common2label[0])+'_'+str(years_common2label[-1])+'_'+vers+'.nc'
+                encoding = {'upper_tercile_binary': {'zlib': True, 'complevel': compression_level}, 'center_tercile_binary': {'zlib': True, 'complevel': compression_level}, 'lower_tercile_binary': {'zlib': True, 'complevel': compression_level}}
+                tercile_bin_obs.to_netcdf(savename_tercile_obs,encoding=encoding)
+
+                #clean
+                upper_prob.close()
+                center_prob.close()
+                lower_prob.close()
+                tercile_prob.close()
+                lower_tercile_obs.close()
+                center_tercile_obs.close()
+                upper_tercile_obs.close()
+                tercile_bin_obs.close()
+                del(upper_prob,center_prob,lower_prob,tercile_prob,lower_tercile_obs,center_tercile_obs,upper_tercile_obs,tercile_bin_obs)
+
+            #save the quantiles separately for each aggregation time and model
             #convert the two numpy arrays containing the two types of quantiles (memberwise and ensemble) into two xarray data arrays, merge them to a single xarray dataset, add attributes to this dataset and save it to netCDF format
             #gcm_quantile_vals = xr.DataArray(gcm_quantile_vals, coords=[detrending,variables_gcm,model[mm],np.round(quantiles,2).astype(datatype),season2quan,lead2quan,members,y2quan,x2quan], dims=['detrended','variable','model','quantile_threshold','season','lead','member','y','x'], name='quantile_memberwise')
             gcm_quantile_vals = xr.DataArray(gcm_quantile_vals, coords=[detrending,variables_gcm,np.round(quantiles,2).astype(datatype),season2quan,lead2quan,members,y2quan,x2quan], dims=['detrended','variable','quantile_threshold','season','lead','member','y','x'], name='quantile_memberwise')
