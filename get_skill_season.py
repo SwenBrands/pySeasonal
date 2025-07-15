@@ -26,11 +26,8 @@ obs = ['era5'] #list of observational datasets used as reference for verificatio
 years_model = [[1993,2023],[1981,2023]] # [[1993,2023],[1981,2023]] list containing as many sub-lists as there are models to be validated; Years used in label of model netCDF file, refers to the first and the last year of the monthly model inits
 years_obs = [1981,2022] #years used in label of obs netCDF file; if they differ from <years_model>, then the common intersection of years will be validated.
 
-# modulator = ['none','enso','enso','enso'] # list containing modulators climate oscillation assumed to modulate the verification results; currently: "enso" or "none"
-# phase = ['none',0,1,2] # enso phase the validation is condition on: 0 = neutral, 1 = El Niño, 2 = La Niña; 'none' indicates that none is used; must have the same length as <modulator>
-
-modulator = ['none','enso'] # list containing modulators climate oscillation assumed to modulate the verification results; currently: "enso" or "none"
-phase = ['none',0] # enso phase the validation is condition on: 0 = neutral, 1 = El Niño, 2 = La Niña; 'none' indicates that none is used; must have the same length as <modulator>
+modulator = ['none','enso','enso','enso'] # list containing modulators climate oscillation assumed to modulate the verification results; currently: "enso" or "none"
+phase = ['none',0,1,2] # enso phase the validation is condition on: 0 = neutral, 1 = El Niño, 2 = La Niña; 'none' indicates that none is used; must have the same length as <modulator>
 
 modulator_ref = 'init' #init or valid; the time instance the modulation in valid for. If set to 'init', then the time series are modulated with the teleconnection index valid at the initalization month. If set to 'valid', they are modulated with the index valid at the time the forecast is valid.
 years_quantile = [1993,2022] #start and end years of the time series used to calculate the quantiles from obserations and model data
@@ -55,11 +52,8 @@ lead = [[[[0],[1],[2],[3],[4],[5]],[[0],[1],[2],[3],[4],[5],[6]]], [[[0,1,2],[1,
 # variables_gcm = ['SPEI-3-R-C1','pvpot','SPEI-3-R','SPEI-3-M','fwi','msl','t2m','tp','si10','ssrd'] #model variable names in CDS format  GCM variable names have been set to ERA5 variable names from CDS in <aggregate_hindcast.py> except for <SPEI-3-M> and <SPEI-3-R>, which are paired with <SPEI-3> in <variables_obs>)
 # variables_obs = ['SPEI-3','pvpot','SPEI-3','SPEI-3','fwi','msl','t2m','tp','si10','ssrd'] #variable names in observations; are identical to <variables_gcm> except for <SPEI-3>, which is referred to as <SPEI-3-M> or <SPEI-3-R> in the model depending on whether past values are taken from the model or reanalysis (i.e. quasi-observations)
 
-# variables_gcm = ['t2m','tp','msl','t2m','tp','si10','ssrd'] #model variable names in CDS format  GCM variable names have been set to ERA5 variable names from CDS in <aggregate_hindcast.py> except for <SPEI-3-M> and <SPEI-3-R>, which are paired with <SPEI-3> in <variables_obs>)
-# variables_obs = ['t2m','tp','msl','t2m','tp','si10','ssrd'] #variable names in observations; are identical to <variables_gcm> except for <SPEI-3>, which is referred to as <SPEI-3-M> or <SPEI-3-R> in the model depending on whether past values are taken from the model or reanalysis (i.e. quasi-observations)
-
-variables_gcm = ['t2m','tp'] #model variable names in CDS format  GCM variable names have been set to ERA5 variable names from CDS in <aggregate_hindcast.py> except for <SPEI-3-M> and <SPEI-3-R>, which are paired with <SPEI-3> in <variables_obs>)
-variables_obs = ['t2m','tp'] #variable names in observations; are identical to <variables_gcm> except for <SPEI-3>, which is referred to as <SPEI-3-M> or <SPEI-3-R> in the model depending on whether past values are taken from the model or reanalysis (i.e. quasi-observations)
+variables_gcm = ['SPEI-3-M','t2m','tp','msl','si10','ssrd'] #model variable names in CDS format  GCM variable names have been set to ERA5 variable names from CDS in <aggregate_hindcast.py> except for <SPEI-3-M> and <SPEI-3-R>, which are paired with <SPEI-3> in <variables_obs>)
+variables_obs = ['SPEI-3','t2m','tp','msl','si10','ssrd'] #variable names in observations; are identical to <variables_gcm> except for <SPEI-3>, which is referred to as <SPEI-3-M> or <SPEI-3-R> in the model depending on whether past values are taken from the model or reanalysis (i.e. quasi-observations)
 
 datatype = 'float32' #data type of the variables in the output netcdf files
 compression_level = 1
@@ -101,6 +95,11 @@ elif file_system == 'lustre':
     filename_telcon = 'oni2enso_195001_202505.nc' #name of the file located in <dir_telcon>
 else:
     raise Exception('ERROR: unknown entry for <file_system> input parameter!')
+
+#go to working directory and load custom functions
+os.chdir(rundir)
+#import functions_seasonal
+print('The script will be run in '+rundir+' !')
     
 #check consistency of some input parameters
 if len(season) != len(season_label):
@@ -125,9 +124,15 @@ for mo in np.arange(len(modulator)):
 
     for ag in np.arange(len(agg_label)):
         #create output final output directory if it does not exist.
-        dir_netcdf_agg = dir_netcdf+'/'+agg_label[ag]
-        if os.path.isdir(dir_netcdf_agg) != True:
-            os.makedirs(dir_netcdf_agg)
+        dir_netcdf_scores = dir_netcdf+'/'+agg_label[ag]+'/scores'
+        dir_netcdf_terciles = dir_netcdf+'/'+agg_label[ag]+'/terciles'
+        dir_netcdf_quantiles = dir_netcdf+'/'+agg_label[ag]+'/quantiles'
+        if os.path.isdir(dir_netcdf_scores) != True:
+            os.makedirs(dir_netcdf_scores)
+        if os.path.isdir(dir_netcdf_terciles) != True:
+            os.makedirs(dir_netcdf_terciles)
+        if os.path.isdir(dir_netcdf_quantiles) != True:
+            os.makedirs(dir_netcdf_quantiles)
 
         for mm in np.arange(len(model)):
             for det in np.arange(len(detrending)):
@@ -447,9 +452,9 @@ for mo in np.arange(len(modulator)):
                         
                         #get name of the output file containing the verification results
                         if modulator[mo] == 'enso':
-                            savename_results = dir_netcdf_agg+'/validation_results_season_'+variables_gcm[vv]+'_'+agg_label[ag]+'_'+model[mm]+'_vs_'+obs[oo]+'_'+domain+'_corroutlier_'+corr_outlier+'_detrended_'+detrending[det]+'_'+str(years_common2label[0])+'_'+str(years_common2label[-1])+'_'+modulator[mo]+str(phase[mo])+modulator_ref+'_'+vers+'.nc'
+                            savename_results = dir_netcdf_scores+'/validation_results_season_'+variables_gcm[vv]+'_'+agg_label[ag]+'_'+model[mm]+'_vs_'+obs[oo]+'_'+domain+'_corroutlier_'+corr_outlier+'_detrended_'+detrending[det]+'_'+str(years_common2label[0])+'_'+str(years_common2label[-1])+'_'+modulator[mo]+str(phase[mo])+modulator_ref+'_'+vers+'.nc'
                         elif modulator[mo] == 'none':
-                            savename_results = dir_netcdf_agg+'/validation_results_season_'+variables_gcm[vv]+'_'+agg_label[ag]+'_'+model[mm]+'_vs_'+obs[oo]+'_'+domain+'_corroutlier_'+corr_outlier+'_detrended_'+detrending[det]+'_'+str(years_common2label[0])+'_'+str(years_common2label[-1])+'_'+modulator[mo]+'_'+vers+'.nc'
+                            savename_results = dir_netcdf_scores+'/validation_results_season_'+variables_gcm[vv]+'_'+agg_label[ag]+'_'+model[mm]+'_vs_'+obs[oo]+'_'+domain+'_corroutlier_'+corr_outlier+'_detrended_'+detrending[det]+'_'+str(years_common2label[0])+'_'+str(years_common2label[-1])+'_'+modulator[mo]+'_'+vers+'.nc'
                         else:
                             raise Exception('ERROR: unknown entry for <modulator[mo]> input parameter !')
 
@@ -703,7 +708,21 @@ for mo in np.arange(len(modulator)):
                 center_prob = xr.DataArray(center_prob_np, coords=[detrending,variables_gcm,center_prob.time,center_prob.season,center_prob.lead,center_prob.y,center_prob.x], dims=['detrended','variable',center_prob.dims[0],center_prob.dims[1],center_prob.dims[2],center_prob.dims[3],center_prob.dims[4]],name='center_tercile_probability')
                 lower_prob = xr.DataArray(lower_prob_np, coords=[detrending,variables_gcm,lower_prob.time,lower_prob.season,lower_prob.lead,lower_prob.y,lower_prob.x], dims=['detrended','variable',lower_prob.dims[0],lower_prob.dims[1],lower_prob.dims[2],lower_prob.dims[3],lower_prob.dims[4]],name='lower_tercile_probability')
                 tercile_prob = xr.merge((lower_prob,center_prob,upper_prob))
-                savename_tercile_prob = dir_netcdf_agg+'/tercile_prob_pticlima_'+agg_label[ag]+'_'+model[mm]+'_'+domain+'_'+str(years_common2label[0])+'_'+str(years_common2label[-1])+'_'+vers+'.nc'
+                
+                tercile_prob['x'].attrs = x_attrs
+                tercile_prob['y'].attrs = y_attrs
+                tercile_prob['detrended'].attrs['info'] = 'Linear de-trending was applied to the modelled and (quasi)observed time series prior to validation; yes or no'
+                tercile_prob['variable'].attrs['info'] = 'Meteorological variable acronym according to ERA5 nomenclature followed by Copernicus Climate Data Store (CDS)'
+                tercile_prob['season'].attrs['info'] = 'Season the forecast is valid for'
+                tercile_prob['lead'].attrs['info'] = 'Leadtime of the forecast; one per month'
+                #global attributes
+                tercile_prob.attrs['model'] = model[mm]
+                tercile_prob.attrs['description'] = 'observed terciles obtained from '+obs[oo]
+                tercile_prob.attrs['reference_period'] = str(years_quantile[0])+' to '+str(years_quantile[-1])
+                tercile_prob.attrs['version'] = vers
+                tercile_prob.attrs['author'] = "Swen Brands (CSIC-UC, Instituto de Fisica de Cantabria), brandssf@ifca.unican.es or swen.brands@gmail.com"                
+                
+                savename_tercile_prob = dir_netcdf_terciles+'/tercile_prob_pticlima_'+agg_label[ag]+'_'+model[mm]+'_'+domain+'_'+str(years_common2label[0])+'_'+str(years_common2label[-1])+'_'+vers+'.nc'
                 encoding = {'upper_tercile_probability': {'zlib': True, 'complevel': compression_level}, 'center_tercile_probability': {'zlib': True, 'complevel': compression_level}, 'lower_tercile_probability': {'zlib': True, 'complevel': compression_level}}
                 tercile_prob.to_netcdf(savename_tercile_prob,encoding=encoding)
 
@@ -712,7 +731,22 @@ for mo in np.arange(len(modulator)):
                 center_tercile_obs = xr.DataArray(center_tercile_obs, coords=[detrending,variables_gcm,center_prob.time,center_prob.season,center_prob.lead,center_prob.y,center_prob.x], dims=['detrended','variable',center_prob.dims[2],center_prob.dims[3],center_prob.dims[4],center_prob.dims[5],center_prob.dims[6]],name='center_tercile_binary')
                 upper_tercile_obs = xr.DataArray(upper_tercile_obs, coords=[detrending,variables_gcm,upper_prob.time,upper_prob.season,upper_prob.lead,upper_prob.y,upper_prob.x], dims=['detrended','variable',upper_prob.dims[2],upper_prob.dims[3],upper_prob.dims[4],upper_prob.dims[5],upper_prob.dims[6]],name='upper_tercile_binary')
                 tercile_bin_obs = xr.merge((lower_tercile_obs,center_tercile_obs,upper_tercile_obs))
-                savename_tercile_obs = dir_netcdf_agg+'/tercile_bin_pticlima_'+agg_label[ag]+'_'+obs[oo]+'_'+domain+'_'+str(years_common2label[0])+'_'+str(years_common2label[-1])+'_'+vers+'.nc'
+                #dimension attributes
+                tercile_bin_obs['x'].attrs = x_attrs
+                tercile_bin_obs['y'].attrs = y_attrs
+                tercile_bin_obs['detrended'].attrs['info'] = 'Linear de-trending was applied to the modelled and (quasi)observed time series prior to validation; yes or no'
+                tercile_bin_obs['variable'].attrs['info'] = 'Meteorological variable acronym according to ERA5 nomenclature followed by Copernicus Climate Data Store (CDS)'
+                tercile_bin_obs['season'].attrs['info'] = 'Season the forecast is valid for'
+                tercile_bin_obs['lead'].attrs['info'] = 'Leadtime of the forecast; one per month'
+                #global attributes
+                tercile_bin_obs.attrs['observation'] = obs[oo]
+                tercile_bin_obs.attrs['description'] = 'observed terciles obtained from '+obs[oo]
+                tercile_bin_obs.attrs['reference_period'] = str(years_quantile[0])+' to '+str(years_quantile[-1])
+                tercile_bin_obs.attrs['version'] = vers
+                tercile_bin_obs.attrs['author'] = "Swen Brands (CSIC-UC, Instituto de Fisica de Cantabria), brandssf@ifca.unican.es or swen.brands@gmail.com"
+                #assign metadata
+
+                savename_tercile_obs = dir_netcdf_terciles+'/tercile_bin_pticlima_'+agg_label[ag]+'_'+obs[oo]+'_'+domain+'_'+str(years_common2label[0])+'_'+str(years_common2label[-1])+'_'+vers+'.nc'
                 encoding = {'upper_tercile_binary': {'zlib': True, 'complevel': compression_level}, 'center_tercile_binary': {'zlib': True, 'complevel': compression_level}, 'lower_tercile_binary': {'zlib': True, 'complevel': compression_level}}
                 tercile_bin_obs.to_netcdf(savename_tercile_obs,encoding=encoding)
 
@@ -751,7 +785,7 @@ for mo in np.arange(len(modulator)):
             quantile_vals_merged.attrs['version'] = vers
             quantile_vals_merged.attrs['author'] = "Swen Brands (CSIC-UC, Instituto de Fisica de Cantabria), brandssf@ifca.unican.es or swen.brands@gmail.com"
             #save to netCDF
-            savename_quantiles = dir_netcdf_agg+'/quantiles_pticlima_'+agg_label[ag]+'_'+model[mm]+'_'+domain+'_'+str(years_quantile[0])+'_'+str(years_quantile[-1])+'_'+vers+'.nc'
+            savename_quantiles = dir_netcdf_quantiles+'/quantiles_pticlima_'+agg_label[ag]+'_'+model[mm]+'_'+domain+'_'+str(years_quantile[0])+'_'+str(years_quantile[-1])+'_'+vers+'.nc'
             encoding = {'quantile_memberwise': {'zlib': True, 'complevel': compression_level}, 'quantile_ensemble': {'zlib': True, 'complevel': compression_level}}
             quantile_vals_merged.to_netcdf(savename_quantiles,encoding=encoding)
 

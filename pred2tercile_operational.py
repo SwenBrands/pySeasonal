@@ -48,21 +48,13 @@ years_quantile = [[1993,2022],[1993,2022]] #years used to calculate the quantile
 # lat_name = ['lat','lat','lat','y','y','y','y','y']
 # file_start = ['seasonal-original-single-levels','seasonal-original-single-levels_masked','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels'] #start string of the file names
 
-# variable_qn = ['msl','t2m','tp','si10','ssrd'] # variable name used inside and outside of the quantile file. This is my work and is thus homegeneous.
-# variable_fc = ['psl','tas','pr','sfcWind','rsds'] # variable name used in the file name, i.e. outside the file, ask collegues for data format harmonization
-# variable_fc_nc = ['psl','tas','pr','sfcWind','rsds'] # variable name within the model netcdf file, may vary depending on source
-# time_name = ['forecast_time','forecast_time','forecast_time','forecast_time','forecast_time'] #name of the time dimension within the model netcdf file, may vary depending on source
-# lon_name = ['x','x','x','x','x']
-# lat_name = ['y','y','y','y','y']
-# file_start = ['seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels'] #start string of the file names
-
-variable_qn = ['tp','t2m'] # variable name used inside and outside of the quantile file. This is my work and is thus homegeneous.
-variable_fc = ['pr','tas'] # variable name used in the file name, i.e. outside the file, ask collegues for data format harmonization; cuurrently, these are also the variable names used in the output nc file
-variable_fc_nc = ['pr','tas'] # variable name within the model netcdf file, may vary depending on source
-time_name = ['forecast_time','forecast_time'] #name of the time dimension within the model netcdf file, may vary depending on source
-lon_name = ['x','x']
-lat_name = ['y','y']
-file_start = ['seasonal-original-single-levels','seasonal-original-single-levels'] #start string of the file names
+variable_qn = ['SPEI-3-M','msl','t2m','tp','si10','ssrd'] # variable name used inside and outside of the quantile file. This is my work and is thus homegeneous.
+variable_fc = ['SPEI-3-M','psl','tas','pr','sfcWind','rsds'] # variable name used in the file name, i.e. outside the file, ask collegues for data format harmonization
+variable_fc_nc = ['SPEI-3-M','psl','tas','pr','sfcWind','rsds'] # variable name within the model netcdf file, may vary depending on source
+time_name = ['time','forecast_time','forecast_time','forecast_time','forecast_time','forecast_time'] #name of the time dimension within the model netcdf file, may vary depending on source
+lon_name = ['lon','x','x','x','x','x']
+lat_name = ['lat','y','y','y','y','y']
+file_start = ['seasonal-original-single-levels_masked','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels'] #start string of the file names
 
 precip_threshold_quotient = 30 #seasonal mean daily precipitation threshold in mm below which the modelled and quasi-observed monthly precipitation amount is set to 0. Bring this in exact agreement with get_skill_season.py in future versions
 datatype = 'float32' #data type of the variables in the output netcdf files
@@ -118,7 +110,7 @@ for ag in np.arange(len(agg_label)):
     season_length = int(agg_label[ag][0])
     for mm in np.arange(len(model)):
         #load the quantiles file
-        filename_quantiles = dir_quantile+'/'+quantile_version+'/'+agg_label[ag]+'/quantiles_pticlima_'+agg_label[ag]+'_'+model[mm]+version[mm]+'_'+domain+'_'+str(years_quantile[mm][0])+'_'+str(years_quantile[mm][1])+'_'+quantile_version+'.nc'
+        filename_quantiles = dir_quantile+'/'+quantile_version+'/'+agg_label[ag]+'/quantiles/quantiles_pticlima_'+agg_label[ag]+'_'+model[mm]+version[mm]+'_'+domain+'_'+str(years_quantile[mm][0])+'_'+str(years_quantile[mm][1])+'_'+quantile_version+'.nc'
         
         #check whether the previously stored model and version thereof match those requested by this script
         nc_quantile = xr.open_dataset(filename_quantiles)
@@ -140,6 +132,14 @@ for ag in np.arange(len(agg_label)):
             
             #filename_forecast = path_gcm_base+'/'+product+'/'+variable_fc[vv]+'/'+model[mm]+'/'+version[mm]+'/'+str(year_init)+str(month_init).zfill(2)+'/'+file_start[vv]+'_'+domain+'_'+product+'_'+variable_fc[vv]+'_'+model[mm]+'_'+version[mm]+'_'+str(year_init)+str(month_init).zfill(2)+'.nc'
             nc_fc = xr.open_dataset(filename_forecast)
+
+            #a seventh forecast months was erroneously added to the SPEI-3-M from cmcc35. This is corrected here
+            if model[mm] == 'cmcc' and version[mm] == '35' and variable_fc[vv] == 'SPEI-3-M':
+                print('Removing 7th forecast months from '+model[mm]+version[mm]+' and '+variable_fc[vv])
+                time_ind = np.arange(len(nc_fc.time)-1) #get time index with the last month removed
+                nc_fc = nc_fc.isel(time=time_ind)
+            else:
+                print('No correction is necessary for '+model[mm]+version[mm]+' and '+variable_fc[vv]+'. The forecast data will be processed as it is.')
             
             #check if the latitudes are in the right order or must be flipped to be consistent with the obserations used for validation
             if nc_fc[lat_name[vv]][0].values < nc_fc[lat_name[vv]][-1].values:
