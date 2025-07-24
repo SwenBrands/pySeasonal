@@ -12,7 +12,6 @@ import pandas as pd
 import dask
 import sys
 import pdb
-exec(open('functions_seasonal.py').read()) #reads the <functions_seasonal.py> script containing a set of custom functions needed here
 
 #the init of the forecast (year and month) can passed by bash; if nothing is passed these parameters will be set by python
 if len(sys.argv) > 1:
@@ -40,21 +39,21 @@ version = ['35','51'] # version of these models
 
 years_quantile = [[1993,2022],[1993,2022]] #years used to calculate the quantiles with get_skill_season.py; list containing as many sublists as they are models
 
-# variable_qn = ['pvpot','SPEI-3-M','fwi','msl','t2m','tp','si10','ssrd'] # variable name used inside and outside of the quantile file. This is my work and is thus homegeneous.
-# variable_fc = ['pvpot','SPEI-3-M','fwi','psl','tas','pr','sfcWind','rsds'] # variable name used in the file name, i.e. outside the file, ask collegues for data format harmonization
-# variable_fc_nc = ['pvpot','SPEI-3-M','FWI','psl','tas','pr','sfcWind','rsds'] # variable name within the model netcdf file, may vary depending on source
-# time_name = ['time','time','time','forecast_time','forecast_time','forecast_time','forecast_time','forecast_time'] #name of the time dimension within the model netcdf file, may vary depending on source
-# lon_name = ['lon','lon','lon','x','x','x','x','x']
-# lat_name = ['lat','lat','lat','y','y','y','y','y']
-# file_start = ['seasonal-original-single-levels','seasonal-original-single-levels_masked','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels'] #start string of the file names
+variable_qn = ['pvpot','SPEI-3-M','fwi','msl','t2m','tp','si10','ssrd'] # variable name used inside and outside of the quantile file. This is my work and is thus homegeneous.
+variable_fc = ['pvpot','SPEI-3-M','fwi','psl','tas','pr','sfcWind','rsds'] # variable name used in the file name, i.e. outside the file, ask collegues for data format harmonization
+variable_fc_nc = ['pvpot','SPEI-3-M','FWI','psl','tas','pr','sfcWind','rsds'] # variable name within the model netcdf file, may vary depending on source
+time_name = ['time','time','time','forecast_time','forecast_time','forecast_time','forecast_time','forecast_time'] #name of the time dimension within the model netcdf file, may vary depending on source
+lon_name = ['lon','lon','lon','x','x','x','x','x']
+lat_name = ['lat','lat','lat','y','y','y','y','y']
+file_start = ['seasonal-original-single-levels_derived','seasonal-original-single-levels_masked','seasonal-original-single-levels_derived','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels'] #start string of the file names
 
-variable_qn = ['SPEI-3-M','msl','t2m','tp','si10','ssrd'] # variable name used inside and outside of the quantile file. This is my work and is thus homegeneous.
-variable_fc = ['SPEI-3-M','psl','tas','pr','sfcWind','rsds'] # variable name used in the file name, i.e. outside the file, ask collegues for data format harmonization
-variable_fc_nc = ['SPEI-3-M','psl','tas','pr','sfcWind','rsds'] # variable name within the model netcdf file, may vary depending on source
-time_name = ['time','forecast_time','forecast_time','forecast_time','forecast_time','forecast_time'] #name of the time dimension within the model netcdf file, may vary depending on source
-lon_name = ['lon','x','x','x','x','x']
-lat_name = ['lat','y','y','y','y','y']
-file_start = ['seasonal-original-single-levels_masked','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels'] #start string of the file names
+# variable_qn = ['SPEI-3-M','msl','t2m','tp','si10','ssrd'] # variable name used inside and outside of the quantile file. This is my work and is thus homegeneous.
+# variable_fc = ['SPEI-3-M','psl','tas','pr','sfcWind','rsds'] # variable name used in the file name, i.e. outside the file, ask collegues for data format harmonization
+# variable_fc_nc = ['SPEI-3-M','psl','tas','pr','sfcWind','rsds'] # variable name within the model netcdf file, may vary depending on source
+# time_name = ['time','forecast_time','forecast_time','forecast_time','forecast_time','forecast_time'] #name of the time dimension within the model netcdf file, may vary depending on source
+# lon_name = ['lon','x','x','x','x','x']
+# lat_name = ['lat','y','y','y','y','y']
+# file_start = ['seasonal-original-single-levels_masked','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels'] #start string of the file names
 
 precip_threshold_quotient = 30 #seasonal mean daily precipitation threshold in mm below which the modelled and quasi-observed monthly precipitation amount is set to 0. Bring this in exact agreement with get_skill_season.py in future versions
 datatype = 'float32' #data type of the variables in the output netcdf files
@@ -99,6 +98,7 @@ print('The GCM files will be loaded from the base directory '+path_gcm_base+'...
 
 #go to rundir
 os.chdir(rundir)
+exec(open('functions_seasonal.py').read()) #reads the <functions_seasonal.py> script containing a set of custom functions needed here
 
 #create output directory of the forecasts generated here, if it does not exist.
 if os.path.isdir(dir_forecast) != True:

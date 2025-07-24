@@ -3,6 +3,7 @@
 '''functions used in PTI clima'''
 
 from math import radians, cos, sin, asin, sqrt
+import numpy as np
 
 def assign_season_label(season_list_f):
     '''assign the season string for a the input list of 3 consecutive months, each month being an integer.'''
@@ -174,7 +175,7 @@ def lin_detrend(xr_ar,rm_mean_f):
     if  xr_ar.dims.index('time') != 0:
         ValueError('The first dimension in the xarray data array xr_ar must be "time" !')
 
-    coeff = xr_ar.polyfit(dim='time',deg=1) #deg = 1 for linear detrending
+    coeff = xr_ar.polyfit(dim='time',deg=1,skipna=True) #deg = 1 for linear detrending
     fit = xr.polyval(xr_ar['time'], coeff.polyfit_coefficients)
     if rm_mean_f == 'yes':
         xr_ar_detrended = xr_ar - fit
@@ -303,12 +304,8 @@ def plot_pcolormesh_seasonal(xr_ar_f,minval_f,maxval_f,savename_f,colormap_f,dpi
     cbar = plt.colorbar(ax,shrink=0.5,label=xr_ar_f.name + ' ('+xr_ar_f.units+')', orientation = 'horizontal')
     cbar.ax.tick_params(labelsize=8,size=8)
     fig.tight_layout()
-    if figformat == 'pdf': #needed to account for irregular behaviour with the alpha parameter when plotting a pdf file
-       #fig.set_rasterized(True)
-       print('Info: There is a problem with the alpha parameter when generating the figure on my local system. Correct this in future versions !')
     plt.savefig(savename_f,dpi=dpival_f)
     plt.close('all')
-
 
 def get_map_lowfreq_var(pattern_f,xx_f,yy_f,agree_ind_f,minval_f,maxval_f,dpival_f,title_f,savename_f,halfres_f,colormap_f,titlesize_f,cbarlabel_f,origpoint=None,orientation_f=None):
     '''Currently used in pyLamb and pySeasonal packages in sligthly differing versions. Plots a pcolormesh contour over a map overlain by dots indicating, e.g. statistical significance'''

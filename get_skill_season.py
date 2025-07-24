@@ -14,7 +14,9 @@ import os
 import xesmf
 import pandas as pd
 import dask
+import time
 from scipy.signal import detrend
+from scipy.stats import linregress
 import pdb #then type <pdb.set_trace()> at a given line in the code below
 exec(open('functions_seasonal.py').read()) #reads the <functions_seasonal.py> script containing a set of custom functions needed here
 
@@ -52,8 +54,8 @@ lead = [[[[0],[1],[2],[3],[4],[5]],[[0],[1],[2],[3],[4],[5],[6]]], [[[0,1,2],[1,
 # variables_gcm = ['SPEI-3-R-C1','pvpot','SPEI-3-R','SPEI-3-M','fwi','msl','t2m','tp','si10','ssrd'] #model variable names in CDS format  GCM variable names have been set to ERA5 variable names from CDS in <aggregate_hindcast.py> except for <SPEI-3-M> and <SPEI-3-R>, which are paired with <SPEI-3> in <variables_obs>)
 # variables_obs = ['SPEI-3','pvpot','SPEI-3','SPEI-3','fwi','msl','t2m','tp','si10','ssrd'] #variable names in observations; are identical to <variables_gcm> except for <SPEI-3>, which is referred to as <SPEI-3-M> or <SPEI-3-R> in the model depending on whether past values are taken from the model or reanalysis (i.e. quasi-observations)
 
-variables_gcm = ['SPEI-3-M','t2m','tp','msl','si10','ssrd'] #model variable names in CDS format  GCM variable names have been set to ERA5 variable names from CDS in <aggregate_hindcast.py> except for <SPEI-3-M> and <SPEI-3-R>, which are paired with <SPEI-3> in <variables_obs>)
-variables_obs = ['SPEI-3','t2m','tp','msl','si10','ssrd'] #variable names in observations; are identical to <variables_gcm> except for <SPEI-3>, which is referred to as <SPEI-3-M> or <SPEI-3-R> in the model depending on whether past values are taken from the model or reanalysis (i.e. quasi-observations)
+variables_gcm = ['pvpot','fwi','SPEI-3-M','t2m','tp','msl','si10','ssrd'] #model variable names in CDS format  GCM variable names have been set to ERA5 variable names from CDS in <aggregate_hindcast.py> except for <SPEI-3-M> and <SPEI-3-R>, which are paired with <SPEI-3> in <variables_obs>)
+variables_obs = ['pvpot','fwi','SPEI-3','t2m','tp','msl','si10','ssrd'] #variable names in observations; are identical to <variables_gcm> except for <SPEI-3>, which is referred to as <SPEI-3-M> or <SPEI-3-R> in the model depending on whether past values are taken from the model or reanalysis (i.e. quasi-observations)
 
 datatype = 'float32' #data type of the variables in the output netcdf files
 compression_level = 1
@@ -324,8 +326,36 @@ for mo in np.arange(len(modulator)):
                         if detrending[det] == 'yes':
                             print('INFO: As requested by the user, the gcm and obs time series are linearly detrended.')
                             obs_seas_mn_5d = lin_detrend(obs_seas_mn_5d,'no')
+                            start_time = time.time()
                             gcm_seas_mn_6d = lin_detrend(gcm_seas_mn_6d,'no')
+                            end_time = time.time()
+                            print(f"the Execution time for detrending was {end_time - start_time} seconds")
+
+                            # #alternative loop
+                            # start_time = time.time()
+                            # gcm_seas_mn_6d_np = gcm_seas_mn_6d.values
+                            # gcm_seas_mn_6d_np2fill = np.zeros(gcm_seas_mn_6d_np.shape)
+                            # gcm_seas_mn_6d_np2fill[:] = np.nan
+                            # for s in np.arange(len(gcm_seas_mn_6d.season)):
+                            #     for l in np.arange(len(gcm_seas_mn_6d.lead)):
+                            #         for m in np.arange(len(gcm_seas_mn_6d.member)):
+                            #             for la in np.arange(len(gcm_seas_mn_6d.y)):
+                            #                 for lo in np.arange(len(gcm_seas_mn_6d.x)):
+                            #                     ts = gcm_seas_mn_6d_np[:,s,l,m,la,lo]
+                            #                     time_axis = np.arange(len(ts))
+                            #                     mask = ~np.isnan(ts)
+                            #                     fit1 = linregress(time_axis[mask], ts[mask])
+                            #                     trend = fit1.slope*time_axis
+                            #                     ts_dt = ts - trend
+                            #                     #ts_dt = detrend(ts[mask], axis=-1, type='linear', bp=0, overwrite_data=False)
+                            #                     gcm_seas_mn_6d_np2fill[:,s,l,m,la,lo] = ts_dt
+                            #                     #slope, intercept, r_value, p_value, std_err = stats.linregress(varx[mask], vary[mask])
+                            # end_time = time.time()
+                            # print(f"the Execution time for detrending was {end_time - start_time} seconds")                    
+                            # gcm_seas_mn_6d = xr.DataArray(gcm_seas_mn_6d_np2fill,coords=[dates_isea,season_label[ag],lead_label,members,nc_gcm.y,nc_gcm.x],dims=['time', 'season', 'lead', 'member', 'y', 'x'], name=variables_gcm[vv]) #convert to xarray data array
+                            
                             gcm_seas_mn_5d = lin_detrend(gcm_seas_mn_5d,'no')
+                            
                         elif detrending[det] == 'no':
                             print('INFO: As requested by the user, the gcm and obs time series are not detrended.')
                         else:
@@ -697,7 +727,7 @@ for mo in np.arange(len(modulator)):
                     del(nc_obs)
                 #retain attributes and then close and delete nc files containing model data
                 x_attrs = nc_gcm.x.attrs
-                y_attrs = nc_gcm.x.attrs
+                y_attrs = nc_gcm.y.attrs
                 nc_gcm.close()
                 del(nc_gcm)
             
@@ -717,7 +747,7 @@ for mo in np.arange(len(modulator)):
                 tercile_prob['lead'].attrs['info'] = 'Leadtime of the forecast; one per month'
                 #global attributes
                 tercile_prob.attrs['model'] = model[mm]
-                tercile_prob.attrs['description'] = 'observed terciles obtained from '+obs[oo]
+                tercile_prob.attrs['description'] = 'observed terciles obtained from '+model[mm]
                 tercile_prob.attrs['reference_period'] = str(years_quantile[0])+' to '+str(years_quantile[-1])
                 tercile_prob.attrs['version'] = vers
                 tercile_prob.attrs['author'] = "Swen Brands (CSIC-UC, Instituto de Fisica de Cantabria), brandssf@ifca.unican.es or swen.brands@gmail.com"                
@@ -798,4 +828,5 @@ for mo in np.arange(len(modulator)):
             quantile_vals_ens.close()
             quantile_vals_merged.close()
 
-            print('INFO: get_skill_season.py has been run successfully !')
+print('INFO: get_skill_season.py has been run successfully !')
+quit()
