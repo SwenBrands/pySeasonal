@@ -222,8 +222,16 @@ for ag in np.arange(len(agg_label)):
         #create xarray data array and save to netCDF format
         date_init = [nc_fc.time[0].values.astype(str)]
         out_arr = np.expand_dims(out_arr,axis=0) #add "rtime" dimension to add the date of the forecast init
-        out_arr = xr.DataArray(out_arr, coords=[date_init,variable_fc,np.array((1,2,3)),season_label,nc_fc[lat_name[-1]],nc_fc[lon_name[-1]]], dims=['rtime','variable','tercile','season','y','x'], name='probability')
+
+        # output file format option without singleton dimensions for aggregation and model
+        # out_arr = xr.DataArray(out_arr, coords=[date_init,variable_fc,np.array((1,2,3)),season_label,nc_fc[lat_name[-1]],nc_fc[lon_name[-1]]], dims=['rtime','variable','tercile','season','y','x'], name='probability')
+        
+        # output file format option with singleton dimensions for aggregation and model, as requested by Jaime.
+        out_arr = np.expand_dims(out_arr,axis=0)
+        out_arr = np.expand_dims(out_arr,axis=0)
+        out_arr = xr.DataArray(out_arr, coords=[[agg_label[ag]],[model[mm]],date_init,variable_fc,np.array((1,2,3)),season_label,nc_fc[lat_name[-1]],nc_fc[lon_name[-1]]], dims=['aggregation','model','rtime','variable','tercile','season','y','x'], name='probability')
         out_arr = out_arr.to_dataset()
+        
         #set dimension attributes
         out_arr['rtime'].attrs['standard_name'] = 'forecast_reference_time'
         out_arr['rtime'].attrs['long_name'] = 'initialization date of the forecast'
@@ -244,7 +252,13 @@ for ag in np.arange(len(agg_label)):
 
         ##set chunking and save the file
         #out_arr = out_arr.chunk({"variable":1, "tercile":1, "season":1, "y":len(nc_fc[lat_name[-1]]), "x":len(nc_fc[lon_name[-1]])})
-        encoding = dict(probability=dict(chunksizes=(1, 1, 1, 1, len(nc_fc[lat_name[-1]]), len(nc_fc[lon_name[-1]])))) #https://docs.xarray.dev/en/stable/user-guide/io.html#writing-encoded-data
+        
+        # encoding for output file format option without singleton dimensions for aggregation and model
+        # encoding = dict(probability=dict(chunksizes=(1, 1, 1, 1, len(nc_fc[lat_name[-1]]), len(nc_fc[lon_name[-1]])))) #https://docs.xarray.dev/en/stable/user-guide/io.html#writing-encoded-data
+        
+        # encoding for output file format option with singleton dimensions for aggregation and model
+        encoding = dict(probability=dict(chunksizes=(1, 1, 1, 1, 1, 1, len(nc_fc[lat_name[-1]]), len(nc_fc[lon_name[-1]])))) #https://docs.xarray.dev/en/stable/user-guide/io.html#writing-encoded-data
+        
         savename = dir_forecast+'/probability_'+agg_label[ag]+'_'+model[mm]+version[mm]+'_init_'+str(year_init)+str(month_init).zfill(2)+'_'+str(season_length)+'mon_dtr_'+detrended+'_refyears_'+str(years_quantile[mm][0])+'_'+str(years_quantile[mm][1])+'.nc'
         out_arr.to_netcdf(savename,encoding=encoding)
 
