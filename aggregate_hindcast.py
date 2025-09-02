@@ -34,17 +34,21 @@ if gcm_store == 'lustre':
 else:
     raise Exception('ERROR: unknown entry for <path_gcm_base> !')
 
-#add directories to your system path in oder to load the configuration files and functions
-sys.path.append(rundir) #add the running directory
-sys.path.append(rundir+'/config') #add the dirctory containg the config files
-print('IMPORTANT NOTE: The configuration file containing all input parameters is located at: '+rundir+'/config')
-
-#import all input variables located in the config directory, go to running directory, and load the functions script located there
-from config_for_aggregate_hindcast import model, version, n_mem, n_lead, variables, variables_nc, variables_new, time_name, lon_name, lat_name, file_start, years, imonth, domain, save_corrected_files
-from functions_seasonal import * #import all my custom functions
+#go to running directory
 os.chdir(rundir) #go to running directory
 
-#exec(open('functions_seasonal.py').read()) #reads the <functions_seasonal.py> script containing a set of custom functions needed here
+#load config file and custom functions
+exec(open('functions_seasonal.py').read()) #reads the <functions_seasonal.py> script containing a set of custom functions needed here
+exec(open(rundir+'/config/config_for_aggregate_hindcast.py').read()) #reads the <functions_seasonal.py> script containing a set of custom functions needed here
+
+# #alternatively, add directories to your system path in oder to import the configuration files and functions; this however requires restarting Pyhton every time the functions and config files are updated, which is why the exec option mentioned above is preferred for script development
+# sys.path.append(rundir) #add the running directory
+# sys.path.append(rundir+'/config') #add the dirctory containg the config files
+# print('IMPORTANT NOTE: The configuration file containing all input parameters is located at: '+rundir+'/config')
+
+# #import all input variables located in the config directory, go to running directory, and load the functions script located there
+# from config_for_aggregate_hindcast import model, version, n_mem, n_lead, variables, variables_nc, variables_new, time_name, lon_name, lat_name, file_start, years, imonth, domain, save_corrected_files
+# from functions_seasonal import * #import all my custom functions
 
 if save_corrected_files == 'yes':
     print('WARNING: the <save_corrected_files> input parameter was set to '+save_corrected_files+' by the user and input files with unexpected units will be corrected and OVER-WRITTEN ! Be sure that this is intended !')
@@ -86,6 +90,9 @@ for mm in np.arange(len(model)):
         for yy in np.arange(len(years_vec)):
             #Check whether to use hindcasts or forecasts
             if years_vec[yy] > 2016 and model[mm]+version[mm] in ('ecmwf51','cmcc35'):
+                print('Info: No hindcast available for '+model[mm]+version[mm]+' and year '+str(years_vec[yy])+'. The forecast is loaded instead...')
+                product = 'forecast'
+            elif years_vec[yy] > 2023 and model[mm]+version[mm] in ('eccc5'):
                 print('Info: No hindcast available for '+model[mm]+version[mm]+' and year '+str(years_vec[yy])+'. The forecast is loaded instead...')
                 product = 'forecast'
             else:

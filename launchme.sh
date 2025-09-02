@@ -7,7 +7,8 @@
 source ${HOME}/.bashrc
 
 #input parameters
-mode='get_skill' #set Python script to be run. Either 'get_skill' or 'plot'
+mode='plot' #set Python script to be run. Either 'plot' or 'get_skill'; the latter is depreciated because it has been substituted by <launch_get_skill_season.sh>
+log_label='plot_1mon'
 
 #check python version
 echo "Your Python version is:"
@@ -19,10 +20,11 @@ cd ${RUNDIR}
 
 if [ ${mode} = 'get_skill' ]
 then
-	python get_skill_season.py > ${LOGDIR}/log_get_skill_season.log
+	python get_skill_season.py > ${LOGDIR}/${log_label}.log
+	echo 'Warning: The '${mode}' option is depreciated and will be deactivated in future versions of this script !'
 elif [ ${mode} = 'plot' ]
 then
-	python plot_seasonal_validation_results.py > ${LOGDIR}/log_plot_seasonal_validation_results.log
+	python plot_seasonal_validation_results.py > ${LOGDIR}/${log_label}.log
 else
 	echo 'Unknown entry mode=${mode}, exiting now....'
 fi

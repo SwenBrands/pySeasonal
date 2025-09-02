@@ -4,38 +4,38 @@ Este fichero txt contiene las rutas a los ficheros y las funciones a actualizar 
 A) máscaras de skill (1 fichero por ventana de aggregación)
 
 1 mes de agregación:
-/lustre/gmeteo/PTICLIMA/Results/seasonal/validation/v1l/1mon/scores/binary_validation_results_pticlima_medcof_1mon_v1l.nc
+/lustre/gmeteo/PTICLIMA/Results/seasonal/validation/v1m/1mon/scores/binary_validation_results_pticlima_medcof_1mon_v1m.nc
 
 3 meses de agregación:
-/lustre/gmeteo/PTICLIMA/Results/seasonal/validation/v1l/3mon/scores/binary_validation_results_pticlima_medcof_3mon_v1l.nc
+/lustre/gmeteo/PTICLIMA/Results/seasonal/validation/v1m/3mon/scores/binary_validation_results_pticlima_medcof_3mon_v1m.nc
 
 --------------------------------------------------------------------------------------------------------------------------------------------
 B) quantiles para generar predicciones probabilistas (1 fichero por aggregación y modelo):
 
 1 mes de agregación:
-/lustre/gmeteo/PTICLIMA/Results/seasonal/validation/v1l/1mon/quantiles/quantiles_pticlima_1mon_cmcc35_medcof_1993_2022_v1l.nc
-/lustre/gmeteo/PTICLIMA/Results/seasonal/validation/v1l/1mon/quantiles/quantiles_pticlima_1mon_ecmwf51_medcof_1993_2022_v1l.nc
+/lustre/gmeteo/PTICLIMA/Results/seasonal/validation/v1m/1mon/quantiles/quantiles_pticlima_1mon_cmcc35_medcof_1993_2022_v1m.nc
+/lustre/gmeteo/PTICLIMA/Results/seasonal/validation/v1m/1mon/quantiles/quantiles_pticlima_1mon_ecmwf51_medcof_1993_2022_v1m.nc
 
 3 meses de agregación:
-/lustre/gmeteo/PTICLIMA/Results/seasonal/validation/v1l/3mon/quantiles/quantiles_pticlima_3mon_cmcc35_medcof_1993_2022_v1l.nc
-/lustre/gmeteo/PTICLIMA/Results/seasonal/validation/v1l/3mon/quantiles/quantiles_pticlima_3mon_ecmwf51_medcof_1993_2022_v1l.nc
+/lustre/gmeteo/PTICLIMA/Results/seasonal/validation/v1m/3mon/quantiles/quantiles_pticlima_3mon_cmcc35_medcof_1993_2022_v1m.nc
+/lustre/gmeteo/PTICLIMA/Results/seasonal/validation/v1m/3mon/quantiles/quantiles_pticlima_3mon_ecmwf51_medcof_1993_2022_v1m.nc
 
 --------------------------------------------------------------------------------------------------------------------------------------------
 C) probabilidades por tercil para el período hindcast (1 fichero por aggregación y modelo):
 
 1 mes de agregación:
 modelos:
-/lustre/gmeteo/PTICLIMA/Results/seasonal/validation/v1l/1mon/terciles/tercile_prob_pticlima_1mon_cmcc35_medcof_1993_2022_v1l.nc
-/lustre/gmeteo/PTICLIMA/Results/seasonal/validation/v1l/1mon/terciles/tercile_prob_pticlima_1mon_ecmwf51_medcof_1981_2022_v1l.nc
+/lustre/gmeteo/PTICLIMA/Results/seasonal/validation/v1m/1mon/terciles/tercile_prob_pticlima_1mon_cmcc35_medcof_1993_2022_v1m.nc
+/lustre/gmeteo/PTICLIMA/Results/seasonal/validation/v1m/1mon/terciles/tercile_prob_pticlima_1mon_ecmwf51_medcof_1981_2022_v1m.nc
 era5:
-/lustre/gmeteo/PTICLIMA/Results/seasonal/validation/v1l/1mon/terciles/tercile_bin_pticlima_1mon_era5_medcof_1981_2022_v1l.nc
+/lustre/gmeteo/PTICLIMA/Results/seasonal/validation/v1m/1mon/terciles/tercile_bin_pticlima_1mon_era5_medcof_1981_2022_v1m.nc
 
 3 meses de agregación:
 modelos:
-/lustre/gmeteo/PTICLIMA/Results/seasonal/validation/v1l/3mon/terciles/tercile_prob_pticlima_3mon_cmcc35_medcof_1993_2022_v1l.nc
-/lustre/gmeteo/PTICLIMA/Results/seasonal/validation/v1l/3mon/terciles/tercile_prob_pticlima_3mon_ecmwf51_medcof_1981_2022_v1l.nc
+/lustre/gmeteo/PTICLIMA/Results/seasonal/validation/v1m/3mon/terciles/tercile_prob_pticlima_3mon_cmcc35_medcof_1993_2022_v1m.nc
+/lustre/gmeteo/PTICLIMA/Results/seasonal/validation/v1m/3mon/terciles/tercile_prob_pticlima_3mon_ecmwf51_medcof_1981_2022_v1m.nc
 era5:
-/lustre/gmeteo/PTICLIMA/Results/seasonal/validation/v1l/3mon/terciles/tercile_bin_pticlima_3mon_era5_medcof_1981_2022_v1l.nc
+/lustre/gmeteo/PTICLIMA/Results/seasonal/validation/v1m/3mon/terciles/tercile_bin_pticlima_3mon_era5_medcof_1981_2022_v1m.nc
 
 --------------------------------------------------------------------------------------------------------------------------------------------
 D) scripts que actualizar para generar la predicción operativa:
