@@ -22,11 +22,17 @@ memory=24gb
 RUNDIR=/lustre/gmeteo/PTICLIMA/Scripts/SBrands/pyPTIclima/pySeasonal
 LOGDIR=/lustre/gmeteo/PTICLIMA/Scripts/SBrands/pyPTIclima/pySeasonal/LOG
 
-#input variables that will be passed to the python script get_skill_season.py
-vers='v1m' #string format
-model_list=('ecmwf51' 'cmcc35') #bash array containing the model names and versions thereof
+# #input variables that will be passed to the python script get_skill_season.py
+# vers='v1m' #string format
+# model_list=('ecmwf51' 'cmcc35') #bash array containing the model names and versions thereof
+# agg_label_list=('1mon' '3mon') #bash array containing the temporal aggregation windows to be considered
+# modulator_plus_phase_list=('none' 'enso0' 'enso1' 'enso2') #bash array containing all modulators and phases thereof
+
+vers='v1m_test' #string format
+model_list=('eccc5') #bash array containing the model names and versions thereof
 agg_label_list=('1mon' '3mon') #bash array containing the temporal aggregation windows to be considered
 modulator_plus_phase_list=('none' 'enso0' 'enso1' 'enso2') #bash array containing all modulators and phases thereof
+
 
 # EXECUTE #######################################################################################
 #check python version

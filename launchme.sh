@@ -8,7 +8,7 @@ source ${HOME}/.bashrc
 
 #input parameters
 mode='plot' #set Python script to be run. Either 'plot' or 'get_skill'; the latter is depreciated because it has been substituted by <launch_get_skill_season.sh>
-log_label='plot_1mon'
+log_label='plot_3mon'
 
 #check python version
 echo "Your Python version is:"
