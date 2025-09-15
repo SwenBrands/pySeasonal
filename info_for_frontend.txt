@@ -1,7 +1,7 @@
 Este fichero txt contiene las rutas a los ficheros y las funciones a actualizar en la parte front-end de la PTI-Clima, predicción estacional
 
 --------------------------------------------------------------------------------------------------------------------------------------------
-A) máscaras de skill (1 fichero por ventana de aggregación)
+A) máscaras de skill (1 fichero por ventana de aggregación), aún en versión v1m
 
 1 mes de agregación:
 /lustre/gmeteo/PTICLIMA/Results/seasonal/validation/v1m/1mon/scores/binary_validation_results_pticlima_medcof_1mon_v1m.nc
@@ -9,36 +9,35 @@ A) máscaras de skill (1 fichero por ventana de aggregación)
 3 meses de agregación:
 /lustre/gmeteo/PTICLIMA/Results/seasonal/validation/v1m/3mon/scores/binary_validation_results_pticlima_medcof_3mon_v1m.nc
 
---------------------------------------------------------------------------------------------------------------------------------------------
-B) quantiles para generar predicciones probabilistas (1 fichero por aggregación y modelo):
-
-1 mes de agregación:
-/lustre/gmeteo/PTICLIMA/Results/seasonal/validation/v1m/1mon/quantiles/quantiles_pticlima_1mon_cmcc35_medcof_1993_2022_v1m.nc
-/lustre/gmeteo/PTICLIMA/Results/seasonal/validation/v1m/1mon/quantiles/quantiles_pticlima_1mon_ecmwf51_medcof_1993_2022_v1m.nc
-
-3 meses de agregación:
-/lustre/gmeteo/PTICLIMA/Results/seasonal/validation/v1m/3mon/quantiles/quantiles_pticlima_3mon_cmcc35_medcof_1993_2022_v1m.nc
-/lustre/gmeteo/PTICLIMA/Results/seasonal/validation/v1m/3mon/quantiles/quantiles_pticlima_3mon_ecmwf51_medcof_1993_2022_v1m.nc
 
 --------------------------------------------------------------------------------------------------------------------------------------------
-C) probabilidades por tercil para el período hindcast (1 fichero por aggregación y modelo):
+B) quantiles para generar predicciones probabilistas (1 fichero por aggregación, modelo y variable), versión actual v1n:
 
-1 mes de agregación:
-modelos:
-/lustre/gmeteo/PTICLIMA/Results/seasonal/validation/v1m/1mon/terciles/tercile_prob_pticlima_1mon_cmcc35_medcof_1993_2022_v1m.nc
-/lustre/gmeteo/PTICLIMA/Results/seasonal/validation/v1m/1mon/terciles/tercile_prob_pticlima_1mon_ecmwf51_medcof_1981_2022_v1m.nc
-era5:
-/lustre/gmeteo/PTICLIMA/Results/seasonal/validation/v1m/1mon/terciles/tercile_bin_pticlima_1mon_era5_medcof_1981_2022_v1m.nc
+/lustre/gmeteo/PTICLIMA/Results/seasonal/validation/v1n/1mon/quantiles
+/lustre/gmeteo/PTICLIMA/Results/seasonal/validation/v1n/2mon/quantiles
+/lustre/gmeteo/PTICLIMA/Results/seasonal/validation/v1n/3mon/quantiles
+/lustre/gmeteo/PTICLIMA/Results/seasonal/validation/v1n/4mon/quantiles
+/lustre/gmeteo/PTICLIMA/Results/seasonal/validation/v1n/5mon/quantiles
 
-3 meses de agregación:
-modelos:
-/lustre/gmeteo/PTICLIMA/Results/seasonal/validation/v1m/3mon/terciles/tercile_prob_pticlima_3mon_cmcc35_medcof_1993_2022_v1m.nc
-/lustre/gmeteo/PTICLIMA/Results/seasonal/validation/v1m/3mon/terciles/tercile_prob_pticlima_3mon_ecmwf51_medcof_1981_2022_v1m.nc
-era5:
-/lustre/gmeteo/PTICLIMA/Results/seasonal/validation/v1m/3mon/terciles/tercile_bin_pticlima_3mon_era5_medcof_1981_2022_v1m.nc
 
 --------------------------------------------------------------------------------------------------------------------------------------------
-D) scripts que actualizar para generar la predicción operativa:
+C) series temporales con las probabilidades por tercil para el período hindcast (1 fichero por aggregación, modelo o reanalysis y variable), versión actual v1n:
+
+/lustre/gmeteo/PTICLIMA/Results/seasonal/validation/v1n/1mon/tercile_probabilities
+/lustre/gmeteo/PTICLIMA/Results/seasonal/validation/v1n/2mon/tercile_probabilities
+/lustre/gmeteo/PTICLIMA/Results/seasonal/validation/v1n/3mon/tercile_probabilities
+/lustre/gmeteo/PTICLIMA/Results/seasonal/validation/v1n/4mon/tercile_probabilities
+/lustre/gmeteo/PTICLIMA/Results/seasonal/validation/v1n/5mon/tercile_probabilities
+
+
+--------------------------------------------------------------------------------------------------------------------------------------------
+D) ficheros de predicción con las probabilidades por tercil, generados con pred2tercile_operational.py (1 fichero por aggregación y modelo), versión actual v1n:
+
+/lustre/gmeteo/PTICLIMA/Results/seasonal/forecast
+
+
+--------------------------------------------------------------------------------------------------------------------------------------------
+E) scripts que actualizar para generar la predicción operativa, versión actual v1n:
 
 https://github.com/SwenBrands/pySeasonal/blob/main/pred2tercile_operational.py
 https://github.com/SwenBrands/pySeasonal/blob/main/oni2enso.py
