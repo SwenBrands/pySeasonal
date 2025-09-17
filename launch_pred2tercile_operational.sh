@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if [ "$1" == "-h" ]; then
-  echo "Description: `basename $0` This script transforms raw daily seasonal forecasts form CDS into percentile format needed for visulization within the PTI-Climate."
+  echo "Description: `basename $0` This script calls the Python script <pred2tercile_operational.py>, which transforms raw daily seasonal forecasts form CDS into percentile format needed for visulization within the PTI-Climate project."
   exit 0
 fi
 

@@ -12,6 +12,7 @@ import pandas as pd
 import dask
 import sys
 import pdb
+import time
 
 #the init of the forecast (year and month) can passed by bash; if nothing is passed these parameters will be set by python
 if len(sys.argv) == 2:
@@ -271,16 +272,27 @@ for ag in np.arange(len(agg_label)):
         out_arr.attrs['file_author'] = nc_quantile.author
 
         ##set chunking and save the file
-        #out_arr = out_arr.chunk({"variable":1, "tercile":1, "season":1, "y":len(nc_fc[lat_name[-1]]), "x":len(nc_fc[lon_name[-1]])})
-        
+        #out_arr = out_arr.chunk({"variable":1, "tercile":1, "season":1, "y":len(nc_fc[lat_name[-1]]), "x":len(nc_fc[lon_name[-1]])})        
+
+        # options to save multiple variables per file
         # encoding for output file format option without singleton dimensions for aggregation and model
         # encoding = dict(probability=dict(chunksizes=(1, 1, 1, 1, len(nc_fc[lat_name[-1]]), len(nc_fc[lon_name[-1]])))) #https://docs.xarray.dev/en/stable/user-guide/io.html#writing-encoded-data
         
-        # encoding for output file format option with singleton dimensions for aggregation and model
-        encoding = dict(probability=dict(chunksizes=(1, 1, 1, 1, 1, 1, len(nc_fc[lat_name[-1]]), len(nc_fc[lon_name[-1]])))) #https://docs.xarray.dev/en/stable/user-guide/io.html#writing-encoded-data
-        
-        savename = dir_forecast+'/probability_'+agg_label[ag]+'_'+model[mm]+version[mm]+'_init_'+str(year_init)+str(month_init).zfill(2)+'_'+str(season_length)+'mon_dtr_'+detrended+'_refyears_'+str(years_quantile[mm][0])+'_'+str(years_quantile[mm][1])+'_'+quantile_version+'.nc'
-        out_arr.to_netcdf(savename,encoding=encoding)
+        # # encoding for output file format option with singleton dimensions for aggregation and model
+        # encoding = dict(probability=dict(chunksizes=(1, 1, 1, 1, 1, 1, len(nc_fc[lat_name[-1]]), len(nc_fc[lon_name[-1]])))) #https://docs.xarray.dev/en/stable/user-guide/io.html#writing-encoded-data
+        # savename = dir_forecast+'/probability_'+agg_label[ag]+'_'+model[mm]+version[mm]+'_init_'+str(year_init)+str(month_init).zfill(2)+'_'+str(season_length)+'mon_dtr_'+detrended+'_refyears_'+str(years_quantile[mm][0])+'_'+str(years_quantile[mm][1])+'_'+quantile_version+'.nc'
+        # out_arr.to_netcdf(savename,encoding=encoding)
+
+        # option to save one variable per file
+        for vvv in np.arange(len(variable_std)):
+            out_arr_singlevar = out_arr.sel(variable=variable_std[vvv]).drop_vars("variable")
+            out_arr_singlevar.attrs['variable'] = variable_std[vvv]
+            encoding = dict(probability=dict(chunksizes=(1, 1, 1, 1, 1, len(nc_fc[lat_name[-1]]), len(nc_fc[lon_name[-1]])))) #https://docs.xarray.dev/en/stable/user-guide/io.html#writing-encoded-data
+            savename_out_arr_singlevar = dir_forecast+'/probability_'+agg_label[ag]+'_'+model[mm]+version[mm]+'_'+variable_std[vvv]+'_init_'+str(year_init)+str(month_init).zfill(2)+'_'+str(season_length)+'mon_dtr_'+detrended+'_refyears_'+str(years_quantile[mm][0])+'_'+str(years_quantile[mm][1])+'_'+quantile_version+'.nc'
+            out_arr_singlevar.to_netcdf(savename_out_arr_singlevar,encoding=encoding)
+            out_arr_singlevar.close()
+            del(out_arr_singlevar)
+            time.sleep(1)
 
         # close all xarray objects
         lower_xr.close()

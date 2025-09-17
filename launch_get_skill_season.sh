@@ -4,7 +4,7 @@
 # launch_get_skill_season.sh:
 ####################################################################################################
 #
-# Description: This script launches the model verification against observations and stores the results in netCDF format
+# Description: This script launches the model verification against observations and stores the results in netCDF format. To this end, get_skill_season.sh is sent to queue, which in turn calls get_skill_season.py
 #
 # Author: Swen Brands (CSIC-UC)
 ####################################################################################################
@@ -17,12 +17,12 @@ source ${HOME}/.bashrc
 
 #environmental and job variables
 partition=meteo_long
-exclude_node=wn56
+exclude_node=wn056
 exectime=00:45:00
 memory=20gb
 RUNDIR=/lustre/gmeteo/PTICLIMA/Scripts/SBrands/pyPTIclima/pySeasonal
-LOGDIR=/lustre/gmeteo/PTICLIMA/Scripts/SBrands/pyPTIclima/pySeasonal/LOG
-FLAGDIR=/lustre/gmeteo/PTICLIMA/Scripts/SBrands/pyPTIclima/pySeasonal/FLAG
+LOGDIR=/lustre/gmeteo/PTICLIMA/Scripts/SBrands/pyPTIclima/pySeasonal/LOG/get_skill
+FLAGDIR=/lustre/gmeteo/PTICLIMA/Scripts/SBrands/pyPTIclima/pySeasonal/FLAG/get_skill
 
 # input variables that will be passed to the python script get_skill_season.py
 vers='v1n' #string format
@@ -83,7 +83,7 @@ do
                     --partition=${partition}
                     --exclude=${exclude_node}
                     --time=${exectime} \
-                    --job-name=${vers}_${model}_${variable}_${agg_label}_${modulator}_${phase} \
+                    --job-name=${LOGDIR}/${vers}_${model}_${variable}_${agg_label}_${modulator}_${phase} \
                     --export=ALL \
                     --begin=now \
                     --output=${LOGDIR}/${vers}_${model}_${variable}_${agg_label}_${modulator}_${phase}.out \
