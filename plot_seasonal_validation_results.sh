@@ -22,8 +22,9 @@ source ${HOME}/.bashrc
 #input variables that will be passed to the python script get_skill_season.py
 agg_label=$1
 plot_maps=$2
-RUNDIR=$3
-LOGDIR=$4
+vers=$3
+RUNDIR=$4
+LOGDIR=$5
 
 ## EXECUTE #########################################################################
 log_label=plot_seasonal_validation_results_${agg_label}
@@ -36,7 +37,7 @@ cd ${RUNDIR}
 # current_time=$(date "+%Y-%m-%d_%H-%M-%S")
 
 # run the Python script
-python plot_seasonal_validation_results.py ${agg_label} ${plot_maps} > ${LOGDIR}/${log_label}.log
+python plot_seasonal_validation_results.py ${agg_label} ${plot_maps} ${vers} > ${LOGDIR}/${log_label}.log
 
 echo "plot_seasonal_validation_results.sh has been sent to queue successfully, exiting now..."
 sleep 1

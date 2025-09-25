@@ -1,0 +1,120 @@
+#!/bin/bash
+
+####################################################################################################
+# launch_send2queue_get_skill_season.sh:
+####################################################################################################
+#
+# Description: This script launches the get_skill_season workflow: For each model, temporal aggregation and climate modulator+phase,
+# a separate job is sent to queue by send2queue_get_skill_season.sh. The latter script calls get_skill_season.sh on the working node,
+# which in turn executes get_skill_season.py there. send2queue_get_skill_season.sh sends a procsse to the frontal nodes that checks
+# whether get_skill_season.py has completed successfully, in which case it writes a flag. Once found, the process on the frontal node closes.
+# CONCLUSION: An open process running a long time on the frontal node and writing into the logfile indicates that the correpsonding job sent to queue did not finish successfully.
+#
+# execute with:
+#
+# ./launch_send2queue_get_skill_season.sh variables_launch_send2queue_get_skill_season.sh > get_skill_season_workflow.log 2>&1
+#
+# Author: Swen Brands (IFCA, CSIC-UC)
+####################################################################################################
+
+#load your software
+source ${HOME}/.bashrc
+
+#load input variables from variables_launch_send2queue_get_skill_season.sh
+FILE_VARIABLES=${1} #read the variables file
+source ${FILE_VARIABLES} #load the variables into memory
+
+#print the just loaded variables
+echo "--------------------------------------------------------------------------------"
+echo "launch_sent2queue_get_skill_season.sh will be run with the following variables:"
+echo "--------------------------------------------------------------------------------"
+echo "partition: "${partition}
+echo "exclude_node: "${exclude_node}
+echo "exectime: "${exectime}
+echo "memory: "${memory}
+echo "RUNDIR: "${RUNDIR}
+echo "LOGDIR: "${LOGDIR}
+echo "FLAGDIR: "${FLAGDIR}
+echo "vers: "${vers}
+echo "model_list: "${model_list}
+echo "agg_label_list: "${agg_label_list}
+echo "modulator_plus_phase: "${modulator_plus_phase}
+echo "variable_list: "${variable_list}
+echo "--------------------------------------------------------------------------------"
+echo "--------------------------------------------------------------------------------"
+
+# #environmental and job variables
+# partition=meteo_long
+# exclude_node=wn055,wn056
+# exectime=00:45:00
+# memory=20gb
+# RUNDIR=/lustre/gmeteo/PTICLIMA/Scripts/SBrands/pyPTIclima/pySeasonal
+# LOGDIR=/lustre/gmeteo/PTICLIMA/Scripts/SBrands/pyPTIclima/pySeasonal/LOG/get_skill
+# FLAGDIR=/lustre/gmeteo/PTICLIMA/Scripts/SBrands/pyPTIclima/pySeasonal/FLAG/get_skill
+
+# # # input variables that will be passed to the python script get_skill_season.py
+# # vers='v1o' #string format
+# # model_list=('ecmwf51' 'cmcc35') #bash array containing the model names and versions thereof
+# # agg_label_list=('1mon' '2mon' '3mon' '4mon' '5mon') #bash array containing the temporal aggregation windows to be considered
+# # modulator_plus_phase_list=('none' 'enso0' 'enso1' 'enso2') #bash array containing all modulators and phases thereof
+# # variable_list=('pvpot' 'fwi' 'SPEI-3-M' 't2m' 'tp' 'msl' 'si10' 'ssrd') #bash array of variables to be processed; must coincide with <variables_gcm> in aggregate_hindcast.py
+
+# vers='v1n_test' #string format
+# model_list=('ecmwf51') #bash array containing the model names and versions thereof
+# agg_label_list=('3mon') #bash array containing the temporal aggregation windows to be considered
+# modulator_plus_phase_list=('none') #bash array containing all modulators and phases thereof
+# variable_list=('fwi') #bash array of variables to be processed; must coincide with <variables_gcm> in aggregate_hindcast.py
+
+# EXECUTE #######################################################################################
+#check python version
+echo "Your Python version is:"
+python --version
+
+#clean the LOG and FLAG directories
+rm -r ${LOGDIR}
+rm -r ${FLAGDIR}
+mkdir ${LOGDIR}
+mkdir ${FLAGDIR}
+sleep 1
+
+cd ${RUNDIR}
+
+#loop through the models
+for model in "${model_list[@]}"
+do
+    #loop through the aggregation windows
+    for agg_label in "${agg_label_list[@]}"
+    do
+        #loop through the modulators and their phases
+        for modulator_plus_phase in "${modulator_plus_phase_list[@]}"
+        do                        
+            if [[ ${modulator_plus_phase} == "enso0" ]]; then
+                modulator="enso"
+                phase="0"
+            elif [[ ${modulator_plus_phase} == "enso1" ]]; then
+                modulator="enso"
+                phase="1"
+            elif [[ ${modulator_plus_phase} == "enso2" ]]; then
+                modulator="enso"
+                phase="2"
+            elif [[ ${modulator_plus_phase} == "none" ]]; then
+                modulator='none'
+                phase='none'
+            else
+                echo 'ERROR: unknown entry for <modulator_plus_phase> !'
+            fi
+            #loop through the variables
+            for variable in "${variable_list[@]}"
+            do  
+                #define the job name
+                jobname=${vers}_${model}_${variable}_${agg_label}_${modulator}_${phase}                
+                #send2queue_get_skill_seasons will send the model evalatuion to queue and is itself sent into the background of the frontal node
+                ./send2queue_get_skill_season.sh ${partition} ${exclude_node} ${exectime} ${memory} ${vers} ${model} ${variable} ${agg_label} ${modulator} ${phase} ${RUNDIR} ${LOGDIR} ${FLAGDIR} ${jobname} > ${LOGDIR}/send2queue_get_skill_season_${jobname}.log &
+                sleep 10
+            done
+        done
+    done
+done
+
+echo "launch_send2queue_get_skill_season.sh has been sent to queue successfully, exiting now..."
+exit 0

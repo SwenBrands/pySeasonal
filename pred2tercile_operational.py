@@ -28,9 +28,9 @@ else:
     print(date.today())
 print(year_init, month_init)
 
-# #overwrite the aformentioned variables for develompment purposes
-# year_init = 2024 #a list containing the years the forecast are initialized on, will be looped through with yy
-# month_init = 1 #a list containing the corresponding months the forecast are initialized on, will be called while looping through <year_init> (with yy), i.e. must have the same length
+#overwrite the aformentioned variables for develompment purposes
+year_init = 2024 #a list containing the years the forecast are initialized on, will be looped through with yy
+month_init = 6 #a list containing the corresponding months the forecast are initialized on, will be called while looping through <year_init> (with yy), i.e. must have the same length
 
 #set input parameters
 quantile_version = 'v1n' #version of the validation results
@@ -60,6 +60,7 @@ file_start = ['seasonal-original-single-levels_derived','seasonal-original-singl
 precip_threshold_quotient = 30 #seasonal mean daily precipitation threshold in mm below which the modelled and quasi-observed monthly precipitation amount is set to 0. Bring this in exact agreement with get_skill_season.py in future versions
 datatype = 'float32' #data type of the variables in the output netcdf files
 domain = 'medcof' #spatial domain
+masked_variable_std = ['fwi','SPEI-3-M'] #list of variables on which a land-sea mask will be applied, setting values over sea to nan
 detrended = 'no' #yes or no, linear detrending of the gcm and obs time series prior to validation
 nr_mem = [25] #considered ensemble members, not yet in use !
 
@@ -87,6 +88,7 @@ if gcm_store == 'lustre':
     rundir = home+'/Scripts/SBrands/pyPTIclima/pySeasonal'
     dir_quantile = home+'/Results/seasonal/validation'
     dir_forecast = home+'/Results/seasonal/forecast'
+    mask_dir = '/lustre/gmeteo/PTICLIMA/Auxiliary-material/Masks' #path to the land-sea masks
 elif gcm_store == 'argo':
     home = os.getenv("DATA_DIR", "")
     path_gcm_base = home+'seasonal-original-single-levels' # head directory of the source files
@@ -94,6 +96,7 @@ elif gcm_store == 'argo':
     path_gcm_base_masked = home+'seasonal-original-single-levels_masked' # head directory of the source files
     dir_quantile = '/tmp/terciles/'
     dir_forecast = home+'seasonal-original-single-levels_derived/medcof/forecast/terciles/'
+    mask_dir = '/lustre/gmeteo/PTICLIMA/Auxiliary-material/Masks' #path to the land-sea masks
 else:
     raise Exception('ERROR: unknown entry for <path_gcm_base> !')
 print('The GCM files will be loaded from the base directory '+path_gcm_base+'...')
@@ -146,6 +149,28 @@ for ag in np.arange(len(agg_label)):
             
             #filename_forecast = path_gcm_base+'/'+product+'/'+variable_fc[vv]+'/'+model[mm]+'/'+version[mm]+'/'+str(year_init)+str(month_init).zfill(2)+'/'+file_start[vv]+'_'+domain+'_'+product+'_'+variable_fc[vv]+'_'+model[mm]+'_'+version[mm]+'_'+str(year_init)+str(month_init).zfill(2)+'.nc'
             nc_fc = xr.open_dataset(filename_forecast)
+
+            #optionally apply land sea mask; set values of sea to nan
+            if variable_std[vv] in masked_variable_std:
+                print('Upon user request, values for sea grid-boxes are set to nan for '+variable_std[vv]+' ! ')                
+                #get mask label as a function of the requested sub-domain
+                if domain in ('medcof','medcof2'):
+                    masklabel = 'Medcof'
+                elif domain == 'iberia':
+                    masklabel = domain[0].upper()+domain[1:]# mask name is Uppercase for iberian domain, i.e. "Iberia"
+                else:
+                    ValueError('Check entry for <domain> input variable !')                
+                mask_file = mask_dir+'/ECMWF_Land_'+masklabel+'.nc'
+                nc_mask = xr.open_dataset(mask_file)
+                mask_appended = np.tile(nc_mask.mask.values,(len(nc_fc.time),len(nc_fc.member),1,1))
+                nc_fc = nc_fc.where(mask_appended == 1, np.nan) #retain grid-boxes marked with 1 in mask
+                #nc_fc = nc_fc.where(mask_appended == 1, nc_fc, np.nan) #retain grid-boxes marked with 1 in mask
+                nc_mask.close()
+                del(nc_mask)
+            elif variable_std[vv] not in masked_variable_std:
+                print('As requested by the user, the verification results are not filtered by a land-sea mask for '+variable_std[vv]+' !')
+            else:
+                ValueError('check whether <variable_std[vv]> is in <masked_variable_std> !')
 
             #a seventh forecast months was erroneously added to the SPEI-3-M from cmcc35. This is corrected here
             if model[mm] == 'cmcc' and version[mm] == '35' and variable_fc[vv] == 'SPEI-3-M':
@@ -288,7 +313,7 @@ for ag in np.arange(len(agg_label)):
             out_arr_singlevar = out_arr.sel(variable=variable_std[vvv]).drop_vars("variable")
             out_arr_singlevar.attrs['variable'] = variable_std[vvv]
             encoding = dict(probability=dict(chunksizes=(1, 1, 1, 1, 1, len(nc_fc[lat_name[-1]]), len(nc_fc[lon_name[-1]])))) #https://docs.xarray.dev/en/stable/user-guide/io.html#writing-encoded-data
-            savename_out_arr_singlevar = dir_forecast+'/probability_'+agg_label[ag]+'_'+model[mm]+version[mm]+'_'+variable_std[vvv]+'_init_'+str(year_init)+str(month_init).zfill(2)+'_'+str(season_length)+'mon_dtr_'+detrended+'_refyears_'+str(years_quantile[mm][0])+'_'+str(years_quantile[mm][1])+'_'+quantile_version+'.nc'
+            savename_out_arr_singlevar = dir_forecast+'/probability_'+agg_label[ag]+'_'+model[mm]+version[mm]+'_'+variable_std[vvv]+'_init_'+str(year_init)+str(month_init).zfill(2)+'_dtr_'+detrended+'_refyears_'+str(years_quantile[mm][0])+'_'+str(years_quantile[mm][1])+'_'+quantile_version+'.nc'
             out_arr_singlevar.to_netcdf(savename_out_arr_singlevar,encoding=encoding)
             out_arr_singlevar.close()
             del(out_arr_singlevar)
@@ -306,4 +331,6 @@ for ag in np.arange(len(agg_label)):
         del(nc_quantile)
 
 print('INFO: pred2tercile_operational.py has been run successfully ! The netcdf output file has been stored at '+dir_forecast)
+
 quit()
+#sys.exit(0)

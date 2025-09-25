@@ -21,9 +21,9 @@ LOGDIR=/lustre/gmeteo/PTICLIMA/Scripts/SBrands/pyPTIclima/pySeasonal/LOG/plot
 FLAGDIR=/lustre/gmeteo/PTICLIMA/Scripts/SBrands/pyPTIclima/pySeasonal/FLAG/plot
 
 # input variables that will be passed to the python script get_skill_season.py
-# agg_label_list=('1mon' '2mon' '3mon' '4mon' '5mon') #bash array containing the temporal aggregation windows to be considered
-agg_label_list=('1mon')
+agg_label_list=('1mon' '2mon' '3mon' '4mon' '5mon') #bash array containing the temporal aggregation windows to be considered
 plot_maps='no'
+vers='v1o'
 
 # EXECUTE #######################################################################################
 #check python version
@@ -47,20 +47,19 @@ do
         --partition=${partition}
         --exclude=${exclude_node}
         --time=${exectime} \
-        --job-name=plot_${agg_label} \
+        --job-name=plot_${agg_label}_${vers} \
         --export=ALL \
         --begin=now \
-        --output=${LOGDIR}/plot_${agg_label}.out \
+        --output=${LOGDIR}/plot_${agg_label}_${vers}.out \
         --ntasks-per-node=1 \
         --ntasks=1 \
         --cpus-per-task=1 \
         --mem=${memory} \
-        ./plot_seasonal_validation_results.sh ${agg_label} ${plot_maps} ${RUNDIR} ${LOGDIR}" #get_skill_season.sh contains the Python script to be run on the working node
+        ./plot_seasonal_validation_results.sh ${agg_label} ${plot_maps} ${vers} ${RUNDIR} ${LOGDIR}" #get_skill_season.sh contains the Python script to be run on the working node
     echo ${QSUB} #prints the command sent to queue
     ${QSUB} #sent to queue  !
     sleep 5
 done
-
 
 echo "launch_plot_seasonal_validation_results.sh has been sent to queue successfully, exiting now..."
 exit 0
