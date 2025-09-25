@@ -17,11 +17,24 @@
 # Author: Swen Brands (IFCA, CSIC-UC)
 ####################################################################################################
 
-#load your software
-source ${HOME}/.bashrc
-
+#--------------------------------------------------------------------------------------------------
+# Check if the script is called correctly
+#--------------------------------------------------------------------------------------------------
 #load input variables from variables_launch_send2queue_get_skill_season.sh
 FILE_VARIABLES=${1} #read the variables file
+
+JOB_NAME="$(basename "$0")"
+MESSAGE="Usage: ./${JOB_NAME} [variables file]"
+
+if [ ! -f "${FILE_VARIABLES}" ]
+then 
+    echo "I cannot find the variables file ${FILE_VARIABLES}"
+    echo ${MESSAGE}
+    exit 1
+fi
+
+#load your software
+source ${HOME}/.bashrc
 source ${FILE_VARIABLES} #load the variables into memory
 
 #print the just loaded variables

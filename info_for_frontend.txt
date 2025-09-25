@@ -39,7 +39,7 @@ D) ficheros de predicción con las probabilidades por tercil, generados con pred
 
 
 --------------------------------------------------------------------------------------------------------------------------------------------
-E) scripts que actualizar para generar la predicción operativa, versión actual v1o:
+E) scripts a actualizar para generar la predicción operativa, versión actual v1o:
 
 https://github.com/SwenBrands/pySeasonal/blob/main/pred2tercile_operational.py
 https://github.com/SwenBrands/pySeasonal/blob/main/oni2enso.py

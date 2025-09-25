@@ -70,7 +70,7 @@ dpival = 300 #resolution of output figures
 south_ext_lambert = 0 #extend the southern limit of the box containing the Lambert Conformal Projection
 
 #set basic path structure for observations and gcms
-gcm_store = os.getenv('GCM_STORE', 'lustre') #argo, laptop, F, extdisk2 or lustre
+gcm_store = os.getenv('GCM_STORE', 'lustre') #loads environmental variable 'GCM_STORE' (Predictia's file system), if this environmental variable not exists (because you are not working on Predictias file system) set gcm_store = lustre
 product = 'forecast'
 
 ## EXECUTE #############################################################

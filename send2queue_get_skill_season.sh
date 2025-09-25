@@ -33,6 +33,7 @@ FLAGDIR=${13}
 jobname=${14}
 
 ## EXECUTE #########################################################################
+checkflag=yes
 checktime=60 #time in seconds that passed from one flag check to another
 
 #go to the run directory and launch get_skill_season.py
@@ -52,7 +53,7 @@ QSUB="sbatch \
     --cpus-per-task=1 \
     --mem=${memory} \
     --mail-user=swen.brands@gmail.com \
-    --mail-type=all \
+    --mail-type=FAIL,TIME_LIMIT \
     ./get_skill_season.sh ${vers} ${model} ${variable} ${agg_label} ${modulator} ${phase} ${RUNDIR} ${LOGDIR} ${FLAGDIR} ${jobname}" #get_skill_season.sh contains the Python script to be run on the working node
 echo ${QSUB} #prints the command sent to queue
 ${QSUB} #sent to queue !
@@ -60,14 +61,22 @@ ${QSUB} #sent to queue !
 #--------------------------------------------------------------------------------------------------
 # Check whether get_skill_season.py executes correctly and writes the flag
 #--------------------------------------------------------------------------------------------------
-flagfile=${FLAGDIR}/get_skill_season_${vers}_${model}_obs_${variable}_model_${variable}_${agg_label}_${modulator}_${phase}.flag
-while [ ! -f ${flagfile} ]
-    do
-    echo "INFO: ${jobname} is still running ! Waiting for the flag file to be written at ${flagfile}..."
-    echo "INFO: check again in ${checktime} seconds..."
-    sleep ${checktime}
-done
-echo "INFO: The flag for the job ${jobname} written by get_skill_season.py has been found !!"
+
+if [[ "${checkflag}" == "yes" ]]; then
+    flagfile=${FLAGDIR}/get_skill_season_${vers}_${model}_obs_${variable}_model_${variable}_${agg_label}_${modulator}_${phase}.flag
+    while [ ! -f ${flagfile} ]
+        do
+        echo "INFO: ${jobname} is still running ! Waiting for the flag file to be written at ${flagfile}..."
+        echo "INFO: check again in ${checktime} seconds..."
+        sleep ${checktime}
+    done
+    echo "INFO: The flag for the job ${jobname} written by get_skill_season.py has been found !!"
+elif [[ "${checkflag}" == "no" ]]; then
+    echo "INFO: the <checkflag> parameter in send2queue_get_skill_season.sh is set to ${checkflag}. In this option, it does not monitor the jobs sent to queue !"
+else
+    echo "WARNING: the option <checkflag=${checkflag}> set in send2queue_get_skill_season.sh is not known !" >&2
+fi
+
 echo "Exiting now..."
 sleep 1
 exit 0
