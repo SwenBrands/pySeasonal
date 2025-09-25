@@ -17,90 +17,43 @@ import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
 import cartopy.feature as cf
 import pdb as pdb #then type <pdb.set_trace()> at a given line in the code below
-exec(open('functions_seasonal.py').read()) #reads the <functions_seasonal.py> script containing a set of custom functions needed here
-
-# #setup for a single model
-# model = ['ecmwf'] #seasonal forecast model
-# version = ['51'] #and version thereof; pertains to <model> loop indicated with <mm> below
-# time_name = [['time']] #one entry per model and variable; recurrs the <model> and <variables> loops below; one list per model, the list items refer to the time name set for the variable from that model; name of the time dimension in the netCDF files for this variable, corresponds to <variables> input parameter and must have the same length
-# n_mem = [25] #number of considered ensemble members, pertains to <model> loop. For instance, ECMWF51 has 25 hindcast and 51 forecast members so <n_mem = 25> should be set if hindcasts and forecasts are combined in the skill evaluation. The first n_mem members are selected.
-# n_lead = [8] #considered lead-time in months, pertains to <model> loop indicated with <mm> below, CMCC 3.5 hindcasts provide 183 forecast days, SEAS5.1 provide 215
-
-# #set input parameters for model dataset to be aggregated, this example is for a single model
-# variables = ['SPEI-3-R_eqm_pullLMs-TRUE','pvpot','SPEI-3-R','SPEI-3-M','fwi','psl','sfcWind','tas','pr','rsds'] #variable names in directories and file names
-# variables_nc = ['SPEI-3-R','pvpot','SPEI-3-R','SPEI-3-M','FWI','psl','sfcWind','tas','pr','rsds'] #variable names within the netCDF files, differs in case of msi (msi is used within the file, but psl is used in the file name)
-# variables_new = ['SPEI-3-R-C1','pvpot','SPEI-3-R','SPEI-3-M','fwi','msl','si10','t2m','tp','ssrd'] #new variable names; as provided by ERA5 data from CDS
-# time_name = ['time','time','time','time','forecast_time','forecast_time','forecast_time','forecast_time','forecast_time'] #name of the time dimension in the netCDF files for this variable, corresponds to <variables> input parameter and must have the same length
-# lon_name = ['lon','lon','lon','lon','lon','x','x','x','x','x']
-# lat_name = ['lat','lat','lat','lat','lat','y','y','y','y','y']
-# file_start = ['seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels_masked','seasonal-original-single-levels_masked','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels'] #start string of the file names
-
-# setup for various models
-model = ['cmcc','ecmwf'] #seasonal forecast model
-version = ['35','51'] #and version thereof; pertains to <model> loop indicated with <mm> below
-n_mem = [40,25] #number of considered ensemble members, pertains to <model> loop. For instance, ECMWF51 has 25 hindcast and 51 forecast members so <n_mem = 25> should be set if hindcasts and forecasts are combined in the skill evaluation. The first n_mem members are selected.
-n_lead = [7,8] #considered lead-time in months, pertains to <model> loop indicated with <mm> below, CMCC 3.5 hindcasts provide 183 forecast days, SEAS5.1 provide 215
-
-# variables = [['pr','tas','psl','sfcWind','rsds'],['pr','tas','psl','sfcWind','rsds']] #variable names in directories and file names
-# variables_nc = [['pr','tas','psl','sfcWind','rsds'],['pr','tas','psl','sfcWind','rsds']] #variable names within the netCDF files, differs in case of fwi msi (msi / FWI is used within the file, but psl / fwi is used in the file name)
-# variables_new = [['tp','t2m','msl','si10','ssrd'],['tp','t2m','msl','si10','ssrd']] #new variable names; as provided by ERA5 data from CDS
-# time_name = [['forecast_time','forecast_time','forecast_time','forecast_time','forecast_time'],['forecast_time','forecast_time','forecast_time','forecast_time','forecast_time']] #list containing lists, each sublist specifies the names of the time coordinates for each variables of a specific model; one list per model
-# lon_name = [['x','x','x','x','x'],['x','x','x','x','x']] #as time_name but for the name of the longitude coordinate
-# lat_name = [['y','y','y','y','y'],['y','y','y','y','y']] #as time_name but for the name of the latitude coordinate
-# file_start = [['seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels'],['seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels']] ##as time_name but for the name of the head folder containing hindcasts and predictions
-
-variables = [['SPEI-3-M','pr','tas','psl','sfcWind','rsds'],['SPEI-3-M','pr','tas','psl','sfcWind','rsds']] #variable names in directories and file names
-variables_nc = [['SPEI-3-M','pr','tas','psl','sfcWind','rsds'],['SPEI-3-M','pr','tas','psl','sfcWind','rsds']] #variable names within the netCDF files, differs in case of fwi msi (msi / FWI is used within the file, but psl / fwi is used in the file name)
-variables_new = [['SPEI-3-M','tp','t2m','msl','si10','ssrd'],['SPEI-3-M','tp','t2m','msl','si10','ssrd']] #new variable names; as provided by ERA5 data from CDS
-time_name = [['time','forecast_time','forecast_time','forecast_time','forecast_time','forecast_time'],['time','forecast_time','forecast_time','forecast_time','forecast_time','forecast_time']] #list containing lists, each sublist specifies the names of the time coordinates for each variables of a specific model; one list per model
-lon_name = [['lon','x','x','x','x','x'],['lon','x','x','x','x','x']] #as time_name but for the name of the longitude coordinate
-lat_name = [['lat','y','y','y','y','y'],['lat','y','y','y','y','y']] #as time_name but for the name of the latitude coordinate
-file_start = [['seasonal-original-single-levels_masked','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels'],['seasonal-original-single-levels_masked','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels']] ##as time_name but for the name of the head folder containing hindcasts and predictions
-
-years = [[1993,2023],[1981,2023]] #years to be regridded, the output files will be filled with monthly values, aggregated from daily values in this script, covering all months beginning in January of the indicated start year and ending in December of the indicated end year. If no daily input data is found for a given month, nans will be placed in the monthly output netCDF files.
-
-#fixed parameters not passing through loops
-imonth = [1,2,3,4,5,6,7,8,9,10,11,12] #month the forecasts are initialized on, 1 refers to the January 1st, 2 to Febrary 1st etc.
-
-#set MEDCOF domain
-domain = 'medcof' #spatial domain the model data is available on. So far, this is just a label used to find the input files and name the output files.
-save_corrected_files = 'no' #overwrite input nc files with un expected units with newly generated corrected files
+import sys
 
 #setup for path to the input GCM files
 gcm_store = 'lustre' #laptop, F, lustre or extdisk2
 
 ## EXECUTE #############################################################
-if save_corrected_files == 'yes':
-    print('WARNING: the <save_corrected_files> input parameter was set to '+save_corrected_files+' by the user and input files with unexpected units will be corrected and OVER-WRITTEN ! Be sure that this is intended !')
-xr.set_options(file_cache_maxsize=1)
-
 #set path to input gcm files as a function of the file system set by the <gcm_store> input parameter
-if gcm_store == 'laptop':
-    home = os.getenv('HOME')
-    path_gcm_base = home+'/datos/GCMData/seasonal-original-single-levels' # head directory of the source files
-    path_gcm_base_derived = path_gcm_base # head directory of the source files
-    path_gcm_base_masked = path_gcm_base # head directory of the source files
-    savepath_base = home+'/datos/tareas/proyectos/pticlima/seasonal/results/gcm/aggregated' #Directory of the output files generated by this script
-elif gcm_store == 'F':
-    home = os.getenv('HOME')
-    path_gcm_base = '/media/swen/F/datos/GCMData/seasonal-original-single-levels' # head directory of the source files
-    path_gcm_base_derived = path_gcm_base # head directory of the source files
-    path_gcm_base_masked = path_gcm_base # head directory of the source files
-    savepath_base = home+'/datos/tareas/proyectos/pticlima/seasonal/results/gcm/aggregated' #Directory of the output files generated by this script
-elif gcm_store == 'extdisk2':
-    home = os.getenv('HOME')
-    path_gcm_base = '/media/swen/ext_disk2/datos/GCMData/seasonal-original-single-levels' # head directory of the source files
-    path_gcm_base_derived = path_gcm_base # head directory of the source files
-    path_gcm_base_masked = path_gcm_base # head directory of the source files
-    savepath_base = home+'/datos/tareas/proyectos/pticlima/seasonal/results/gcm/aggregated' #Directory of the output files generated by this script
-elif gcm_store == 'lustre':
+if gcm_store == 'lustre':
     home = '/lustre/gmeteo/PTICLIMA'
+    rundir = home+'/Scripts/SBrands/pyPTIclima/pySeasonal'
     path_gcm_base = home+'/DATA/SEASONAL/seasonal-original-single-levels' # head directory of the source files
     path_gcm_base_derived = home+'/DATA/SEASONAL/seasonal-original-single-levels_derived' # head directory of the source files
     path_gcm_base_masked = home+'/DATA/SEASONAL/seasonal-original-single-levels_masked' # head directory of the source files
     savepath_base = home+'/Results/seasonal/gcm/aggregated' #Directory of the output files generated by this script
 else:
     raise Exception('ERROR: unknown entry for <path_gcm_base> !')
+
+#go to running directory
+os.chdir(rundir) #go to running directory
+
+#load config file and custom functions
+exec(open('functions_seasonal.py').read()) #reads the <functions_seasonal.py> script containing a set of custom functions needed here
+exec(open(rundir+'/config/config_for_aggregate_hindcast.py').read()) #reads the <functions_seasonal.py> script containing a set of custom functions needed here
+
+# #alternatively, add directories to your system path in oder to import the configuration files and functions; this however requires restarting Pyhton every time the functions and config files are updated, which is why the exec option mentioned above is preferred for script development
+# sys.path.append(rundir) #add the running directory
+# sys.path.append(rundir+'/config') #add the dirctory containg the config files
+# print('IMPORTANT NOTE: The configuration file containing all input parameters is located at: '+rundir+'/config')
+
+# #import all input variables located in the config directory, go to running directory, and load the functions script located there
+# from config_for_aggregate_hindcast import model, version, n_mem, n_lead, variables, variables_nc, variables_new, time_name, lon_name, lat_name, file_start, years, imonth, domain, save_corrected_files
+# from functions_seasonal import * #import all my custom functions
+
+if save_corrected_files == 'yes':
+    print('WARNING: the <save_corrected_files> input parameter was set to '+save_corrected_files+' by the user and input files with unexpected units will be corrected and OVER-WRITTEN ! Be sure that this is intended !')
+xr.set_options(file_cache_maxsize=1)
+
 print('The GCM files will be loaded from the base directory '+path_gcm_base+'...')
 
 #get mesh information from static file, assumed to be equal for all models
@@ -137,6 +90,9 @@ for mm in np.arange(len(model)):
         for yy in np.arange(len(years_vec)):
             #Check whether to use hindcasts or forecasts
             if years_vec[yy] > 2016 and model[mm]+version[mm] in ('ecmwf51','cmcc35'):
+                print('Info: No hindcast available for '+model[mm]+version[mm]+' and year '+str(years_vec[yy])+'. The forecast is loaded instead...')
+                product = 'forecast'
+            elif years_vec[yy] > 2023 and model[mm]+version[mm] in ('eccc5'):
                 print('Info: No hindcast available for '+model[mm]+version[mm]+' and year '+str(years_vec[yy])+'. The forecast is loaded instead...')
                 product = 'forecast'
             else:

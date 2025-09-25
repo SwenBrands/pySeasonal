@@ -3,34 +3,12 @@
 '''functions used in PTI clima'''
 
 from math import radians, cos, sin, asin, sqrt
+import numpy as np
 
 def assign_season_label(season_list_f):
     '''assign the season string for a the input list of 3 consecutive months, each month being an integer.'''
-    if season_list_f == [1,2,3]:
-        season_label_f = 'JFM'
-    elif season_list_f == [2,3,4]:
-        season_label_f = 'FMA'
-    elif season_list_f == [3,4,5]:
-        season_label_f = 'MAM'
-    elif season_list_f == [4,5,6]:
-        season_label_f = 'AMJ'
-    elif season_list_f == [5,6,7]:
-        season_label_f = 'MJJ'
-    elif season_list_f == [6,7,8]:
-        season_label_f = 'JJA'
-    elif season_list_f == [7,8,9]:
-        season_label_f = 'JAS'
-    elif season_list_f == [8,9,10]:
-        season_label_f = 'ASO'
-    elif season_list_f == [9,10,11]:
-        season_label_f = 'SON'
-    elif season_list_f == [10,11,12]:
-        season_label_f = 'OND'
-    elif season_list_f == [11,12,1]:
-        season_label_f = 'NDJ'
-    elif season_list_f == [12,1,2]:
-        season_label_f = 'DJF'
-    elif season_list_f == [1]:
+    # 1-months seasons
+    if season_list_f == [1]:
         season_label_f = 'JAN'
     elif season_list_f == [2]:
         season_label_f = 'FEB'
@@ -54,6 +32,106 @@ def assign_season_label(season_list_f):
         season_label_f = 'NOV'
     elif season_list_f == [12]:
         season_label_f = 'DEC'
+    # 2-months seasons
+    elif season_list_f == [1,2]:
+        season_label_f = 'JF'
+    elif season_list_f == [2,3]:
+        season_label_f = 'FM'
+    elif season_list_f == [3,4]:
+        season_label_f = 'MA'
+    elif season_list_f == [4,5]:
+        season_label_f = 'AM'
+    elif season_list_f == [5,6]:
+        season_label_f = 'MJ'
+    elif season_list_f == [6,7]:
+        season_label_f = 'JJ'
+    elif season_list_f == [7,8]:
+        season_label_f = 'JA'
+    elif season_list_f == [8,9]:
+        season_label_f = 'AS'
+    elif season_list_f == [9,10]:
+        season_label_f = 'SO'
+    elif season_list_f == [10,11]:
+        season_label_f = 'ON'
+    elif season_list_f == [11,12]:
+        season_label_f = 'ND'
+    elif season_list_f == [12,1,]:
+        season_label_f = 'DJ'
+    # 3-months seasons
+    elif season_list_f == [1,2,3]:
+        season_label_f = 'JFM'
+    elif season_list_f == [2,3,4]:
+        season_label_f = 'FMA'
+    elif season_list_f == [3,4,5]:
+        season_label_f = 'MAM'
+    elif season_list_f == [4,5,6]:
+        season_label_f = 'AMJ'
+    elif season_list_f == [5,6,7]:
+        season_label_f = 'MJJ'
+    elif season_list_f == [6,7,8]:
+        season_label_f = 'JJA'
+    elif season_list_f == [7,8,9]:
+        season_label_f = 'JAS'
+    elif season_list_f == [8,9,10]:
+        season_label_f = 'ASO'
+    elif season_list_f == [9,10,11]:
+        season_label_f = 'SON'
+    elif season_list_f == [10,11,12]:
+        season_label_f = 'OND'
+    elif season_list_f == [11,12,1]:
+        season_label_f = 'NDJ'
+    elif season_list_f == [12,1,2]:
+        season_label_f = 'DJF'
+    # 4-months seasons
+    elif season_list_f == [1,2,3,4]:
+        season_label_f = 'JFMA'
+    elif season_list_f == [2,3,4,5]:
+        season_label_f = 'FMAM'
+    elif season_list_f == [3,4,5,6]:
+        season_label_f = 'MAMJ'
+    elif season_list_f == [4,5,6,7]:
+        season_label_f = 'AMJJ'
+    elif season_list_f == [5,6,7,8]:
+        season_label_f = 'MJJA'
+    elif season_list_f == [6,7,8,9]:
+        season_label_f = 'JJAS'
+    elif season_list_f == [7,8,9,10]:
+        season_label_f = 'JASO'
+    elif season_list_f == [8,9,10,11]:
+        season_label_f = 'ASON'
+    elif season_list_f == [9,10,11,12]:
+        season_label_f = 'SOND'
+    elif season_list_f == [10,11,12,1]:
+        season_label_f = 'ONDJ'
+    elif season_list_f == [11,12,1,2]:
+        season_label_f = 'NDJF'
+    elif season_list_f == [12,1,2,3]:
+        season_label_f = 'DJFM'
+    # 5-months seasons
+    elif season_list_f == [1,2,3,4,5]:
+        season_label_f = 'JFMAM'
+    elif season_list_f == [2,3,4,5,6]:
+        season_label_f = 'FMAMJ'
+    elif season_list_f == [3,4,5,6,7]:
+        season_label_f = 'MAMJJ'
+    elif season_list_f == [4,5,6,7,8]:
+        season_label_f = 'AMJJA'
+    elif season_list_f == [5,6,7,8,9]:
+        season_label_f = 'MJJAS'
+    elif season_list_f == [6,7,8,9,10]:
+        season_label_f = 'JJASO'
+    elif season_list_f == [7,8,9,10,11]:
+        season_label_f = 'JASON'
+    elif season_list_f == [8,9,10,11,12]:
+        season_label_f = 'ASOND'
+    elif season_list_f == [9,10,11,12,1]:
+        season_label_f = 'SONDJ'
+    elif season_list_f == [10,11,12,1,2]:
+        season_label_f = 'ONDJF'
+    elif season_list_f == [11,12,1,2,3]:
+        season_label_f = 'NDJFM'
+    elif season_list_f == [12,1,2,3,4]:
+        season_label_f = 'DJFMA'
     else:
         raise Exception('ERROR: check entry for <season_list_f> !')
     return(season_label_f)
@@ -174,7 +252,7 @@ def lin_detrend(xr_ar,rm_mean_f):
     if  xr_ar.dims.index('time') != 0:
         ValueError('The first dimension in the xarray data array xr_ar must be "time" !')
 
-    coeff = xr_ar.polyfit(dim='time',deg=1) #deg = 1 for linear detrending
+    coeff = xr_ar.polyfit(dim='time',deg=1,skipna=True) #deg = 1 for linear detrending
     fit = xr.polyval(xr_ar['time'], coeff.polyfit_coefficients)
     if rm_mean_f == 'yes':
         xr_ar_detrended = xr_ar - fit
@@ -303,12 +381,8 @@ def plot_pcolormesh_seasonal(xr_ar_f,minval_f,maxval_f,savename_f,colormap_f,dpi
     cbar = plt.colorbar(ax,shrink=0.5,label=xr_ar_f.name + ' ('+xr_ar_f.units+')', orientation = 'horizontal')
     cbar.ax.tick_params(labelsize=8,size=8)
     fig.tight_layout()
-    if figformat == 'pdf': #needed to account for irregular behaviour with the alpha parameter when plotting a pdf file
-       #fig.set_rasterized(True)
-       print('Info: There is a problem with the alpha parameter when generating the figure on my local system. Correct this in future versions !')
     plt.savefig(savename_f,dpi=dpival_f)
     plt.close('all')
-
 
 def get_map_lowfreq_var(pattern_f,xx_f,yy_f,agree_ind_f,minval_f,maxval_f,dpival_f,title_f,savename_f,halfres_f,colormap_f,titlesize_f,cbarlabel_f,origpoint=None,orientation_f=None):
     '''Currently used in pyLamb and pySeasonal packages in sligthly differing versions. Plots a pcolormesh contour over a map overlain by dots indicating, e.g. statistical significance'''
@@ -367,7 +441,7 @@ def transform_gcm_variable(ds_f,var_in_f,var_out_f,model_f,version_f):
      and version of the modelling system; output: xarray dataset <ds_f> with corrected variable names and units.'''
 
     # go through exceptions depending on the variable, model, version, etc.    
-    if (var_in_f == 'tas') & (model_f in ('ecmwf','cmcc')) & (version_f in ('51','35')):
+    if (var_in_f == 'tas') & (model_f in ('ecmwf','cmcc','eccc')) & (version_f in ('51','35','5')):
         #bring temperature data to Kelvin, taking into account Predictia's double transformation error in all forecasts from 201701 to 202311
         if (ds_f[var_in_f].mean().values <= 100) & (ds_f[var_in_f].mean().values > -100):
             print('Info: Adding 273.15 to '+var_in_f+' data from '+model_f+version_f+' to transform degress Celsius into Kelvin.')
