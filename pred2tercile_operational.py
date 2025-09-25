@@ -70,7 +70,7 @@ dpival = 300 #resolution of output figures
 south_ext_lambert = 0 #extend the southern limit of the box containing the Lambert Conformal Projection
 
 #set basic path structure for observations and gcms
-gcm_store = 'lustre' #argo, laptop, F, extdisk2 or lustre
+gcm_store = os.getenv('GCM_STORE', 'lustre') #argo, laptop, F, extdisk2 or lustre
 product = 'forecast'
 
 ## EXECUTE #############################################################
@@ -94,7 +94,8 @@ elif gcm_store == 'argo':
     path_gcm_base = home+'seasonal-original-single-levels' # head directory of the source files
     path_gcm_base_derived = home+'seasonal-original-single-levels_derived' # head directory of the source files
     path_gcm_base_masked = home+'seasonal-original-single-levels_masked' # head directory of the source files
-    dir_quantile = '/tmp/terciles/'
+    rundir = '/app/terciles'
+    dir_quantile = '/mnt/vol'
     dir_forecast = home+'seasonal-original-single-levels_derived/medcof/forecast/terciles/'
     mask_dir = '/lustre/gmeteo/PTICLIMA/Auxiliary-material/Masks' #path to the land-sea masks
 else:
