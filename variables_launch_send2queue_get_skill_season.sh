@@ -22,7 +22,7 @@ FLAGDIR=/lustre/gmeteo/PTICLIMA/Scripts/SBrands/pyPTIclima/pySeasonal/FLAG/get_s
 # variable_list=('pvpot' 'fwi' 'SPEI-3-M' 't2m' 'tp' 'msl' 'si10' 'ssrd') #bash array of variables to be processed; must coincide with <variables_gcm> in aggregate_hindcast.py
 
 vers='v1o' #string format
-model_list=('ecmwf51') #bash array containing the model names and versions thereof
-agg_label_list=('3mon') #bash array containing the temporal aggregation windows to be considered
-modulator_plus_phase_list=('none') #bash array containing all modulators and phases thereof
-variable_list=('fwi') #bash array of variables to be processed; must coincide with <variables_gcm> in aggregate_hindcast.py
+model_list=('eccc5') #bash array containing the model names and versions thereof
+agg_label_list=('1mon' '2mon' '3mon' '4mon' '5mon') #bash array containing the temporal aggregation windows to be considered
+modulator_plus_phase_list=('none' 'enso0' 'enso1' 'enso2') #bash array containing all modulators and phases thereof
+variable_list=('pvpot' 'fwi' 't2m' 'tp' 'msl' 'si10' 'ssrd') #bash array of variables to be processed; must coincide with <variables_gcm> in aggregate_hindcast.py

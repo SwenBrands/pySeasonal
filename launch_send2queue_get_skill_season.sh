@@ -49,10 +49,10 @@ echo "RUNDIR: "${RUNDIR}
 echo "LOGDIR: "${LOGDIR}
 echo "FLAGDIR: "${FLAGDIR}
 echo "vers: "${vers}
-echo "model_list: "${model_list}
-echo "agg_label_list: "${agg_label_list}
-echo "modulator_plus_phase: "${modulator_plus_phase}
-echo "variable_list: "${variable_list}
+echo "model_list: "${model_list[@]}
+echo "agg_label_list: "${agg_label_list[@]}
+echo "modulator_plus_phase: "${modulator_plus_phase_list[@]}
+echo "variable_list: "${variable_list[@]}
 echo "--------------------------------------------------------------------------------"
 echo "--------------------------------------------------------------------------------"
 

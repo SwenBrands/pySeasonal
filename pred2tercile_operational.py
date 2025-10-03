@@ -60,7 +60,7 @@ file_start = ['seasonal-original-single-levels_derived','seasonal-original-singl
 precip_threshold_quotient = 30 #seasonal mean daily precipitation threshold in mm below which the modelled and quasi-observed monthly precipitation amount is set to 0. Bring this in exact agreement with get_skill_season.py in future versions
 datatype = 'float32' #data type of the variables in the output netcdf files
 domain = 'medcof' #spatial domain
-masked_variable_std = ['fwi','SPEI-3-M'] #list of variables on which a land-sea mask will be applied, setting values over sea to nan
+masked_variable_std = ['pvpot','fwi','SPEI-3-M'] #list of variables on which a land-sea mask will be applied, setting values over sea to nan
 detrended = 'no' #yes or no, linear detrending of the gcm and obs time series prior to validation
 nr_mem = [25] #considered ensemble members, not yet in use !
 
@@ -70,7 +70,7 @@ dpival = 300 #resolution of output figures
 south_ext_lambert = 0 #extend the southern limit of the box containing the Lambert Conformal Projection
 
 #set basic path structure for observations and gcms
-gcm_store = os.getenv('GCM_STORE', 'lustre') #loads environmental variable 'GCM_STORE' (Predictia's file system), if this environmental variable not exists (because you are not working on Predictias file system) set gcm_store = lustre
+gcm_store = os.getenv('GCM_STORE', 'lustre') #loads environmental variable 'GCM_STORE' (Predictia's file system), if this environmental variable not exists (because you are not working on Predictias file system) gcm_store = 'lustre' is set.
 product = 'forecast'
 
 ## EXECUTE #############################################################
@@ -161,15 +161,16 @@ for ag in np.arange(len(agg_label)):
                     masklabel = domain[0].upper()+domain[1:]# mask name is Uppercase for iberian domain, i.e. "Iberia"
                 else:
                     ValueError('Check entry for <domain> input variable !')                
-                mask_file = mask_dir+'/ECMWF_Land_'+masklabel+'.nc'
-                nc_mask = xr.open_dataset(mask_file)
+                mask_file = mask_dir+'/ECMWF_Land_'+masklabel+'_ascending_lat.nc'
+                nc_mask = xr.open_dataset(mask_file) #open the mask file
+                # nc_mask = nc_mask.reindex(latitude=list(reversed(nc_mask.latitude))) #re-index the mask file in order to put the latitudes in ascending order
                 mask_appended = np.tile(nc_mask.mask.values,(len(nc_fc.time),len(nc_fc.member),1,1))
                 nc_fc = nc_fc.where(mask_appended == 1, np.nan) #retain grid-boxes marked with 1 in mask
                 #nc_fc = nc_fc.where(mask_appended == 1, nc_fc, np.nan) #retain grid-boxes marked with 1 in mask
                 nc_mask.close()
                 del(nc_mask)
             elif variable_std[vv] not in masked_variable_std:
-                print('As requested by the user, the verification results are not filtered by a land-sea mask for '+variable_std[vv]+' !')
+                print('As requested by the user, the forecast probabilities are not filtered by a land-sea mask for '+variable_std[vv]+' !')
             else:
                 ValueError('check whether <variable_std[vv]> is in <masked_variable_std> !')
 
