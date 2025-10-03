@@ -60,7 +60,7 @@ file_start = ['seasonal-original-single-levels_derived','seasonal-original-singl
 precip_threshold_quotient = 30 #seasonal mean daily precipitation threshold in mm below which the modelled and quasi-observed monthly precipitation amount is set to 0. Bring this in exact agreement with get_skill_season.py in future versions
 datatype = 'float32' #data type of the variables in the output netcdf files
 domain = 'medcof' #spatial domain
-masked_variable_std = ['pvpot','fwi','SPEI-3-M'] #list of variables on which a land-sea mask will be applied, setting values over sea to nan
+masked_variable_std = ['fwi','SPEI-3-M'] #list of variables on which a land-sea mask will be applied, setting values over sea to nan
 detrended = 'no' #yes or no, linear detrending of the gcm and obs time series prior to validation
 nr_mem = [25] #considered ensemble members, not yet in use !
 
