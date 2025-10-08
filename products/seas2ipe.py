@@ -10,7 +10,6 @@ import pandas as pd
 import dask
 import sys
 import pdb
-exec(open('functions_seasonal.py').read()) #reads the <functions_seasonal.py> script containing a set of custom functions needed here
 
 #the init of the forecast (year and month) can passed by bash; if nothing is passed these parameters will be set by python
 if len(sys.argv) > 1:
@@ -93,8 +92,9 @@ else:
     raise Exception('ERROR: unknown entry for <path_gcm_base> !')
 print('The GCM files will be loaded from the base directory '+path_gcm_base+'...')
 
-#go to rundir
+#go to rundir and load custom Python functions
 os.chdir(rundir)
+exec(open('functions_seasonal.py').read()) #reads the <functions_seasonal.py> script containing a set of custom functions needed here
 
 #create output directory of the forecasts generated here, if it does not exist.
 if os.path.isdir(dir_output) != True:
