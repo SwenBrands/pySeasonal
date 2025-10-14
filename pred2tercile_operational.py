@@ -29,8 +29,8 @@ else:
 print(year_init, month_init)
 
 #overwrite the aformentioned variables for develompment purposes
-year_init = 2024 #a list containing the years the forecast are initialized on, will be looped through with yy
-month_init = 6 #a list containing the corresponding months the forecast are initialized on, will be called while looping through <year_init> (with yy), i.e. must have the same length
+year_init = 2023 #a list containing the years the forecast are initialized on, will be looped through with yy
+month_init = 12 #a list containing the corresponding months the forecast are initialized on, will be called while looping through <year_init> (with yy), i.e. must have the same length
 
 #set input parameters
 quantile_version = 'v1o' #version of the validation results
@@ -47,7 +47,8 @@ variable_fc_nc = ['pvpot','SPEI-3-M','FWI','psl','tas','pr','sfcWind','rsds'] # 
 time_name = ['time','time','time','forecast_time','forecast_time','forecast_time','forecast_time','forecast_time'] #name of the time dimension within the model netcdf file, may vary depending on source
 lon_name = ['lon','lon','lon','x','x','x','x','x']
 lat_name = ['lat','lat','lat','y','y','y','y','y']
-file_start = ['seasonal-original-single-levels_derived','seasonal-original-single-levels_masked','seasonal-original-single-levels_derived','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels'] #start string of the file names
+# file_start = ['seasonal-original-single-levels_derived','seasonal-original-single-levels_masked','seasonal-original-single-levels_derived','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels'] #start string of the file names
+file_start = ['seasonal-original-single-levels','seasonal-original-single-levels_masked','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels'] #start string of the file names
 
 # variable_std = ['SPEI-3-M','msl','t2m','tp','si10','ssrd'] # variable name used inside and outside of the quantile file. This is my work and is thus homegeneous.
 # variable_fc = ['SPEI-3-M','psl','tas','pr','sfcWind','rsds'] # variable name used in the file name, i.e. outside the file, ask collegues for data format harmonization
@@ -142,7 +143,7 @@ for ag in np.arange(len(agg_label)):
             if variable_fc[vv] in ('SPEI-3','SPEI-3-M','SPEI-3-R'):
                 filename_forecast = path_gcm_base_masked+'/'+domain+'/'+product+'/'+variable_fc[vv]+'/'+model[mm]+'/'+version[mm]+'/coefs_pool_members/'+str(year_init)+str(month_init).zfill(2)+'/'+file_start[vv]+'_'+domain+'_'+product+'_'+variable_fc[vv]+'_'+model[mm]+'_'+version[mm]+'_'+str(year_init)+str(month_init).zfill(2)+'.nc'
             elif variable_fc[vv] in ('fwi','pvpot'):
-                filename_forecast = path_gcm_base_derived+'/'+domain+'/'+product+'/'+variable_fc[vv]+'/'+str(year_init)+str(month_init).zfill(2)+'/'+file_start[vv]+'_'+domain+'_'+product+'_'+variable_fc[vv]+'_'+model[mm]+'_'+version[mm]+'_'+str(year_init)+str(month_init).zfill(2)+'.nc'
+                filename_forecast = path_gcm_base_derived+'/'+domain+'/'+product+'/'+variable_fc[vv]+'/'+model[mm]+'/'+version[mm]+'/'+str(year_init)+str(month_init).zfill(2)+'/'+file_start[vv]+'_'+domain+'_'+product+'_'+variable_fc[vv]+'_'+model[mm]+'_'+version[mm]+'_'+str(year_init)+str(month_init).zfill(2)+'.nc'
             elif variable_fc[vv] in ('psl','sfcWind','tas','pr','rsds'):
                 filename_forecast = path_gcm_base+'/'+domain+'/'+product+'/'+variable_fc[vv]+'/'+model[mm]+'/'+version[mm]+'/'+str(year_init)+str(month_init).zfill(2)+'/'+file_start[vv]+'_'+domain+'_'+product+'_'+variable_fc[vv]+'_'+model[mm]+'_'+version[mm]+'_'+str(year_init)+str(month_init).zfill(2)+'.nc'
             else:

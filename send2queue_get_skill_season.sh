@@ -39,6 +39,8 @@ checktime=60 #time in seconds that passed from one flag check to another
 #go to the run directory and launch get_skill_season.py
 cd ${RUNDIR}
 
+echo "Passing ${jobname} to get_skill_season.sh ..."
+
 #construct the command to be sent to queue
 QSUB="sbatch \
     --partition=${partition}
@@ -63,7 +65,7 @@ ${QSUB} #sent to queue !
 #--------------------------------------------------------------------------------------------------
 
 if [[ "${checkflag}" == "yes" ]]; then
-    flagfile=${FLAGDIR}/get_skill_season_${vers}_${model}_obs_${variable}_model_${variable}_${agg_label}_${modulator}_${phase}.flag
+    flagfile=${FLAGDIR}/get_skill_season_${vers}_${model}_model_${variable}_${agg_label}_${modulator}_${phase}.flag
     while [ ! -f ${flagfile} ]
         do
         echo "INFO: ${jobname} is still running ! Waiting for the flag file to be written at ${flagfile}..."

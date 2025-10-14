@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 
+## set the variables for which the values over the sea will be removed, the suffix <std> refers to the effect that the standard variable names used by the pySeasonal package have to be used here
+mask_dir = '/lustre/gmeteo/PTICLIMA/Auxiliary-material/Masks' #path to the land-sea masks on lustre
+masked_variable_std = ['fwi','SPEI-3-M'] #list of variables on which a land-sea mask will be applied, setting values over sea to nan
+
 ## set the lead-times for each model and version version thereof, as well as for each aggregation window (currently 1 and 3 months) 
 
 # ECMWF SEAS5.1
@@ -20,7 +24,7 @@ lead_cmcc35_3mon = [[0,1,2],[1,2,3],[2,3,4],[3,4,5]]
 lead_cmcc35_4mon = [[0,1,2,3],[1,2,3,4],[2,3,4,5]] #lead-months per season for an aggregation window of 4 months
 lead_cmcc35_5mon = [[0,1,2,3,4],[1,2,3,4,5]] #lead-months per season for an aggregation window of 5 months
 
-# ECMWF ECCC System 5, based on the CanESM5.1p1bc atmosphere and terrestial ecosystem coupled model; see https://confluence.ecmwf.int/display/CKB/Description+of+CanESM5.1p1bc-v20240611+C3S+contribution
+# ECCC System 5, based on the CanESM5.1p1bc atmosphere and terrestial ecosystem coupled model; see https://confluence.ecmwf.int/display/CKB/Description+of+CanESM5.1p1bc-v20240611+C3S+contribution
 nr_mem_eccc5 = 20
 years_eccc5 = [1993,2023]
 lead_eccc5_1mon = [[0],[1],[2],[3],[4],[5],[6]]

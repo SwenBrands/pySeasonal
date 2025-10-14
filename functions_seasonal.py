@@ -5,6 +5,33 @@
 from math import radians, cos, sin, asin, sqrt
 import numpy as np
 
+def apply_sea_mask(arr_f,mask_file_f):
+    '''sets the values over the Sea, as provided by <mask_file_f> to nan in <arr_f>; returns the modified <arr_f>
+    Input: <arr_f> is an xarray DataArray with the dimensions detrended, variable, time, season, lead, y, x;
+    <mask_file_f> is a character string pointing to the path of the maks file in netCDF format. The function tests
+    whether the dimensions in <arr_f> are as expected and whether the latitutes in <arr_f> therein match those in <mask_file_f>.'''
+    
+    nc_mask_f = xr.open_dataset(mask_file_f) #open the mask file
+
+    #test for equal latitudes
+    if ~np.all(nc_mask_f.latitude.values-arr_f.y.values == 0):
+        ValueError('<nc_mask_f.latitude> and <arr_f.y> do not match !')
+
+    # target_dims = list(dict(arr_f.dims).values())
+    
+    # test if dimensions in <arr_f> are as expected
+    target_dims = arr_f.dims
+    if target_dims != ('detrended', 'variable', 'time', 'season', 'lead', 'y', 'x'):
+        ValueError('The dimensions of <arr_f> are not as expected !')
+    
+    mask_appended_f = np.tile(nc_mask_f.mask.values,(arr_f.shape[0],arr_f.shape[1],arr_f.shape[2],arr_f.shape[3],arr_f.shape[4],1,1))
+    arr_f = arr_f.where(~np.isnan(mask_appended_f), np.nan) #retain grid-boxes marked with 1 in mask
+
+    #clean everything except arr_f, which will be returned to the script calling this function
+    nc_mask_f.close()
+    del(nc_mask_f,mask_appended_f)
+    return(arr_f) #returns masked xarray data array
+
 def assign_season_label(season_list_f):
     '''assign the season string for a the input list of 3 consecutive months, each month being an integer.'''
     # 1-months seasons
@@ -455,7 +482,7 @@ def transform_gcm_variable(ds_f,var_in_f,var_out_f,model_f,version_f):
         else:
             raise Exception('ERROR: Unknown value for <ds_f[var_in_f]> !')
         ds_f[var_in_f].attrs['units'] = 'daily mean '+var_out_f+' in Kelvin'
-    elif (var_in_f in ('pr','rsds')) & (model_f in ('ecmwf','cmcc')) & (version_f in ('51','35')):
+    elif (var_in_f in ('pr','rsds')) & (model_f in ('ecmwf','cmcc','eccc')) & (version_f in ('51','35','4','5')):
         print('Info: Disaggregate '+var_in_f+' accumulated over the '+str(len(ds_f.time))+' days forecast period from '+model_f+version_f+' to daily sums.')
         vals_disagg = np.diff(ds_f[var_in_f].values,n=1,axis=0)
         vals_disagg[vals_disagg < 0] = 0 #set negative flux values to 0

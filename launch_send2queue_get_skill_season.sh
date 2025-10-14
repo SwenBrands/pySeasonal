@@ -36,6 +36,7 @@ fi
 #load your software
 source ${HOME}/.bashrc
 source ${FILE_VARIABLES} #load the variables into memory
+ulimit -u 1024
 
 #print the just loaded variables
 echo "--------------------------------------------------------------------------------"
@@ -55,28 +56,6 @@ echo "modulator_plus_phase: "${modulator_plus_phase_list[@]}
 echo "variable_list: "${variable_list[@]}
 echo "--------------------------------------------------------------------------------"
 echo "--------------------------------------------------------------------------------"
-
-# #environmental and job variables
-# partition=meteo_long
-# exclude_node=wn055,wn056
-# exectime=00:45:00
-# memory=20gb
-# RUNDIR=/lustre/gmeteo/PTICLIMA/Scripts/SBrands/pyPTIclima/pySeasonal
-# LOGDIR=/lustre/gmeteo/PTICLIMA/Scripts/SBrands/pyPTIclima/pySeasonal/LOG/get_skill
-# FLAGDIR=/lustre/gmeteo/PTICLIMA/Scripts/SBrands/pyPTIclima/pySeasonal/FLAG/get_skill
-
-# # # input variables that will be passed to the python script get_skill_season.py
-# # vers='v1o' #string format
-# # model_list=('ecmwf51' 'cmcc35') #bash array containing the model names and versions thereof
-# # agg_label_list=('1mon' '2mon' '3mon' '4mon' '5mon') #bash array containing the temporal aggregation windows to be considered
-# # modulator_plus_phase_list=('none' 'enso0' 'enso1' 'enso2') #bash array containing all modulators and phases thereof
-# # variable_list=('pvpot' 'fwi' 'SPEI-3-M' 't2m' 'tp' 'msl' 'si10' 'ssrd') #bash array of variables to be processed; must coincide with <variables_gcm> in aggregate_hindcast.py
-
-# vers='v1n_test' #string format
-# model_list=('ecmwf51') #bash array containing the model names and versions thereof
-# agg_label_list=('3mon') #bash array containing the temporal aggregation windows to be considered
-# modulator_plus_phase_list=('none') #bash array containing all modulators and phases thereof
-# variable_list=('fwi') #bash array of variables to be processed; must coincide with <variables_gcm> in aggregate_hindcast.py
 
 # EXECUTE #######################################################################################
 #check python version
@@ -120,10 +99,11 @@ do
             for variable in "${variable_list[@]}"
             do  
                 #define the job name
-                jobname=${vers}_${model}_${variable}_${agg_label}_${modulator}_${phase}                
+                jobname=${vers}_${model}_${variable}_${agg_label}_${modulator}_${phase}
+                echo "Passing ${jobname} to send2queue_get_skill_season.sh ..."              
                 #send2queue_get_skill_seasons will send the model evalatuion to queue and is itself sent into the background of the frontal node
-                ./send2queue_get_skill_season.sh ${partition} ${exclude_node} ${exectime} ${memory} ${vers} ${model} ${variable} ${agg_label} ${modulator} ${phase} ${RUNDIR} ${LOGDIR} ${FLAGDIR} ${jobname} > ${LOGDIR}/send2queue_get_skill_season_${jobname}.log &
-                sleep 10
+                ./send2queue_get_skill_season.sh ${partition} ${exclude_node} ${exectime} ${memory} ${vers} ${model} ${variable} ${agg_label} ${modulator} ${phase} ${RUNDIR} ${LOGDIR} ${FLAGDIR} ${jobname} > ${LOGDIR}/send2queue_get_skill_season_${jobname}.log 2>&1 &
+                sleep 60
             done
         done
     done

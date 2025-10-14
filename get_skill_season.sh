@@ -19,19 +19,18 @@
 source ${HOME}/.bashrc
 
 #input variables that will be passed to the python script get_skill_season.py
-vers=$1
-model=$2
-variable=$3
-agg_label=$4
-modulator=$5
-phase=$6
-RUNDIR=$7
-LOGDIR=$8
-FLAGDIR=$9
-jobname=$10
+vers=${1}
+model=${2}
+variable=${3}
+agg_label=${4}
+modulator=${5}
+phase=${6}
+RUNDIR=${7}
+LOGDIR=${8}
+FLAGDIR=${9}
+jobname=${10}
 
 ## EXECUTE #########################################################################
-log_label=get_skill_season_${jobname}
 #check python version
 echo "Your Python version is:"
 python --version
@@ -40,7 +39,10 @@ python --version
 cd ${RUNDIR}
 # current_time=$(date "+%Y-%m-%d_%H-%M-%S")
 
+log_label=get_skill_season_py_${jobname}
+echo "The log_label sent to get_skill_season.py is "${log_label}
 # run the Python script
+
 python get_skill_season.py ${vers} ${model} ${variable} ${agg_label} ${modulator} ${phase} ${FLAGDIR} > ${LOGDIR}/${log_label}.log
 
 echo "get_skill_season.sh has been sent to queue successfully, exiting now..."
