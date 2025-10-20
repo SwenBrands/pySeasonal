@@ -14,11 +14,14 @@ source ${HOME}/.bashrc
 #environmental and job variables
 partition=meteo_long
 exclude_node=wn056
-exectime=00:30:00 # 09:00:00 for plot_maps = 'yes' and 1mon
+exectime=00:45:00 # 09:00:00 for plot_maps = 'yes' and 1mon
 memory=16gb
 RUNDIR=/lustre/gmeteo/PTICLIMA/Scripts/SBrands/pyPTIclima/pySeasonal
+BASHDIR=/lustre/gmeteo/PTICLIMA/Scripts/SBrands/pyPTIclima/pySeasonal/bash
+PYDIR=/lustre/gmeteo/PTICLIMA/Scripts/SBrands/pyPTIclima/pySeasonal
 LOGDIR=/lustre/gmeteo/PTICLIMA/Scripts/SBrands/pyPTIclima/pySeasonal/LOG/plot
 FLAGDIR=/lustre/gmeteo/PTICLIMA/Scripts/SBrands/pyPTIclima/pySeasonal/FLAG/plot
+
 
 # input variables that will be passed to the python script get_skill_season.py
 agg_label_list=('1mon' '2mon' '3mon' '4mon' '5mon') #bash array containing the temporal aggregation windows to be considered
@@ -37,7 +40,7 @@ mkdir ${LOGDIR}
 mkdir ${FLAGDIR}
 sleep 1
 
-cd ${RUNDIR}
+cd ${BASHDIR}
 
 #loop through the aggregation windows
 for agg_label in "${agg_label_list[@]}"
@@ -55,7 +58,7 @@ do
         --ntasks=1 \
         --cpus-per-task=1 \
         --mem=${memory} \
-        ./plot_seasonal_validation_results.sh ${agg_label} ${plot_maps} ${vers} ${RUNDIR} ${LOGDIR}" #get_skill_season.sh contains the Python script to be run on the working node
+        ./plot_seasonal_validation_results.sh ${agg_label} ${plot_maps} ${vers} ${RUNDIR} ${PYDIR} ${LOGDIR}" #get_skill_season.sh contains the Python script to be run on the working node
     echo ${QSUB} #prints the command sent to queue
     ${QSUB} #sent to queue  !
     sleep 5

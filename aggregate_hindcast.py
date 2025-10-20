@@ -68,6 +68,22 @@ n_lon = len(nc_template['x'])
 nc_template.close()
 
 for mm in np.arange(len(model)):
+
+    #get model dimensions from a template modell initialization, needed for entirely missing hindcast months. This init data of this template file and other information is set in <config_for_aggregate_hindcast.yaml>; <members>, <lons> and <lats> from this file will be overwritten if other init files are found during execution of this script
+    if template_var[mm] in ('tas','psl','pr'):
+        path_template_gcm = path_gcm_base+'/'+domain+'/hindcast/'+template_var[mm]+'/'+model[mm]+'/'+version[mm]+'/'+str(template_init[mm][0:4])+str(template_init[mm][-2:]).zfill(2)+'/'+template_file_start[mm]+'_'+domain+'_hindcast_'+template_var[mm]+'_'+model[mm]+'_'+version[mm]+'_'+str(template_init[mm][0:4])+str(template_init[mm][-2:]).zfill(2)+'.nc'
+        nc_template_gcm = xr.open_dataset(path_template_gcm)
+        nc_template_gcm = nc_template_gcm.isel(member=np.arange(n_mem[mm])) #select members within the template netCDF file
+        members = np.array([int(str(nc_template_gcm.member[ii].astype(str).values).replace('Member_','')) for ii in np.arange(len(nc_template_gcm.member))]) #this option also works for the first SPEI-3-R version
+        members = np.arange(len(members)) #force the members to start with 0 irrespective of the input format (the first SPEI-3-R version started with 1)
+        lons = nc_template_gcm['x'].values
+        lats = nc_template_gcm['y'].values
+        #make a short latitute check
+        if lats[0] < lats[-1]:
+            raise ValueError('latitudes in <lats> must be descending !')
+    else:
+        raise ValueError('<template_var[mm]> is not in the list of allowed template variables defined in config_for_aggregate_hindcast.yaml ! This is because the template variables must have a specific format, e.g. ascending latitudes, that is, e.g., not met by the SPEI-3 inidices')
+
     #create directory of the output netcdf files if necessary
     if os.path.isdir(savepath_base+'/'+model[mm]+version[mm]) != True:
         os.makedirs(savepath_base+'/'+model[mm]+version[mm])
@@ -94,7 +110,7 @@ for mm in np.arange(len(model)):
             
         for yy in np.arange(len(years_vec)):
             #Check whether to use hindcasts or forecasts
-            if years_vec[yy] > 2016 and model[mm]+version[mm] in ('ecmwf51','cmcc35'):
+            if years_vec[yy] > 2016 and model[mm]+version[mm] in ('ecmwf51','cmcc35','cmcc4'):
                 print('Info: No hindcast available for '+model[mm]+version[mm]+' and year '+str(years_vec[yy])+'. The forecast is loaded instead...')
                 product = 'forecast'
             elif years_vec[yy] > 2023 and model[mm]+version[mm] in ('eccc5'):
@@ -125,6 +141,7 @@ for mm in np.arange(len(model)):
                     nc = xr.open_dataset(path_gcm_data)
                 else:
                     print('WARNING: '+path_gcm_data+' is not available! Proceed to load the next netCDF file containing '+model[mm]+version[mm]+' data for '+str(years_vec[yy])+' and '+str(imonth[im]))
+                    var_units = 'not known because no file is available'
                     continue
                     
                 #check if the latitudes are in the right order or must be flipped to be consistent with the obserations used for validation
@@ -172,6 +189,9 @@ for mm in np.arange(len(model)):
                     
                     ##get members from the input file and transform the variety of possible formats to integer
                     #members = nc.member.values.astype(int) #this option does not work for the first SPEI-3-R version
+                    
+                    #this overwrites <members> from the template per model file <nc_template_gcm> loaded above
+                    del(members)
                     members = np.array([int(str(nc.member[ii].astype(str).values).replace('Member_','')) for ii in np.arange(len(nc.member))]) #this option also works for the first SPEI-3-R version
                     members = np.arange(len(members)) #force the members to start with 0 irrespective of the input format (the first SPEI-3-R version started with 1)
                     
@@ -181,7 +201,9 @@ for mm in np.arange(len(model)):
                     except:
                         print('WARNING: The region / domain is not provided with the input file '+path_gcm_data+'. Consequently, it is set to '+domain+', this values being provided by the <domain> input parameter set by the user above in this script.')
                         region = domain
-                        
+
+                    #this overwrites <lons and lats> from the template per model file <nc_template_gcm> loaded above
+                    del(lons,lats)  
                     lons = nc[lon_name[mm][vv]].values
                     #lon_attrs = nc[lon_name[mm][vv]].attrs #currently not used
                     lats = nc[lat_name[mm][vv]].values
@@ -244,6 +266,10 @@ for mm in np.arange(len(model)):
         enddate = str(years[mm][-1]+1)+'-'+str(n_lead[mm]-1).zfill(2)+startdate[-12:] #the end calendar day of the output nc file is fixed at 1st of July for ECMWF51 due to the 8-month leadtime (from December 1 of the previous year to July 1 of the end year)
         leads = np.arange(n_lead[mm])
         daterange = pd.date_range(start=startdate, end=enddate, freq='MS') #MS = month start frequency, see https://pandas.pydata.org/docs/user_guide/timeseries.html#timeseries-offset-aliases
+        
+        if np.all(np.isnan(data_mon)):
+            pdb.set_trace()
+            
         outnc = xr.DataArray(data_mon, coords=[daterange, leads, members, lats, lons], dims=['time', 'lead', 'member', 'y', 'x'], name=variables_new[mm][vv])
         del(data_mon) #delete the loop-wise numpy array <data_mon>
 

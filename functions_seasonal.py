@@ -468,7 +468,7 @@ def transform_gcm_variable(ds_f,var_in_f,var_out_f,model_f,version_f):
      and version of the modelling system; output: xarray dataset <ds_f> with corrected variable names and units.'''
 
     # go through exceptions depending on the variable, model, version, etc.    
-    if (var_in_f == 'tas') & (model_f in ('ecmwf','cmcc','eccc')) & (version_f in ('51','35','5')):
+    if (var_in_f == 'tas') & (model_f+version_f in ('ecmwf51','cmcc35','cmcc4','eccc5')):
         #bring temperature data to Kelvin, taking into account Predictia's double transformation error in all forecasts from 201701 to 202311
         if (ds_f[var_in_f].mean().values <= 100) & (ds_f[var_in_f].mean().values > -100):
             print('Info: Adding 273.15 to '+var_in_f+' data from '+model_f+version_f+' to transform degress Celsius into Kelvin.')
@@ -482,7 +482,7 @@ def transform_gcm_variable(ds_f,var_in_f,var_out_f,model_f,version_f):
         else:
             raise Exception('ERROR: Unknown value for <ds_f[var_in_f]> !')
         ds_f[var_in_f].attrs['units'] = 'daily mean '+var_out_f+' in Kelvin'
-    elif (var_in_f in ('pr','rsds')) & (model_f in ('ecmwf','cmcc','eccc')) & (version_f in ('51','35','4','5')):
+    elif (var_in_f in ('pr','rsds')) & (model_f+version_f in ('ecmwf51','cmcc35','cmcc4','eccc5')):
         print('Info: Disaggregate '+var_in_f+' accumulated over the '+str(len(ds_f.time))+' days forecast period from '+model_f+version_f+' to daily sums.')
         vals_disagg = np.diff(ds_f[var_in_f].values,n=1,axis=0)
         vals_disagg[vals_disagg < 0] = 0 #set negative flux values to 0
