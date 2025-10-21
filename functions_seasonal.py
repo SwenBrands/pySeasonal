@@ -499,34 +499,41 @@ def transform_gcm_variable(ds_f,var_in_f,var_out_f,model_f,version_f):
         valid_f = 1
     return(ds_f, valid_f)
 
-def get_reliability_or_roc(obs_f,gcm_f,obs_quantile_f,gcm_quantile_f,threshold_f,score_f='reliability',bin_edges_f=None):
+def get_reliability_or_roc(obs_f,gcm_f,obs_quantile_f,gcm_quantile_f,dist_part_f,score_f='reliability',bin_edges_f=None):
     """ caclulates the mean absolute difference (returned as <reliability>) between the forecast probabilities and corresponding conditional observed probabilities of the reliability plot and the diagonal of the plot
     obs_f (5d in get_skill_season.py) and gcm_f (6d) are xarray data arrays, obs_quantile_f and gcm_quantile_f are pre-caclulated observed and gcm quantiles in xarray format,
-    threshold_f is a threshold value in decimals. I threshold_f is >= 0.5 then it is asked wether the values in xr_obs_f and
-    xr_gcm_f are greater than the treshold; otherwise it is asked whether they are smaller"""
+    dist_part_f is a character string indicating the part of the distribution that will be assessed; currently possible values are "lower_tercile", "center_tercile" and "upper_tercile"
+    """
     
     if len(obs_f.dims) == 4:
         ## obtain observed quantile thresholds and replicate along the time axis to fit the shape of obs_f
-        obs_quantile_threshold = np.tile(obs_quantile_f.sel(quantile=threshold_f),(obs_f.shape[0],1,1,1))    
+        obs_lower_tercile_f = np.tile(obs_quantile_f.sel(quantile=1/3),(obs_f.shape[0],1,1,1))
+        obs_upper_tercile_f = np.tile(obs_quantile_f.sel(quantile=2/3),(obs_f.shape[0],1,1,1))    
         #replicate the gcm quantile thresholds passed to this function via <gcm_quantile_f> along the time axis
-        gcm_quantile_threshold = np.tile(gcm_quantile_f.sel(quantile=threshold_f),(gcm_f.shape[0],1,1,1,1)) #get target threshold value from precalculated threshold values and replicate along the time dimension to fit the size of gcm_f
+        gcm_lower_tercile_f = np.tile(gcm_quantile_f.sel(quantile=1/3),(gcm_f.shape[0],1,1,1,1)) #get target threshold value from precalculated threshold values and replicate along the time dimension to fit the size of gcm_f
+        gcm_upper_tercile_f = np.tile(gcm_quantile_f.sel(quantile=2/3),(gcm_f.shape[0],1,1,1,1))
     elif len(obs_f.dims) == 5:
         ## obtain observed quantile thresholds and replicate along the time axis to fit the shape of obs_f
-        obs_quantile_threshold = np.tile(obs_quantile_f.sel(quantile=threshold_f),(obs_f.shape[0],1,1,1,1))    
+        obs_lower_tercile_f = np.tile(obs_quantile_f.sel(quantile=1/3),(obs_f.shape[0],1,1,1,1))
+        obs_upper_tercile_f = np.tile(obs_quantile_f.sel(quantile=2/3),(obs_f.shape[0],1,1,1,1))    
         #replicate the gcm quantile thresholds passed to this function via <gcm_quantile_f> along the time axis
-        gcm_quantile_threshold = np.tile(gcm_quantile_f.sel(quantile=threshold_f),(gcm_f.shape[0],1,1,1,1,1)) #get target threshold value from precalculated threshold values and replicate along the time dimension to fit the size of gcm_f
+        gcm_lower_tercile_f = np.tile(gcm_quantile_f.sel(quantile=1/3),(gcm_f.shape[0],1,1,1,1,1)) #get target threshold value from precalculated threshold values and replicate along the time dimension to fit the size of gcm_f
+        gcm_upper_tercile_f = np.tile(gcm_quantile_f.sel(quantile=2/3),(gcm_f.shape[0],1,1,1,1,1))
     else:
-        raise Exception('Error in get_reliability_or_roc(): check the number of dimenions in <obs_f>!')    
+        raise Exception('Error in get_reliability_or_roc(): check the number of dimenions in <obs_f>!')  
 
-    #get binary time series, quantile is exceeded yes (1) or no (0)
-    if threshold_f >= 0.5:
-        obs_bin = xr.where(obs_f > obs_quantile_threshold, 1, 0).astype('int8') #here the nan values over the sea are lost. They will be brought back below.
-        gcm_bin = xr.where(gcm_f > gcm_quantile_threshold, 1, 0).astype('int8')
-    elif threshold_f < 0.5:
-        obs_bin = xr.where(obs_f < obs_quantile_threshold, 1, 0).astype('int8') #here the nan values over the sea are lost. They will be brought back below.
-        gcm_bin = xr.where(gcm_f < gcm_quantile_threshold, 1, 0).astype('int8')
+    #get binary time series, observed or modelled time series are within the part of the distribution specified in <dist_part> yes (1) or no (0)  
+    if dist_part_f == 'upper_tercile':
+        obs_bin = xr.where(obs_f > obs_upper_tercile_f, 1, 0).astype('int8') #here the nan values over the sea are lost. They will be brought back below.
+        gcm_bin = xr.where(gcm_f > gcm_upper_tercile_f, 1, 0).astype('int8')
+    elif dist_part_f == 'lower_tercile':
+        obs_bin = xr.where(obs_f < obs_lower_tercile_f, 1, 0).astype('int8') #here the nan values over the sea are lost. They will be brought back below.
+        gcm_bin = xr.where(gcm_f < gcm_lower_tercile_f, 1, 0).astype('int8')
+    elif dist_part_f in ('center_tercile','centre_tercile'):
+        obs_bin = xr.where((obs_f >= obs_lower_tercile_f) & (obs_f <= obs_upper_tercile_f), 1, 0).astype('int8') #here the nan values over the sea are lost. They will be brought back below.
+        gcm_bin = xr.where((gcm_f >= gcm_lower_tercile_f) & (gcm_f <= gcm_upper_tercile_f), 1, 0).astype('int8')
     else:
-        raise Exception("ERROR: check entry for threshold_f !")
+        raise Exception("ERROR: check entry for dist_part_f !")
         
     # obs_bin = obs_bin.where(~np.isnan(obs_f)) #xs.reliability and xs.roc do not work with nans in the input arrays, so this line is commented so far
     # gcm_bin = gcm_bin.where(~np.isnan(gcm_f)) #xs.reliability and xs.roc do not work with nans in the input arrays, so this line is commented so far

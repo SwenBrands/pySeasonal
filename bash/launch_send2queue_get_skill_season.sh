@@ -47,6 +47,8 @@ echo "exclude_node: "${exclude_node}
 echo "exectime: "${exectime}
 echo "memory: "${memory}
 echo "RUNDIR: "${RUNDIR}
+echo "BASHDIR: "${BASHDIR}
+echo "PYDIR: "${PYDIR}
 echo "LOGDIR: "${LOGDIR}
 echo "FLAGDIR: "${FLAGDIR}
 echo "vers: "${vers}
@@ -102,7 +104,7 @@ do
                 jobname=${vers}_${model}_${variable}_${agg_label}_${modulator}_${phase}
                 echo "Passing ${jobname} to send2queue_get_skill_season.sh ..."              
                 #send2queue_get_skill_seasons will send the model evalatuion to queue and is itself sent into the background of the frontal node
-                ./send2queue_get_skill_season.sh ${partition} ${exclude_node} ${exectime} ${memory} ${vers} ${model} ${variable} ${agg_label} ${modulator} ${phase} ${RUNDIR} ${LOGDIR} ${FLAGDIR} ${jobname} > ${LOGDIR}/send2queue_get_skill_season_${jobname}.log 2>&1 &
+                . ${BASHDIR}/send2queue_get_skill_season.sh ${partition} ${exclude_node} ${exectime} ${memory} ${vers} ${model} ${variable} ${agg_label} ${modulator} ${phase} ${RUNDIR} ${BASHDIR} ${PYDIR} ${LOGDIR} ${FLAGDIR} ${jobname} > ${LOGDIR}/send2queue_get_skill_season_${jobname}.log 2>&1 &
                 sleep 60
             done
         done

@@ -28,9 +28,11 @@ agg_label=${8}
 modulator=${9}
 phase=${10}
 RUNDIR=${11}
-LOGDIR=${12}
-FLAGDIR=${13}
-jobname=${14}
+BASHDIR=${12}
+PYDIR=${13}
+LOGDIR=${14}
+FLAGDIR=${15}
+jobname=${16}
 
 ## EXECUTE #########################################################################
 checkflag=yes
@@ -56,7 +58,10 @@ QSUB="sbatch \
     --mem=${memory} \
     --mail-user=swen.brands@gmail.com \
     --mail-type=FAIL,TIME_LIMIT \
-    ./get_skill_season.sh ${vers} ${model} ${variable} ${agg_label} ${modulator} ${phase} ${RUNDIR} ${LOGDIR} ${FLAGDIR} ${jobname}" #get_skill_season.sh contains the Python script to be run on the working node
+    ./get_skill_season.sh ${vers} ${model} ${variable} ${agg_label} ${modulator} ${phase} ${RUNDIR} ${PYDIR} ${LOGDIR} ${FLAGDIR} ${jobname}" #get_skill_season.sh contains the Python script to be run on the working node
+
+#go to bash directory and launch the command to queue
+cd ${BASHDIR}
 echo ${QSUB} #prints the command sent to queue
 ${QSUB} #sent to queue !
 

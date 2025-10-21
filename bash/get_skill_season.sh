@@ -26,9 +26,10 @@ agg_label=${4}
 modulator=${5}
 phase=${6}
 RUNDIR=${7}
-LOGDIR=${8}
-FLAGDIR=${9}
-jobname=${10}
+PYDIR=${8}
+LOGDIR=${9}
+FLAGDIR=${10}
+jobname=${11}
 
 ## EXECUTE #########################################################################
 #check python version
@@ -43,7 +44,7 @@ log_label=get_skill_season_py_${jobname}
 echo "The log_label sent to get_skill_season.py is "${log_label}
 # run the Python script
 
-python get_skill_season.py ${vers} ${model} ${variable} ${agg_label} ${modulator} ${phase} ${FLAGDIR} > ${LOGDIR}/${log_label}.log
+python ${PYDIR}/get_skill_season.py ${vers} ${model} ${variable} ${agg_label} ${modulator} ${phase} ${FLAGDIR} > ${LOGDIR}/${log_label}.log
 
 echo "get_skill_season.sh has been sent to queue successfully, exiting now..."
 sleep 1
