@@ -6,10 +6,11 @@ from math import radians, cos, sin, asin, sqrt
 import numpy as np
 
 def apply_sea_mask(arr_f,mask_file_f):
-    '''sets the values over the Sea, as provided by <mask_file_f> to nan in <arr_f>; returns the modified <arr_f>
+    '''sets the values over the Sea, as provided by the netCDF file locted at <mask_file_f> to nan in <arr_f>;
     Input: <arr_f> is an xarray DataArray with the dimensions detrended, variable, time, season, lead, y, x;
     <mask_file_f> is a character string pointing to the path of the maks file in netCDF format. The function tests
-    whether the dimensions in <arr_f> are as expected and whether the latitutes in <arr_f> therein match those in <mask_file_f>.'''
+    whether the dimensions in <arr_f> are as expected and whether the latitutes in <arr_f> therein match those in <mask_file_f>.
+    Ouput: returns the modified <arr_f> with nan values over the Sea'''
     
     nc_mask_f = xr.open_dataset(mask_file_f) #open the mask file
 

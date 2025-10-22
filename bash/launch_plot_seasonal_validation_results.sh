@@ -26,7 +26,7 @@ FLAGDIR=/lustre/gmeteo/PTICLIMA/Scripts/SBrands/pyPTIclima/pySeasonal/FLAG/plot
 # input variables that will be passed to the python script get_skill_season.py
 agg_label_list=('1mon' '2mon' '3mon' '4mon' '5mon') #bash array containing the temporal aggregation windows to be considered
 plot_maps='no'
-vers='v1o'
+vers='v1p'
 
 # EXECUTE #######################################################################################
 #check python version
