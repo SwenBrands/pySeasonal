@@ -27,14 +27,6 @@ def load_config(config_file='config/config_for_pred2tercile_operational.yaml'):
     gcm_store = os.getenv('GCM_STORE', 'lustre')
     if gcm_store in config['paths']:
         paths = config['paths'][gcm_store]
-        # Handle special cases for argo environment
-        if gcm_store == 'argo':
-            data_dir = os.getenv("DATA_DIR", "")
-            paths['home'] = data_dir
-            paths['path_gcm_base'] = data_dir + paths['path_gcm_base']
-            paths['path_gcm_base_derived'] = data_dir + paths['path_gcm_base_derived']
-            paths['path_gcm_base_masked'] = data_dir + paths['path_gcm_base_masked']
-            paths['dir_forecast'] = data_dir + paths['dir_forecast']
         config['paths'] = paths
     else:
         raise Exception(f'ERROR: unknown entry for <gcm_store> !')
@@ -63,7 +55,6 @@ year_init = 2025 #a list containing the years the forecast are initialized on, w
 month_init = 10 #a list containing the corresponding months the forecast are initialized on, will be called while looping through <year_init> (with yy), i.e. must have the same length
 
 # Extract configuration variables
-paths = config['paths'] # get paths from configuration
 model = config['model']
 version = config['version']
 years_quantile = config['years_quantile']
@@ -89,6 +80,7 @@ ecmwf51 = config['ecmwf51']
     # raise Exception('ERROR: the last entries of the <lon_name> and <lat_name> input lists must be "x" and "y" respectively to ensure that the output netCDF file is consistent!')
 
 # Extract paths from configuration
+paths = config['paths'] # get paths from configuration
 home = paths['home']
 path_gcm_base = paths['path_gcm_base']
 path_gcm_base_derived = paths['path_gcm_base_derived']
