@@ -56,8 +56,8 @@ else:
 print(year_init, month_init)
 
 # # Example year and run to run without passing any input arguments; comment or delete the next two lines in operative use
-# year_init = 2024 #a list containing the years the forecast are initialized on, will be looped through with yy
-# month_init = 6 #a list containing the corresponding months the forecast are initialized on, will be called while looping through <year_init> (with yy), i.e. must have the same length
+# year_init = 2025 #a list containing the years the forecast are initialized on, will be looped through with yy
+# month_init = 10 #a list containing the corresponding months the forecast are initialized on, will be called while looping through <year_init> (with yy), i.e. must have the same length
 
 # Extract configuration variables
 vers = config['version']
@@ -109,13 +109,16 @@ exec(open('functions_seasonal.py').read()) #reads the <functions_seasonal.py> sc
 if os.path.isdir(dir_output) != True:
     os.makedirs(dir_output)
 
-for ag in np.arange(len(agg_labels)):
-
-    #load the skill masks for a given aggregation window; multiple variables are and models located within the same file.
-    filename_validation = dir_validation+'/'+agg_labels[ag]+'/scores/binary_validation_results_pticlima_'+domain+'_'+agg_labels[ag]+'_'+vers+'.nc'
-    nc_val = xr.open_dataset(filename_validation)
-    
+for ag in np.arange(len(agg_labels)):    
     for mm in np.arange(len(model)):
+        #load the skill masks for a given aggregation window; multiple variables are and models located within the same file.
+        filename_validation = dir_validation+'/'+agg_labels[ag]+'/skill_masks/skill_masks_pticlima_'+domain+'_'+agg_labels[ag]+'_'+model[mm]+version[mm]+'_'+vers+'.nc'
+        nc_val = xr.open_dataset(filename_validation)
+
+        #check if model name in skill mask file matches the requested model name
+        if nc_val.model != model[mm]+version[mm]:
+            raise ValueError('The model name requested by <model[mm]> does not match the model name stored in <nc_val> !')
+
         nc_forecast = xr.Dataset() #create empty xarray dataset to be filled with xr data arrays in the next loop
         for vv in np.arange(len(variables_std)):
             #load the forecast for a specific variable
@@ -167,7 +170,7 @@ for ag in np.arange(len(agg_labels)):
                 raise ValueError('<fc_season_length> must equal <agg_labels[ag]> ! ')
 
             fc_seasons = nc_forecast.season.values
-            nc_val_sub = nc_val.sel(subperiod=subperiod,detrended=detrended,model=model[mm]+version[mm],season=fc_seasons,variable=variables_std[vv])[score]
+            nc_val_sub = nc_val.sel(subperiod=subperiod,detrended=detrended,season=fc_seasons,variable=variables_std[vv])[score]
             val_leads = nc_val_sub.lead.values
 
             skill_mask = np.zeros((len(fc_seasons),len(nc_val.y),len(nc_val.x))) #a 3d array

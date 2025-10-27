@@ -18,8 +18,71 @@ import dask
 import time
 from scipy.signal import detrend
 from scipy.stats import linregress
+import yaml
+from pathlib import Path
 import pdb #then type <pdb.set_trace()> at a given line in the code below
 start_time = time.time()
+
+#this is a function to load the configuration file
+def load_config(config_file='config/config_for_get_skill_season.yaml'):
+    """Load configuration from YAML file"""
+    config_path = Path(__file__).parent / config_file
+    print('The path of the configuration file is '+str(config_path))
+    with open(config_path, 'r') as file:
+        config = yaml.safe_load(file)
+    
+    # Setup paths based on GCM_STORE environment variable
+    gcm_store = os.getenv('GCM_STORE', 'lustre')
+    if gcm_store in config['paths']:
+        paths = config['paths'][gcm_store]
+        # Handle special cases for argo environment
+        if gcm_store == 'argo':
+            data_dir = os.getenv("DATA_DIR", "")
+            paths['home'] = data_dir
+            paths['path_gcm_base'] = data_dir + paths['path_gcm_base']
+            paths['path_gcm_base_derived'] = data_dir + paths['path_gcm_base_derived']
+            paths['path_gcm_base_masked'] = data_dir + paths['path_gcm_base_masked']
+            paths['dir_forecast'] = data_dir + paths['dir_forecast']
+        config['paths'] = paths
+    else:
+        raise ValueError('Unknown entry for <gcm_store> !')
+    
+    return config
+
+# Load configuration
+config = load_config()
+
+# Extract paths from configuration
+paths = config['paths'] # get paths from configuration
+rundir = paths['rundir']
+path_obs_base = paths['path_obs_base']
+path_gcm_base = paths['path_gcm_base'] 
+dir_netcdf = paths['dir_netcdf']
+dir_telcon = paths['dir_telcon'] #directory of the netCDF file containing the phases of known teleconnection indices; currently ENSO only, as generated with oni2enso.py
+filename_telcon = paths['filename_telcon'] #name of the file located in <dir_telcon>
+mask_dir = paths['mask_dir'] # path to the land-sea masks on lustre
+
+# Extract fixed input parameters from configuration
+in_params = config['input_parameters']
+obs = in_params['obs']
+years_obs = in_params['years_obs']
+modulator_ref = in_params['modulator_ref']
+min_nr_events = in_params['min_nr_events']
+years_quantile = in_params['years_quantile']
+precision = in_params['precision']
+compression_level = in_params['compression_level']
+precip_threshold = in_params['precip_threshold']
+bin_edges_reliability = in_params['bin_edges_reliability']
+corr_outlier = in_params['corr_outlier']
+aggreg = in_params['aggreg']
+domain = in_params['domain']
+int_method = in_params['int_method']
+quantiles = in_params['quantiles']
+skillscore_reference = in_params['skillscore_reference']
+nr_pseudo_mem = in_params['nr_pseudo_mem']
+testlevel = in_params['testlevel']
+detrending = in_params['detrending']
+masked_variable_std = in_params['masked_variable_std']
 
 # take input variables from bash
 #optionally take input variables set in launch_get_skill_season.sh, which are passed via get_skill_season.sh
@@ -35,7 +98,7 @@ if len(sys.argv) > 1:
 
     #make sure that the list <variables_gcm> only contains a single character string in this mode
     if len(models) !=1 or len(variables_gcm) !=1 or len(agg_labels) !=1 or len(modulators) !=1 or len(phases) !=1:
-        ValueError('If input parameters are ingested from the overhead bash script <get_skill_season.sh>, each of these must be a single character string !')
+       raise ValueError('If input parameters are ingested from the overhead bash script <get_skill_season.sh>, each of these must be a single character string !')
 
     #pair model variable with observed variable
     if variables_gcm[0] in ('SPEI-3-M','SPEI-3-R','SPEI-3-R-C1'):
@@ -43,7 +106,7 @@ if len(sys.argv) > 1:
     elif variables_gcm[0] in ('pvpot','fwi','SPEI-3-M','t2m','tp','msl','si10','ssrd'):
         variables_obs = variables_gcm
     else:
-        ValueError('Unknown entry for variables_gcm !')
+        raise ValueError('Unknown entry for variables_gcm !')
 
 else:
     # # set standard input parameters
@@ -55,63 +118,26 @@ else:
     # modulators = ['none','enso','enso','enso'] # list containing modulators climate oscillation assumed to modulate the verification results; currently: "enso" or "none"
     # phases = ['none','0','1','2'] #changed to string format for all entries in the new version
 
-    vers = 'v1p' #version number of the output netCDF file to be sent to Predictia; will be extended by "_mon" or "_seas" depending on whether 1-month or 3-month values will be verified
-    models = ['cmcc4'] #['cmcc35','ecmwf51'] list of models and versions thereof
-    variables_gcm = ['fwi'] #model variable names in CDS format  GCM variable names have been set to ERA5 variable names from CDS in <aggregate_hindcast.py> except for <SPEI-3-M> and <SPEI-3-R>, which are paired with <SPEI-3> in <variables_obs>)
-    variables_obs = ['fwi'] #variable names in observations; are identical to <variables_gcm> except for <SPEI-3>, which is referred to as <SPEI-3-M> or <SPEI-3-R> in the model depending on whether past values are taken from the model or reanalysis (i.e. quasi-observations)
-    agg_labels = ['5mon'] #list of strings used to label to aggregation period in the output files generated by this script; the length of this list defines the number of aggregation windows
-    modulators = ['none'] # list containing modulators climate oscillation assumed to modulate the verification results; currently: "enso" or "none"
-    phases = ['none'] #changed to string format for all entries in the new version
+    vers = 'v_test' #version number of the output netCDF file to be sent to Predictia; will be extended by "_mon" or "_seas" depending on whether 1-month or 3-month values will be verified
+    models = ['eccc5','ecmwf51'] #['cmcc35','ecmwf51'] list of models and versions thereof
+    variables_gcm = ['fwi','SPEI-3-M','t2m'] #model variable names in CDS format  GCM variable names have been set to ERA5 variable names from CDS in <aggregate_hindcast.py> except for <SPEI-3-M> and <SPEI-3-R>, which are paired with <SPEI-3> in <variables_obs>)
+    variables_obs = ['fwi','SPEI-3','t2m'] #variable names in observations; are identical to <variables_gcm> except for <SPEI-3>, which is referred to as <SPEI-3-M> or <SPEI-3-R> in the model depending on whether past values are taken from the model or reanalysis (i.e. quasi-observations)
+    agg_labels = ['2mon','3mon','4mon','5mon'] #list of strings used to label to aggregation period in the output files generated by this script; the length of this list defines the number of aggregation windows
+    modulators = ['none','enso'] # list containing modulators climate oscillation assumed to modulate the verification results; currently: "enso" or "none"
+    phases = ['none','0'] #changed to string format for all entries in the new version
     FLAGDIR = '/lustre/gmeteo/PTICLIMA/Scripts/SBrands/pyPTIclima/pySeasonal/FLAG/get_skill'
-
-# set the remaining (fixed) input variables
-obs = ['era5'] #list of observational datasets used as reference for verification. Currently, only ERA5 is admitted, i.e. the list has a single item.
-years_obs = [1981,2022] #years used in label of obs netCDF file; if they differ from <years_model>, then the common intersection of years will be validated.
-modulator_ref = 'init' #init or valid; the time instance the modulation in valid for. If set to 'init', then the time series are modulated with the teleconnection index valid at the initalization month. If set to 'valid', they are modulated with the index valid at the time the forecast is valid.
-min_nr_events = 3 # the minimum number of events that must be reached for each modulator and events to permit the verification; if this threshold is not reached, the script returns a ValueError
-years_quantile = [1993,2022] #start and end years of the time series used to calculate the quantiles from obserations and model data
-file_system = 'lustre' #lustre or myLaptop; used to create the path structure to the input and output files
-precision = 'float32' #data type of the variables in the output netcdf files
-compression_level = 1
-precip_threshold = 1/30 #1/30; monthly mean daily precipitation threshold in mm below which the modelled and quasi-observed monthly precipitation amount is set to 0; Bring the parameter in pred2tercile.py in exact agreement with this script in future versions
-#bin_edges_reliability = np.linspace(0, 1, 4) # probability edges used to calculate the reliability, either <None> in which case the default of xs.reliability() is used (currently 5 bins) or, which should return the same, manually pass 5 bins with np.linspace(0, 1, 6); or 3 bins with np.linspace(0, 1, 4)
-bin_edges_reliability = None
-corr_outlier = 'no'
-aggreg = 'mon' #temporal aggregation of the input files
-domain = 'medcof' #spatial domain
-int_method = 'conservative_normed' #'conservative_normed', interpolation method used before in <regrid_obs.py>
-quantiles = [1/3,1/3*2] #quantiles of the year-to-year time series to be calculated and stored
-skillscore_reference = 'rand' #'clim' or 'rand'; use either the climatological mean or randomly reshuffled observed time series as reference forcast for calculating the CPRSS
-nr_pseudo_mem = 25 #number of times the climatological mean or randomly reshuffled observarions are replicated along the "member" dimension to mimic a model ensemble representing the naiv climatological forecasts used as reference for calculating the CRPS Skill Score. Results are insensitive to variations in this value; the script has been tested for value=2 and 4.
-
-#options for methods estimating hindcast skill
-testlevel = 0.05
-detrending = ['yes','no'] #yes or no, linear detrending of the gcm and obs time series prior to validation
 
 ## EXECUTE #############################################################
 
-#set basic path structure for observations and gcms
-if file_system == 'lustre':
-    home = '/lustre/gmeteo/PTICLIMA'
-    rundir = home+'/Scripts/SBrands/pyPTIclima/pySeasonal'
-    path_obs_base = home+'/Results/seasonal/obs/regridded'
-    path_gcm_base = home+'/Results/seasonal/gcm/aggregated' 
-    dir_netcdf = home+'/Results/seasonal/validation/'
-    dir_telcon = home+'/Results/seasonal/indices' #directory of the netCDF file containing the phases of known teleconnection indices; currently ENSO only, as generated with oni2enso.py
-    filename_telcon = 'oni2enso_195001_202505.nc' #name of the file located in <dir_telcon>
-else:
-    raise Exception('ERROR: unknown entry for <file_system> input parameter!')
-
 #load custom functions and configuraiton files
 exec(open(rundir+'/functions_seasonal.py').read()) #reads the <functions_seasonal.py> script containing a set of custom functions needed here
-exec(open(rundir+'/config/config_for_get_skill_season.py').read()) #reads additional input variables (or arguments) used in this script
 
 #load the season configurations depending on the aggregation periods specified in <agg_labels>
 season_label = []
 season = []
 for ag in np.arange(len(agg_labels)):
-    season_label_step = eval(eval("'season_label_'+seas", {"seas": agg_labels[ag]}))
-    season_step = eval(eval("'season_'+seas", {"seas": agg_labels[ag]}))
+    season_label_step = config['season_labels'][agg_labels[ag]]
+    season_step = config['seasons'][agg_labels[ag]]
     season_label.append(season_label_step)
     season.append(season_step)
 
@@ -120,16 +146,55 @@ lead = [] #init list containing the lead-time configuration for each model and a
 nr_mem = [] #init list containing the number of members per model; this list contains as many sub-lists as there are models to be validated
 years_model = [] #init list containing the start and end years of period to be evaluated for each model (may contain the combined hindcasts and forecasts); this list contains as many sub-lists as there are models to be validated
 for mm in np.arange(len(models)):
-    nr_mem_step = eval(eval("'nr_mem_'+mod", {"mod": models[mm]}))
-    years_model_step = eval(eval("'years_'+mod", {"mod": models[mm]}))
+    nr_mem_step = config[models[mm]]['nr_mem']
+    years_model_step = config[models[mm]]['years']
     nr_mem.append(nr_mem_step)
     years_model.append(years_model_step)
     
     leads_per_model = [] #init lead-times per model
     for ag in np.arange(len(agg_labels)):
-        lead_step = eval(eval("'lead_'+mod+'_'+aggr", {"mod": models[mm],"aggr": agg_labels[ag]}))
+        lead_step = config[models[mm]]['lead_'+agg_labels[ag]]
         leads_per_model.append(lead_step)
     lead.append(leads_per_model)
+
+# pdb.set_trace()
+#######################################################################################################################################
+
+# #what follows is the previous version of the above loop (remove in future versions of the script)
+# exec(open(rundir+'/config/config_for_get_skill_season.py').read()) #reads additional input variables (or arguments) used in this script
+
+# #load the season configurations depending on the aggregation periods specified in <agg_labels>
+# season_label_old = []
+# season_old = []
+# for ag in np.arange(len(agg_labels)):
+#     season_label_step_old = eval(eval("'season_label_'+seas", {"seas": agg_labels[ag]}))
+#     season_step_old = eval(eval("'season_'+seas", {"seas": agg_labels[ag]}))
+#     season_label_old.append(season_label_step_old)
+#     season_old.append(season_step_old)
+
+# lead_old = [] #init list containing the lead-time configuration for each model and aggregation window
+# nr_mem_old = [] #init list containing the number of members per model; this list contains as many sub-lists as there are models to be validated
+# years_model_old = [] #init list containing the start and end years of period to be evaluated for each model (may contain the combined hindcasts and forecasts); this list contains as many sub-lists as there are models to be validated
+# for mm in np.arange(len(models)):
+#     nr_mem_step_old = eval(eval("'nr_mem_'+mod", {"mod": models[mm]}))
+#     years_model_step_old = eval(eval("'years_'+mod", {"mod": models[mm]}))
+#     nr_mem_old.append(nr_mem_step_old)
+#     years_model_old.append(years_model_step_old)
+    
+#     leads_per_model_old = [] #init lead-times per model
+#     for ag in np.arange(len(agg_labels)):
+#         lead_step_old = eval(eval("'lead_'+mod+'_'+aggr", {"mod": models[mm],"aggr": agg_labels[ag]}))
+#         leads_per_model_old.append(lead_step_old)
+#     lead_old.append(leads_per_model_old)
+
+# #check whether the new and old configurations match
+# if (season == season_old) & (season_label == season_label_old) & (lead == lead_old) & (nr_mem == nr_mem_old) & (years_model == years_model_old):
+#     print('The configuration check was passed !')
+# else:
+#     raise ValueError('the yaml configuration does not match the older py based configuration !')
+
+#######################################################################################################################################
+# pdb.set_trace()
 
 #print the variables built from the configuration files
 print('------------------------------------------------')
@@ -155,10 +220,10 @@ print('The script will be run in '+rundir+' !')
     
 #check consistency of some input parameters
 if len(season) != len(season_label):
-    raise Exception('ERROR: the length of the list <season> does not equal the length of the list <season_label> !')
+    raise ValueError('The length of the list <season> does not equal the length of the list <season_label> !')
 
 if len(season) != len(agg_labels):
-    raise Exception('ERROR: the length of the list <season> does not equal the length of the list <agg_labels> !')
+    raise ValueError('The length of the list <season> does not equal the length of the list <agg_labels> !')
 
 print('Starting verification for '+str(variables_gcm)+' from '+str(models)+' vs. '+str(obs)+', model years '+str(years_model)+', obs years '+str(years_obs)+', quantile years '+str(years_quantile)+' for modulation with '+str(modulators)+' in phase '+str(phases)+'...')
 
@@ -191,16 +256,16 @@ for mo in np.arange(len(modulators)):
             for det in np.arange(len(detrending)):
                 for vv in np.arange(len(variables_gcm)):       
                     #create a numpy array containing all lead-months for models[mm]
-                    lead_arr = np.arange(np.array(lead[ag][mm]).min(),np.array(lead[ag][mm]).max()+1)
+                    lead_arr = np.arange(np.array(lead[mm][ag]).min(),np.array(lead[mm][ag]).max()+1)
                     #get label describing the considered lead-time
-                    lead_label = [str(lead[ag][mm][ll]).replace(',','').replace('[','').replace(']','').replace(' ','') for ll in np.arange(len(lead[ag][mm]))]
+                    lead_label = [str(lead[mm][ag][ll]).replace(',','').replace('[','').replace(']','').replace(' ','') for ll in np.arange(len(lead[mm][ag]))]
                     #get numpy array for the years considered for quantile calculation
                     years_quantile_vec = np.arange(years_quantile[0],years_quantile[1]+1,1)
 
                     if models[mm] == 'ecmwf51' and lead_arr[-1] > 6: #if leadtime > 6 for ecmwf51, the return an error because the 7th forecast month is composed of a few days only in this gcm
-                        raise Exception('ERROR: the maximum lead requested for '+models[mm]+' ('+str(lead_arr[-1])+') is not valid ! Please check the entries of the input parameter <lead>.')        
+                        raise ValueError('The maximum lead requested for '+models[mm]+' ('+str(lead_arr[-1])+') is not valid ! Please check the entries of the input parameter <lead>.')        
                     elif models[mm] == 'cmcc35' and lead_arr[-1] > 5:
-                        raise Exception('ERROR: the maximum lead requested for '+models[mm]+' ('+str(lead_arr[-1])+') is not valid ! Please check the entries of the input parameter <lead>.')        
+                        raise ValueError('The maximum lead requested for '+models[mm]+' ('+str(lead_arr[-1])+') is not valid ! Please check the entries of the input parameter <lead>.')        
                     else:
                         print('Maximum lead-month = '+str(lead_arr[-1])+' for '+models[mm]+' has been set correctly. Proceed to verification....')
                     
@@ -208,7 +273,7 @@ for mo in np.arange(len(modulators)):
                     nc_gcm = xr.open_dataset(path_gcm)
                     #nc_gcm = xr.open_dataset(path_gcm, chunks = {'member' : 1})
                     nc_gcm[variables_gcm[vv]] = nc_gcm[variables_gcm[vv]].astype(precision)
-                    #leads = np.arange(lead[ag][mm])
+                    #leads = np.arange(lead[mm][ag])
                     members = nc_gcm.member.values
                     nc_gcm = nc_gcm.isel(lead=lead_arr) #filter out the necessary leads only
                     
@@ -255,7 +320,7 @@ for mo in np.arange(len(modulators)):
                             print('INFO: The dates from observations and the model are identical.')
                             years_common2label = dates_obs.year.values
                         else:
-                            raise Exception('ERROR: The dates from observations do not agree whith those obtained from the model !')
+                            raise ValueError('The dates from observations do not agree whith those obtained from the model !')
                     
                         #set observed precip. < precip_threshold to 0
                         if variables_obs[vv] == 'tp':
@@ -266,8 +331,8 @@ for mo in np.arange(len(modulators)):
                         #loop through each season
                         for sea in np.arange(len(season[ag])):
                             #loop through list of monthly lead times
-                            for ll in np.arange(len(lead[ag][mm])):
-                                print('INFO: validating agg. window '+str(agg_labels[ag])+' for '+variables_obs[vv]+' from '+models[mm]+' vs '+obs[oo]+' in '+str(season[ag][sea])+' and lead-time '+str(lead[ag][mm])+' with detrending '+detrending[det])
+                            for ll in np.arange(len(lead[mm][ag])):
+                                print('INFO: validating agg. window '+str(agg_labels[ag])+' for '+variables_obs[vv]+' from '+models[mm]+' vs '+obs[oo]+' in '+str(season[ag][sea])+' and lead-time '+str(lead[mm][ag])+' with detrending '+detrending[det])
 
                                 #get dates for the inter-annual time series containing the requested seasons
                                 seasind_obs = np.where(np.isin(dates_obs.month,season[ag][sea]))[0] #get time indices pointing to all months forming the requested season
@@ -281,7 +346,7 @@ for mo in np.arange(len(modulators)):
                                 if sea == 0 and ll == 0:
                                     nr_years = len(dates_isea) #length of the year-to-year time vector for a specific season
                                     nr_seas = len(season[ag])
-                                    nr_leads = len(lead[ag][mm])
+                                    nr_leads = len(lead[mm][ag])
                                     nr_mems =  len(nc_gcm['member'])                        
                                     nr_lats = len(nc_gcm['y'])
                                     nr_lons = len(nc_gcm['x'])
@@ -319,16 +384,18 @@ for mo in np.arange(len(modulators)):
                                 
                                 #and loop through each month of this season to calculate the seasonal mean values in both the model and observations
                                 for mon in np.arange(len(season[ag][sea])):
-                                    print('INFO: get values for month '+str(season[ag][sea][mon])+' and leadtime '+str(lead[ag][mm][ll][mon])+'...')
+                                    print('INFO: get values for month '+str(season[ag][sea][mon])+' and leadtime '+str(lead[mm][ag][ll][mon])+'...')
+                                    # pdb.set_trace()
                                     monthind_gcm = np.where(np.isin(dates_gcm.month,season[ag][sea][mon]))[0]
                                     monthind_obs = np.where(np.isin(dates_obs.month,season[ag][sea][mon]))[0]
                                     #check for consistent indices pointing the target month
                                     if np.sum(monthind_obs - monthind_gcm) != 0:
-                                        raise Exception('ERROR: the indices indicating the target month in the observed and model data do not agree !')                    
+                                        raise ValueError('The indices indicating the target month in the observed and model data do not agree !')                    
                                     
                                     #select the target months/seasons and work with xarray data arrays and numpy arrays from here on instead of working with xr datasets
                                     nc_gcm_mon = nc_gcm[variables_gcm[vv]].isel(time=monthind_gcm) #get the requested calendar month from the model
-                                    nc_gcm_mon = nc_gcm_mon.sel(lead=lead[ag][mm][ll][mon]) #get the requested lead from the model
+                                    # pdb.set_trace()
+                                    nc_gcm_mon = nc_gcm_mon.sel(lead=lead[mm][ag][ll][mon]) #get the requested lead from the model
                                     nc_obs_mon = nc_obs[variables_obs[vv]].isel(time=monthind_obs) #get the requested calendar month from the observations / reanalysis, there is no lead time in this case
                                     gcm_mon = nc_gcm_mon.values #retain the numpy arrays with in the xr dataarrays
                                     obs_mon = nc_obs_mon.values #retain the numpy arrays with in the xr dataarrays
@@ -426,7 +493,7 @@ for mo in np.arange(len(modulators)):
                         elif detrending[det] == 'no':
                             print('INFO: As requested by the user, the gcm and obs time series are not detrended.')
                         else:
-                            raise Exception('ERROR: check entry for <detrending[det]>')
+                            raise ValueError('Check entry for <detrending[det]>')
                                         
                         #calculate the quantiles along the time dimension and put them into the pre-initialized numpy arrays
                         bool_obs_quantile_years = pd.DatetimeIndex(obs_seas_mn_5d.time).year.isin(years_quantile_vec) #get boolean for obs
@@ -468,7 +535,7 @@ for mo in np.arange(len(modulators)):
                         if np.all(dates_gcm_5d.isin(dates_gcm_6d)) == True and np.all(dates_gcm_6d.isin(dates_gcm_5d)) == True:
                             print('INFO: The 5d and 6d data arrays from the model are identical.')
                         else:
-                            raise Exception('ERROR: The 5d and 6d data arrays from the model are not identical !')
+                            raise ValueError('The 5d and 6d data arrays from the model are not identical !')
                         #continue with a single dates_gcm pandas datetime index and delete the unnecessary ones
                         dates_gcm = dates_gcm_5d
                         del(dates_gcm_5d,dates_gcm_6d)
@@ -479,7 +546,7 @@ for mo in np.arange(len(modulators)):
                             years_common = dates_gcm.year.values
                             print('INFO: the common time period used for verification is '+str(years_common)+' !')
                         else:
-                            raise Exception('ERROR: the modelled and observed date vectors are not identical !')
+                            raise ValueError('The modelled and observed date vectors are not identical !')
                         
                         #get overall / ensemble quantiles calculated upon the array with flattened "member" dimension, thereby mimicing a n member times longer time series
                         gcm_seas_mn_5d_flat_mems = gcm_seas_mn_6d.transpose('time','member','season','lead','y','x') #change order of the dimensions
@@ -548,7 +615,7 @@ for mo in np.arange(len(modulators)):
                             # ref_forecast = xr.DataArray(ref_forecast,coords=[dates_isea,season_label[ag],lead_label,members[0:nr_pseudo_mem],nc_obs.y,nc_obs.x],dims=['time', 'season', 'lead', 'member', 'y', 'x'], name=variables_obs[vv]+'_'+skillscore_reference)
                             ref_forecast = xr.DataArray(ref_forecast,coords=[dates_isea,season_label[ag],lead_label,np.arange(nr_pseudo_mem),nc_obs.y,nc_obs.x],dims=['time', 'season', 'lead', 'member', 'y', 'x'], name=variables_obs[vv]+'_'+skillscore_reference)
                         else:
-                            raise Exception('ERROR: check entry for <skillscore_reference> input parameter !')
+                            raise ValueError('Check entry for <skillscore_reference> input parameter !')
                         
                         #get name of the output file containing the verification results
                         if modulators[mo] == 'enso':
@@ -556,11 +623,11 @@ for mo in np.arange(len(modulators)):
                         elif modulators[mo] == 'none':
                             savename_results = dir_netcdf_scores+'/validation_results_season_'+variables_gcm[vv]+'_'+agg_labels[ag]+'_'+models[mm]+'_vs_'+obs[oo]+'_'+domain+'_corroutlier_'+corr_outlier+'_detrended_'+detrending[det]+'_'+str(years_common2label[0])+'_'+str(years_common2label[-1])+'_'+modulators[mo]+'_'+vers+'.nc'
                         else:
-                            raise Exception('ERROR: unknown entry for <modulators[mo]> input parameter !')
+                            raise ValueError('Unknown entry for <modulators[mo]> input parameter !')
 
                         ##start verification
                         #init numpy arrays to be filled along the "lead" dimension
-                        pearson_r_np = np.zeros((len(season[ag]),len(lead[ag][mm]),len(gcm_seas_mn_5d.y),len(gcm_seas_mn_5d.x)))
+                        pearson_r_np = np.zeros((len(season[ag]),len(lead[mm][ag]),len(gcm_seas_mn_5d.y),len(gcm_seas_mn_5d.x)))
                         pearson_pval_np = np.copy(pearson_r_np)
                         pearson_pval_effn_np = np.copy(pearson_r_np)
                         spearman_r_np = np.copy(pearson_r_np)
@@ -588,17 +655,17 @@ for mo in np.arange(len(modulators)):
                                 elif modulator_ref == 'valid':
                                     indices_sub = indices.isel(time=np.isin(indices.time,obs_seas_mn_5d.time)) #get common time period with observations, which in turn was syncronized with model data above
                                 else:
-                                    raise Exception('ERROR: check entry for <modulator_ref> input parameter !')
+                                    raise ValueError('Check entry for <modulator_ref> input parameter !')
                                 # phase_ind = (indices_sub.oni2enso == phases[mo]).values
                                 phase_ind = (indices_sub.oni2enso == int(phases[mo])).values
                                 #check whether the minumum number of events set in <min_nr_events> is reached
                                 if sum(phase_ind==False) < min_nr_events:
-                                     ValueError('<phase_ind> must at least contain '+str(min_nr_events)+' True values !')
+                                    raise ValueError('<phase_ind> must at least contain '+str(min_nr_events)+' True values !')
                             elif modulators[mo] == 'none':
                                 indices_sub = indices.isel(time=np.isin(indices.time,obs_seas_mn_5d.time)) #is not used below any more if modulators[mo] = 'none'
                                 phase_ind = np.array([True]*len(obs_seas_mn_5d.time)) #set all indices to True
                             else:
-                                raise Exception('ERROR: unknown entry for <modulators[mo]> input parameter !')
+                                raise ValueError('Unknown entry for <modulators[mo]> input parameter !')
                             
                             #get xarray data array for each lead time
                             pearson_r = xs.pearson_r(obs_seas_mn_5d.isel(time=phase_ind).sel(lead=lead_label[ll]),gcm_seas_mn_5d.isel(time=phase_ind).sel(lead=lead_label[ll]),dim='time',skipna=True).rename('pearson_r')
@@ -841,7 +908,7 @@ for mo in np.arange(len(modulators)):
                     elif domain == 'iberia':
                         masklabel = domain[0].upper()+domain[1:]# mask name is Uppercase for iberian domain, i.e. "Iberia"
                     else:
-                        ValueError('Check entry for <domain> input variable !')                
+                        raise ValueError('Check entry for <domain> input variable !')                
                     
                     # mask_file = mask_dir+'/ECMWF_Land_'+masklabel+'_ascending_lat.nc' # <mask_dir> is defined in ./config/config_for_get_skill_season.py
                     mask_file = mask_dir+'/ECMWF_Land_'+masklabel+'.nc' #here, descending lats are needed (check why the DataArrays behave distinct concerning ascending or descending lats in pySeasonal)
@@ -911,7 +978,7 @@ for mo in np.arange(len(modulators)):
                 #check whether there are two 1 values for the same year
                 merger = xr.concat([lower_tercile_obs,center_tercile_obs,upper_tercile_obs], dim='tercile').assign_coords(tercile=('tercile', [1,2,3]))
                 if np.any(merger.sum(dim='tercile') > 1):
-                    ValueError('Binary value 1 has been found in <merger> for more than 1 tercile per year ! It should only appear in one specific tercile !')
+                    raise ValueError('Binary value 1 has been found in <merger> for more than 1 tercile per year ! It should only appear in one specific tercile !')
                 merger.close()
                 del(merger)
 

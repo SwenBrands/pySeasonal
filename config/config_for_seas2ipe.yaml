@@ -3,7 +3,7 @@
 # Configuration file for seas2ipe.py script
 
 # Version and model configuration
-version: 'v1o'  # version number of the validation results
+version: 'v1p'  # version number of the validation results
 model: ['ecmwf']  # list containing the acronyms of the models to be assessed
 model_version: ['51']  # list containing the versions of these models
 obs: 'era5'  # string containing the observational reference
