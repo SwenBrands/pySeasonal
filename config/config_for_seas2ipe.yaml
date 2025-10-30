@@ -38,6 +38,18 @@ paths:
     dir_validation: '/lustre/gmeteo/PTICLIMA/Results/seasonal/validation'
     dir_forecast: '/lustre/gmeteo/PTICLIMA/Results/seasonal/forecast'
     dir_output: '/lustre/gmeteo/WORK/WWW/PTICLIMA/PRODUCTS/seas2ipe'
+
+  pticlima: 
+    home: 'home/swen'
+    server: '/home/swen/PTICLIMA/PRODUCTS'
+    path_gcm_base: '/home/swen/PTICLIMA/DATA/SEASONAL/seasonal-original-single-levels'
+    path_gcm_base_derived: '/home/swen/PTICLIMA/DATA/SEASONAL/seasonal-original-single-levels_derived'
+    path_gcm_base_masked: '/home/swen/PTICLIMA/DATA/SEASONAL/seasonal-original-single-levels_masked'
+    rundir: '/home/swen/Scripts/SBrands/pyPTIclima/pySeasonal'
+    dir_validation: '/home/swen/PTICLIMA/Results/seasonal/validation'
+    dir_forecast: '/home/swen/PTICLIMA/Results/seasonal/forecast'
+    dir_output: '/home/swen/PTICLIMA/PRODUCTS/seas2ipe'
+
   argo:
     home: ''  # will be set from DATA_DIR environment variable
     server: '/lustre/gmeteo/WORK/WWW/PTICLIMA/PRODUCTS'
