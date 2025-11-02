@@ -1,0 +1,11 @@
+1 Mai: Había un mes demás en los forecasts del SPEI-3-M from cmcc35 ( 7 en vez de 6 ). ¿ Eso se ha corregido ?
+
+
+2 Óscar: cambia el nombre de fichero netCDF para fwi y pvpot para ser conisistente con las demás variables:
+por ejemplo:
+seasonal-original-single-levels_medcof_hindcast_fwi_ecmwf_51_201612.nc
+a
+seasonal-original-single-levels_derived_medcof_hindcast_fwi_ecmwf_51_201612.nc
+
+
+3 Óscar: borra /lustre/gmeteo/PTICLIMA/DATA/SEASONAL/seasonal-original-single-levels_derived/medcof/hindcast/fwi/YYYYMM y pvpot/YYYYMM ya que los resultados ahora están en las subcarpetas de modelo

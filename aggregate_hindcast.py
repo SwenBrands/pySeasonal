@@ -21,8 +21,15 @@ import sys
 import yaml
 from pathlib import Path
 
+# INDICATE CONFIGURATION FILE ######################################
+
+configuration_file = 'config_for_aggregate_hindcast_medcof.yaml'
+# configuration_file = 'config_for_aggregate_hindcast_Canarias.yaml'
+
+####################################################################
+
 #this is a function to load the configuration file
-def load_config(config_file='config/config_for_aggregate_hindcast.yaml'):
+def load_config(config_file='config/'+configuration_file):
     """Load configuration from YAML file"""
     config_path = Path(__file__).parent / config_file
     print('The path of the configuration file is '+str(config_path))
@@ -161,7 +168,7 @@ for mm in np.arange(len(model)):
             if years_vec[yy] > 2016 and model[mm]+version[mm] in ('ecmwf51','cmcc35','cmcc4'):
                 print('Info: No hindcast available for '+model[mm]+version[mm]+' and year '+str(years_vec[yy])+'. The forecast is loaded instead...')
                 product = 'forecast'
-            elif years_vec[yy] > 2023 and model[mm]+version[mm] in ('eccc5'):
+            elif years_vec[yy] > 2023 and model[mm]+version[mm] in ('eccc5','dwd22'):
                 print('Info: No hindcast available for '+model[mm]+version[mm]+' and year '+str(years_vec[yy])+'. The forecast is loaded instead...')
                 product = 'forecast'
             else:

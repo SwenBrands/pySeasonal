@@ -1,13 +1,13 @@
 ## setup for various models
-model: ['cmcc', 'eccc', 'cmcc', 'ecmwf']  # seasonal forecast model
-version: ['4', '5', '35', '51']  # and version thereof; pertains to <model> loop indicated with <mm> below
-n_mem: [30, 20, 40, 25]  # number of considered ensemble members, pertains to <model> loop. For instance, ECMWF51 has 25 hindcast and 51 forecast members so <n_mem = 25> should be set if hindcasts and forecasts are combined in the skill evaluation. The first n_mem members are selected.
-n_lead: [7, 8, 7, 8]  # considered lead-time in months, pertains to <model> loop indicated with <mm> below, CMCC 3.5 hindcasts provide 183 forecast days, SEAS5.1 provide 215, ECCC provide 214
+model: ['dwd', 'cmcc', 'eccc', 'cmcc', 'ecmwf']  # seasonal forecast model
+version: ['22', '4', '5', '35', '51']  # and version thereof; pertains to <model> loop indicated with <mm> below
+n_mem: [30, 30, 20, 40, 25]  # number of considered hindcast members, pertains to <model> loop. For instance, ECMWF51 has 25 hindcast and 51 forecast members so <n_mem = 25> should be set if hindcasts and forecasts are combined in the skill evaluation. The first n_mem members are selected.
+n_lead: [7, 7, 8, 7, 8]  # considered lead-time in months, pertains to <model> loop indicated with <mm> below, CMCC 3.5 hindcasts provide 183 forecast days, SEAS5.1 provide 215, ECCC provide 214
 
 # details example file per model that is available on your file system; the example file must be for the base variables as provided by Jaime, i.e. no climate indices are permitted
-template_init: ['199910', '199910', '199910', '199910']  # single init from the hindcast period, expressed as YYYYMM known to be availble, this is to extract the dimensions of the netCDF file for the specific model; it is necessary to set <base_init> because entire hindcast months will be missing for newly introduced models
-template_var: ['tas', 'tas', 'tas', 'tas']  # variable for that single init, the file for that variable must be formated by Predictia
-template_file_start: ['seasonal-original-single-levels', 'seasonal-original-single-levels', 'seasonal-original-single-levels', 'seasonal-original-single-levels']
+template_init: ['199910', '199910', '199910', '199910', '199910']  # single init from the hindcast period, expressed as YYYYMM known to be availble, this is to extract the dimensions of the netCDF file for the specific model; it is necessary to set <base_init> because entire hindcast months will be missing for newly introduced models
+template_var: ['tas', 'tas', 'tas', 'tas', 'tas']  # variable for that single init, the file for that variable must be formated by Predictia
+template_file_start: ['seasonal-original-single-levels', 'seasonal-original-single-levels', 'seasonal-original-single-levels', 'seasonal-original-single-levels', 'seasonal-original-single-levels']
 
 # fixed parameters not passing through loops
 imonth: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]  # month the forecasts are initialized on, 1 refers to the January 1st, 2 to Febrary 1st etc.
@@ -35,6 +35,15 @@ model_settings:
     lon_name: ['lon','lon','x','x','x','x','x']
     lat_name: ['lat','lat','y','y','y','y','y']
     file_start: ['seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels']
+    years: [1993, 2023]
+  dwd22:
+    variables: ['pr','tas','psl','sfcWind','rsds']
+    variables_nc: ['pr','tas','psl','sfcWind','rsds']
+    variables_new: ['tp','t2m','msl','si10','ssrd']
+    time_name: ['forecast_time','forecast_time','forecast_time','forecast_time','forecast_time']
+    lon_name: ['x','x','x','x','x']
+    lat_name: ['y','y','y','y','y']
+    file_start: ['seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels','seasonal-original-single-levels']
     years: [1993, 2023]
   eccc5:
     variables: ['SPEI-3-M','pvpot','fwi','pr','tas','psl','sfcWind','rsds']

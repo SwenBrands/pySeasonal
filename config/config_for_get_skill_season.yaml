@@ -69,6 +69,16 @@ cmcc4:
   lead_4mon: [[0, 1, 2, 3], [1, 2, 3, 4], [2, 3, 4, 5]] # lead-months per season for an aggregation window of 4 months
   lead_5mon: [[0, 1, 2, 3, 4], [1, 2, 3, 4, 5]] # lead-months per season for an aggregation window of 5 months
 
+# DWD-22 (System 22 in CDS)
+dwd22:
+  nr_mem: 30
+  years: [1993, 2023]
+  lead_1mon: [[0], [1], [2], [3], [4], [5]]
+  lead_2mon: [[0, 1], [1, 2], [2, 3], [3, 4], [4, 5]] # lead-months per season for an aggregation window of 2 months
+  lead_3mon: [[0, 1, 2], [1, 2, 3], [2, 3, 4], [3, 4, 5]]
+  lead_4mon: [[0, 1, 2, 3], [1, 2, 3, 4], [2, 3, 4, 5]] # lead-months per season for an aggregation window of 4 months
+  lead_5mon: [[0, 1, 2, 3, 4], [1, 2, 3, 4, 5]] # lead-months per season for an aggregation window of 5 months
+
 # ECCC System 5, based on the CanESM5.1p1bc atmosphere and terrestial ecosystem coupled model
 # see https://confluence.ecmwf.int/display/CKB/Description+of+CanESM5.1p1bc-v20240611+C3S+contribution
 eccc5:
