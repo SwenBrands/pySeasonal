@@ -65,10 +65,10 @@ for vv in np.arange(len(variables)):
     if domain == 'medcof':
         if variables[vv] == 'fwi':
             path_obs_data = path_obs_base+'/'+obs.upper()+'/data_derived/'+domain+'_'+resolution+'/'+variables[vv]+'12/'+variables[vv]+'_'+domain+'_'+resolution+'.nc'
-            nc = xr.open_dataset(path_obs_data)
+            nc = xr.open_dataset(path_obs_data, decode_timedelta=False)
         elif variables[vv] == 'pvpot':
             path_obs_data = path_obs_base+'/'+obs.upper()+'/data_derived/'+domain+'_'+resolution+'/'+variables[vv]+'/'+variables[vv]+'_'+domain+'_'+resolution+'_DM.nc'
-            nc = xr.open_dataset(path_obs_data)
+            nc = xr.open_dataset(path_obs_data, decode_timedelta=False)
         elif variables[vv] == 'SPEI-3':
             #path_obs_data = path_obs_base+'/'+obs+'/'+agg_src+'/'+domain+'_'+resolution+'/'+variables[vv]+'/'+variables[vv]+'_'+obs.upper()+'_'+agg_src+'_*.nc' #SPEI-3_ERA5_day_2021.nc
             path_obs_data = path_obs_base+'/'+obs.upper()+'/data_masked/'+domain+'_'+resolution+'/'+variables[vv] #SPEI-3_ERA5_day_2021.nc
@@ -86,7 +86,7 @@ for vv in np.arange(len(variables)):
     elif domain in ('Canarias','Iberia'):
         # path_obs_data = path_obs_base+'/'+obs[0:3].upper()+obs[3:]+'/data_derived_'+resolution+'/'+domain[0].upper()+domain[1:]+'/'+agg_src+'/'+variables[vv]+'/'+variables[vv]+'_'+domain[0:3]+'.nc'
         path_obs_data = path_obs_base+'/'+obs+'/data_derived_'+resolution+'/'+domain+'/'+agg_src+'/'+variables[vv]+'/'+variables[vv]+'_'+domain.lower()[0:3]+'.nc'
-        nc = xr.open_dataset(path_obs_data)
+        nc = xr.open_dataset(path_obs_data, decode_timedelta=False)
     else:
         valueError('Unexpected value for <domain> !')
     

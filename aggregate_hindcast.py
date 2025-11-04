@@ -119,7 +119,7 @@ xr.set_options(file_cache_maxsize=1)
 print('The GCM files will be loaded from the base directory '+path_gcm_base+'...')
 
 #get mesh information from static file, assumed to be equal for all models
-nc_template = xr.open_dataset(path_gcm_base+'/'+domain+'/hindcast/'+template_var[0]+'/ecmwf/51/198101/'+template_file_start[0]+'_'+domain+'_hindcast_'+template_var[0]+'_ecmwf_51_198101.nc')
+nc_template = xr.open_dataset(path_gcm_base+'/'+domain+'/hindcast/'+template_var[0]+'/ecmwf/51/198101/'+template_file_start[0]+'_'+domain+'_hindcast_'+template_var[0]+'_ecmwf_51_198101.nc', decode_timedelta=False)
 
 n_lat = len(nc_template[template_lat[0]])
 n_lon = len(nc_template[template_lon[0]])
@@ -130,7 +130,7 @@ for mm in np.arange(len(model)):
     #get model dimensions from a template modell initialization, needed for entirely missing hindcast months. This init data of this template file and other information is set in <config_for_aggregate_hindcast.yaml>; <members>, <lons> and <lats> from this file will be overwritten if other init files are found during execution of this script
     if template_var[mm] in ('tas','psl','pr','FD-C4','SU-C4','TR-C4'):
         path_template_gcm = path_gcm_base+'/'+domain+'/hindcast/'+template_var[mm]+'/'+model[mm]+'/'+version[mm]+'/'+str(template_init[mm][0:4])+str(template_init[mm][-2:]).zfill(2)+'/'+template_file_start[mm]+'_'+domain+'_hindcast_'+template_var[mm]+'_'+model[mm]+'_'+version[mm]+'_'+str(template_init[mm][0:4])+str(template_init[mm][-2:]).zfill(2)+'.nc'
-        nc_template_gcm = xr.open_dataset(path_template_gcm)
+        nc_template_gcm = xr.open_dataset(path_template_gcm, decode_timedelta=False)
         nc_template_gcm = nc_template_gcm.isel(member=np.arange(n_mem[mm])) #select members within the template netCDF file
         members = np.array([int(str(nc_template_gcm.member[ii].astype(str).values).replace('Member_','')) for ii in np.arange(len(nc_template_gcm.member))]) #this option also works for the first SPEI-3-R version
         members = np.arange(len(members)) #force the members to start with 0 irrespective of the input format (the first SPEI-3-R version started with 1)
@@ -196,7 +196,7 @@ for mm in np.arange(len(model)):
                 
                 #check whether netCDF file for years_vec[yy] and imonth[im], containing the monthly gcm intis, exists. This is done because a try because some files are missing. If the file is not there, continue to the next step of the loop / month indexed by <im>. 
                 if os.path.isfile(path_gcm_data):
-                    nc = xr.open_dataset(path_gcm_data)
+                    nc = xr.open_dataset(path_gcm_data, decode_timedelta=False)
                 else:
                     print('WARNING: '+path_gcm_data+' is not available! Proceed to load the next netCDF file containing '+model[mm]+version[mm]+' data for '+str(years_vec[yy])+' and '+str(imonth[im]))
                     var_units = 'not known because no file is available'
@@ -240,9 +240,10 @@ for mm in np.arange(len(model)):
                         if variables_nc[mm][vv] == 'pvpot':
                             print('Units are set to: zero-bound index')
                             print('For '+variables_nc[mm][vv]+', the units are set to: zero-bound index')
-                        if variables_nc[mm][vv] in ('FD','SU','TR'):
-                            print('For '+variables_nc[mm][vv]+', the units are set to: number of days')
-                            var_units = 'number of days'
+                            var_units = 'zero-bound index'
+                        # if variables_nc[mm][vv] in ('FD','SU','TR'):
+                        #     print('For '+variables_nc[mm][vv]+', the units are set to: number of days')
+                        #     var_units = 'number of days'
                         else:
                             raise ValueError('No units are defined for '+variables_nc[mm][vv]+' !!')
                         
@@ -278,7 +279,7 @@ for mm in np.arange(len(model)):
                 #if the input netCDF file is not valid, as revealed by transform_gcm_variable(), overwrite the original file with the newly created one
                 if (file_valid == 0) & (save_corrected_files == 'yes'):
                     del(nc) #delete the previously opened nc file object
-                    nc = xr.open_dataset(path_gcm_data) #and re-open it
+                    nc = xr.open_dataset(path_gcm_data, decode_timedelta=False) #and re-open it
                     #get encoding and variable unit of the input netCDF file for all dimensions and variables
                     ec_x = nc[lon_name[mm][vv]].encoding
                     ec_y = nc[lat_name[mm][vv]].encoding
