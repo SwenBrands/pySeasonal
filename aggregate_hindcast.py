@@ -23,7 +23,7 @@ from pathlib import Path
 
 # INDICATE CONFIGURATION FILE ######################################
 
-configuration_file = 'config_for_aggregate_hindcast_medcof.yaml'
+configuration_file = 'config_for_aggregate_hindcast_Canarias.yaml'
 # configuration_file = 'config_for_aggregate_hindcast_Canarias.yaml'
 
 ####################################################################
@@ -71,6 +71,8 @@ years = [config['model_settings'][key]['years'] for key in model_keys]
 template_init = config['template_init']
 template_var = config['template_var']
 template_file_start = config['template_file_start']
+template_lon = config['template_lon']
+template_lat = config['template_lat']
 
 #fixed parameters not passing through loops
 imonth = config['imonth']
@@ -117,25 +119,26 @@ xr.set_options(file_cache_maxsize=1)
 print('The GCM files will be loaded from the base directory '+path_gcm_base+'...')
 
 #get mesh information from static file, assumed to be equal for all models
-nc_template = xr.open_dataset(path_gcm_base+'/'+domain+'/hindcast/tas/ecmwf/51/198101/seasonal-original-single-levels_medcof_hindcast_tas_ecmwf_51_198101.nc')
-n_lat = len(nc_template['y'])
-n_lon = len(nc_template['x'])
+nc_template = xr.open_dataset(path_gcm_base+'/'+domain+'/hindcast/'+template_var[0]+'/ecmwf/51/198101/'+template_file_start[0]+'_'+domain+'_hindcast_'+template_var[0]+'_ecmwf_51_198101.nc')
+
+n_lat = len(nc_template[template_lat[0]])
+n_lon = len(nc_template[template_lon[0]])
 nc_template.close()
 
 for mm in np.arange(len(model)):
 
     #get model dimensions from a template modell initialization, needed for entirely missing hindcast months. This init data of this template file and other information is set in <config_for_aggregate_hindcast.yaml>; <members>, <lons> and <lats> from this file will be overwritten if other init files are found during execution of this script
-    if template_var[mm] in ('tas','psl','pr'):
+    if template_var[mm] in ('tas','psl','pr','FD-C4','SU-C4','TR-C4'):
         path_template_gcm = path_gcm_base+'/'+domain+'/hindcast/'+template_var[mm]+'/'+model[mm]+'/'+version[mm]+'/'+str(template_init[mm][0:4])+str(template_init[mm][-2:]).zfill(2)+'/'+template_file_start[mm]+'_'+domain+'_hindcast_'+template_var[mm]+'_'+model[mm]+'_'+version[mm]+'_'+str(template_init[mm][0:4])+str(template_init[mm][-2:]).zfill(2)+'.nc'
         nc_template_gcm = xr.open_dataset(path_template_gcm)
         nc_template_gcm = nc_template_gcm.isel(member=np.arange(n_mem[mm])) #select members within the template netCDF file
         members = np.array([int(str(nc_template_gcm.member[ii].astype(str).values).replace('Member_','')) for ii in np.arange(len(nc_template_gcm.member))]) #this option also works for the first SPEI-3-R version
         members = np.arange(len(members)) #force the members to start with 0 irrespective of the input format (the first SPEI-3-R version started with 1)
-        lons = nc_template_gcm['x'].values
-        lats = nc_template_gcm['y'].values
-        #make a short latitute check
-        if lats[0] < lats[-1]:
-            raise ValueError('latitudes in <lats> must be descending !')
+        lons = nc_template_gcm[template_lon].values
+        lats = nc_template_gcm[template_lat].values
+        # #make a short latitute check
+        # if lats[0] < lats[-1]:
+        #     raise ValueError('latitudes in <lats> must be descending !')
     else:
         raise ValueError('<template_var[mm]> is not in the list of allowed template variables defined in config_for_aggregate_hindcast.yaml ! This is because the template variables must have a specific format, e.g. ascending latitudes, that is, e.g., not met by the SPEI-3 inidices')
 
@@ -156,12 +159,12 @@ for mm in np.arange(len(model)):
         #construct path to input GCM files as a function of the variable set in variables[mm][vv]
         if variables[mm][vv] in ('fwi','pvpot'):
             path_gcm_base_var = path_gcm_base_derived
-        elif variables[mm][vv] in ('SPEI-3','SPEI-3-M','SPEI-3-R','SPEI-3-R_eqm_pullLMs-TRUE'):
+        elif variables[mm][vv] in ('SPEI-3','SPEI-3-M','SPEI-3-R','SPEI-3-R_eqm_pullLMs-TRUE','FD-C4','SU-C4','TR-C4'):
             path_gcm_base_var = path_gcm_base_masked
         elif variables[mm][vv] in ('psl','sfcWind','tas','pr','rsds'):
             path_gcm_base_var = path_gcm_base
         else:
-            raise Exception('ERROR: check entry for variables[mm][vv] !')
+            raise ValueError('Check entry for variables[mm][vv] !')
             
         for yy in np.arange(len(years_vec)):
             #Check whether to use hindcasts or forecasts
@@ -184,7 +187,7 @@ for mm in np.arange(len(model)):
                     path_gcm_data = path_gcm_base_var+'/'+domain+'/'+product+'/'+variables[mm][vv]+'/'+model[mm]+'/'+version[mm]+'/coefs_pool_members/'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'/'+file_start[mm][vv]+'_'+domain+'_'+product+'_'+variables[mm][vv]+'_'+model[mm]+'_'+version[mm]+'_'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'.nc'
                 elif variables[mm][vv] in ('SPEI-3-R_eqm_pullLMs-TRUE'):
                     path_gcm_data = path_gcm_base_var+'/'+domain+'/'+product+'/'+variables[mm][vv]+'/'+model[mm]+'/'+version[mm]+'/coefs_of_reanalysis/'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'/'+file_start[mm][vv]+'_'+domain+'_'+product+'_SPEI-3-R_'+model[mm]+'_'+version[mm]+'_'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'.nc'
-                elif variables[mm][vv] in ('fwi','pvpot'):
+                elif variables[mm][vv] in ('fwi','pvpot','FD-C4','SU-C4','TR-C4'):
                     path_gcm_data = path_gcm_base_var+'/'+domain+'/'+product+'/'+variables[mm][vv]+'/'+model[mm]+'/'+version[mm]+'/'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'/'+file_start[mm][vv]+'_'+domain+'_'+product+'_'+variables[mm][vv]+'_'+model[mm]+'_'+version[mm]+'_'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'.nc'
                 elif variables[mm][vv] in ('psl','sfcWind','tas','pr','rsds'):
                     path_gcm_data = path_gcm_base_var+'/'+domain+'/'+product+'/'+variables[mm][vv]+'/'+model[mm]+'/'+version[mm]+'/'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'/'+file_start[mm][vv]+'_'+domain+'_'+product+'_'+variables[mm][vv]+'_'+model[mm]+'_'+version[mm]+'_'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'.nc'
@@ -236,9 +239,12 @@ for mm in np.arange(len(model)):
                         print('WARNING: no units have been stored in netcdf input file for '+variables[mm][vv]+' located at '+path_gcm_data)
                         if variables_nc[mm][vv] == 'pvpot':
                             print('Units are set to: zero-bound index')
-                            var_units = 'zero-bound index'
+                            print('For '+variables_nc[mm][vv]+', the units are set to: zero-bound index')
+                        if variables_nc[mm][vv] in ('FD','SU','TR'):
+                            print('For '+variables_nc[mm][vv]+', the units are set to: number of days')
+                            var_units = 'number of days'
                         else:
-                            raise Exception('ERROR: no units are defined for '+variables[mm][vv]+' !!')
+                            raise ValueError('No units are defined for '+variables_nc[mm][vv]+' !!')
                         
                     #var_name = nc[variables_nc[mm][vv]].name #optionally use variable name from input netCDF files
                     

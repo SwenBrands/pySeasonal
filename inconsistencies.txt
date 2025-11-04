@@ -1,11 +1,24 @@
-1 Mai: Había un mes demás en los forecasts del SPEI-3-M from cmcc35 ( 7 en vez de 6 ). ¿ Eso se ha corregido ?
+1. Mai: Había un mes demás en los forecasts del SPEI-3-M from cmcc35 ( 7 en vez de 6 ). ¿ Eso se ha corregido ?
 
 
-2 Óscar: cambia el nombre de fichero netCDF para fwi y pvpot para ser conisistente con las demás variables:
+2. Óscar: cambia el nombre de fichero netCDF para fwi y pvpot para ser conisistente con las demás variables:
 por ejemplo:
 seasonal-original-single-levels_medcof_hindcast_fwi_ecmwf_51_201612.nc
 a
 seasonal-original-single-levels_derived_medcof_hindcast_fwi_ecmwf_51_201612.nc
 
 
-3 Óscar: borra /lustre/gmeteo/PTICLIMA/DATA/SEASONAL/seasonal-original-single-levels_derived/medcof/hindcast/fwi/YYYYMM y pvpot/YYYYMM ya que los resultados ahora están en las subcarpetas de modelo
+3. Óscar: borra /lustre/gmeteo/PTICLIMA/DATA/SEASONAL/seasonal-original-single-levels_derived/medcof/hindcast/fwi/YYYYMM y pvpot/YYYYMM ya que los resultados ahora están en las subcarpetas de modelo
+
+
+4. Mai: El método de corrección de la variable debería ir dentro del fichero, es decir, por ejemplo:
+FD -> FD-C4
+para el fichero:
+/lustre/gmeteo/PTICLIMA/DATA/SEASONAL/seasonal-original-single-levels_derived/Canarias/hindcast/FD-C4/ecmwf/51/198101/seasonal-original-single-levels_derived_Canarias_hindcast_FD-C4_ecmwf_51_198101.nc
+En la ruta al fichero FD-C4 está puesto correctamente, pero falta por poner dentro del netCDF.
+
+
+5. Mai y Óscar: Para el pvpot como los índices mensuales nuevos (FD-C4, etc. ) las data variables dentro de los netCDF no tienen unidades, es decir que falta por incluir el atributo "units". Por ejemplo "number of days" o la unidad estándar que se use, si es que la hay.
+
+
+6. Hay inconsistencias con las minuscuclas y mayusculas en todas partes
