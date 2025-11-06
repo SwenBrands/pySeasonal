@@ -5,6 +5,17 @@
 from math import radians, cos, sin, asin, sqrt
 import numpy as np
 
+def flip_latitudes_and_data(xr_ds_f,lat_name):
+    ''' flips latitudes and data variables in xr_ds_f; input: xr_df_f is an xarray dataseet and lat_name a string containing the placeholder name for the latitude in that dataset;
+    output: flipped xr_ds_f '''
+    if lat_name == 'lat':
+        xr_ds_f = xr_ds_f.reindex(lat=list(reversed(xr_ds_f.lat)))
+    elif lat_name == 'y':
+        xr_ds_f= xr_ds_f.reindex(y=list(reversed(xr_ds_f.y)))
+    else:
+        raise ValueError('Unexpected entry for <lat_name> in flip_latitudes() function !')
+    return(xr_ds_f)
+
 def apply_sea_mask(arr_f,mask_file_f):
     '''sets the values over the Sea, as provided by the netCDF file locted at <mask_file_f> to nan in <arr_f>;
     Input: <arr_f> is an xarray DataArray with the dimensions detrended, variable, time, season, lead, y, x;
@@ -13,9 +24,25 @@ def apply_sea_mask(arr_f,mask_file_f):
     Ouput: returns the modified <arr_f> with nan values over the Sea'''
     
     nc_mask_f = xr.open_dataset(mask_file_f) #open the mask file
+    
+    #check whether the latitudes in the mask file are descinding; otherwise return error
+    if nc_mask_f.lat[0] <= nc_mask_f.lat[-1]:
+        raise valueError(' The latitudes in '+mask_file_f+' are ASCENDING and must be passed DESCENDING to apply_sea_mask() function ! ')
+    elif nc_mask_f.lat[0] > nc_mask_f.lat[-1]:
+        print(' The latitudes in '+mask_file_f+' are DESCENDING, as expected by the apply_sea_mask() function !')
+    else:
+        raise valueError('unknown latitude order in '+mask_file_f)
+    
+    #check whether the y coordinate values in the xarray DataArray are are descinding; otherwise return error
+    if arr_f.y[0] <= arr_f.y[-1]:
+        raise valueError(' The y coordinate values in <arr_f> are ASCENDING and must be passed DESCENDING to apply_sea_mask() function ! ')
+    elif arr_f.y[0] > arr_f.y[-1]:
+        print(' The y coordinate values in <arr_f> are DESCENDING, as expected by the apply_sea_mask() function !')
+    else:
+        raise valueError('unknown y coordinate order in <arr_f> !')
 
     #test for equal latitudes
-    if ~np.all(nc_mask_f.latitude.values-arr_f.y.values == 0):
+    if ~np.all(nc_mask_f.lat.values-arr_f.y.values == 0):
         ValueError('<nc_mask_f.latitude> and <arr_f.y> do not match !')
 
     # target_dims = list(dict(arr_f.dims).values())

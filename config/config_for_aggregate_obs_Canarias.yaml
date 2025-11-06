@@ -1,0 +1,22 @@
+---
+
+obs: 'PTI-grid-v2' #name of the observational / reanalysis dataset that will be regridded: 'era5', 'PTI-grid-v2'
+agg_src: 'mon' #'day' or 'mon': temporal aggregation of the observational input files, pertains to the <obs> loop indicated with <oo> below
+startyear_file: 1981 #start year of the obs file as indicated in filename
+endyear_file: 2022 #corresponding end year
+variables: ['FD','SU','TR'] #variables to be regridded
+variables_nc: ['FD','SU','TR'] #variable names with the netCDF file
+years: [1981,2022] #years to be regridded
+
+domain: 'Canarias' #spatial domain the model data is available on. So far, this is just a label used in the output filename.
+resolution: '5km' #resolution shortcut used in the input variable names
+
+grid_name: 'PTI-grid-v2' #here used as label to save the output netcdf file: ecmwf51 for 1 degree datasets, PTI-grid-v2 for downscaled datasets
+int_method: 'upscaled' #here used as label to save the output netcdf file, ask Adri if this method was used, 'conservative_normed' or 'upscaled'
+
+paths:
+  lustre:
+    home: '/lustre/gmeteo/PTICLIMA'
+    path_obs_base: '/lustre/gmeteo/PTICLIMA//DATA/OBSERVATIONS' #base path upon which the final path to the obs data is constructed
+    savepath_base: '/lustre/gmeteo/PTICLIMA/Results/seasonal/obs/regridded' #This is the common directory for regridded monthly observations; what is placed here will be processed by get_skill_season.py
+    rundir: '/lustre/gmeteo/PTICLIMA/Scripts/SBrands/pyPTIclima/pySeasonal' #The run directory

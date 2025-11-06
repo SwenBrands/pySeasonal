@@ -1,0 +1,66 @@
+---
+
+# Configuration file for seas2ipe.py script
+
+# Version and model configuration
+version: 'v1p'  # version number of the validation results
+model: ['ecmwf']  # list containing the acronyms of the models to be assessed
+model_version: ['51']  # list containing the versions of these models
+obs: 'era5'  # string containing the observational reference
+
+# Quantile and validation configuration
+years_quantile: [[1993, 2022]]  # list containing the years used to calculate quantiles, one sub-list per model
+subperiod: 'none'  # climate oscillation: "enso" or "none"
+score: 'pearson_r_binary'  # score of the binary skill mask
+agg_labels: ['3mon']  # considered aggregation windows
+nan_placeholder: 0
+
+# Variable mapping
+variables_std: ['SPEI-3-M', 'pvpot', 'fwi', 't2m', 'tp', 'si10', 'ssrd']  # standardized variable names
+variables_out: ['spei3', 'pvpot', 'fwi', 'gtg', 'rti', 'fg', 'ssrd']  # output variable names, as defined in PTI-Clima variable table: https://docs.google.com/spreadsheets/d/1K5n3aM0vGgnJEwlghjK1BtqJr0Ug0mQYlzZKQxB2wJU/edit?gid=0#gid=0https://docs.google.com/spreadsheets/d/1K5n3aM0vGgnJEwlghjK1BtqJr0Ug0mQYlzZKQxB2wJU/edit?gid=0#gid=0
+masked_variables_std: ['none']  # list of variables on which land-sea mask will be applied
+
+# Data type and domain configuration
+datatype: 'float32'  # data type of variables in output netcdf files
+domain: 'medcof'  # spatial domain
+detrended: 'no'  # yes or no, linear detrending
+
+# Path configuration
+# These paths will be set based on GCM_STORE environment variable
+paths:
+  lustre:
+    home: '/lustre/gmeteo/PTICLIMA'
+    server: '/lustre/gmeteo/WORK/WWW/PTICLIMA/PRODUCTS'
+    path_gcm_base: '/lustre/gmeteo/PTICLIMA/DATA/SEASONAL/seasonal-original-single-levels'
+    path_gcm_base_derived: '/lustre/gmeteo/PTICLIMA/DATA/SEASONAL/seasonal-original-single-levels_derived'
+    path_gcm_base_masked: '/lustre/gmeteo/PTICLIMA/DATA/SEASONAL/seasonal-original-single-levels_masked'
+    rundir: '/lustre/gmeteo/PTICLIMA/Scripts/SBrands/pyPTIclima/pySeasonal'
+    dir_validation: '/lustre/gmeteo/PTICLIMA/Results/seasonal/validation'
+    dir_forecast: '/lustre/gmeteo/PTICLIMA/Results/seasonal/forecast'
+    dir_output: '/lustre/gmeteo/WORK/WWW/PTICLIMA/PRODUCTS/seas2ipe'
+
+  pticlima: 
+    home: 'home/swen'
+    server: '/home/swen/PTICLIMA/PRODUCTS'
+    path_gcm_base: '/home/swen/PTICLIMA/DATA/SEASONAL/seasonal-original-single-levels'
+    path_gcm_base_derived: '/home/swen/PTICLIMA/DATA/SEASONAL/seasonal-original-single-levels_derived'
+    path_gcm_base_masked: '/home/swen/PTICLIMA/DATA/SEASONAL/seasonal-original-single-levels_masked'
+    rundir: '/home/swen/Scripts/SBrands/pyPTIclima/pySeasonal'
+    dir_validation: '/home/swen/PTICLIMA/Results/seasonal/validation'
+    dir_forecast: '/home/swen/PTICLIMA/Results/seasonal/forecast'
+    dir_output: '/home/swen/PTICLIMA/PRODUCTS/seas2ipe'
+
+  argo:
+    home: ''  # will be set from DATA_DIR environment variable
+    server: '/lustre/gmeteo/WORK/WWW/PTICLIMA/PRODUCTS'
+    path_gcm_base: 'seasonal-original-single-levels'
+    path_gcm_base_derived: 'seasonal-original-single-levels_derived'
+    path_gcm_base_masked: 'seasonal-original-single-levels_masked'
+    rundir: '/app/terciles'
+    dir_validation: '/tmp/terciles/'
+    dir_forecast: 'seasonal-original-single-levels_derived/medcof/forecast/terciles/'
+    dir_output: '/lustre/gmeteo/WORK/WWW/PTICLIMA/PRODUCTS/needs_to_be_defined'
+
+# Quantile thresholds
+quantile_threshold: [0.33, 0.67]
+

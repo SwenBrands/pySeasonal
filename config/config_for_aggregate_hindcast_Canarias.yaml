@@ -1,3 +1,5 @@
+---
+
 ## setup for various models
 model: ['ecmwf']  # seasonal forecast model
 version: ['51']  # and version thereof; pertains to <model> loop indicated with <mm> below
@@ -18,7 +20,7 @@ imonth: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]  # month the forecasts are initi
 domain: 'Canarias'  # spatial domain the model data is available on. So far, this is just a label used to find the input files and name the output files.
 save_corrected_files: 'no'  # overwrite input nc files with un expected units with newly generated corrected files
 
-path:
+paths:
   lustre:
     home: '/lustre/gmeteo/PTICLIMA'
     rundir: '/lustre/gmeteo/PTICLIMA/Scripts/SBrands/pyPTIclima/pySeasonal'

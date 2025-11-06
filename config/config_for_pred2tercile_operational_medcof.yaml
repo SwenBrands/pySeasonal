@@ -16,7 +16,8 @@ agg_label: ['1mon','2mon','3mon','4mon','5mon'] # ['1mon','3mon'] list of string
 precip_threshold_quotient: 30 #seasonal mean daily precipitation threshold in mm below which the modelled and quasi-observed monthly precipitation amount is set to 0. Bring this in exact agreement with get_skill_season.py in future versions
 datatype: 'float32' #data type of the variables in the output netcdf files
 domain: 'medcof' #spatial domain
-masked_variable_std: ['fwi','SPEI-3-M'] #list of variables on which a land-sea mask will be applied, setting values over sea to nan
+masked_variables_std: ['pvpot','SPEI-3-M','fwi','msl','t2m','tp','si10','ssrd'] #list of variables on which a land-sea mask will be applied, setting values over sea to nan
+# masked_variables_std: ['none'] #list of variables on which a land-sea mask will be applied, setting values over sea to nan
 detrended: 'no' #yes or no, linear detrending of the gcm and obs time series prior to validation
 nr_mem: [25] #considered ensemble members, not yet in use !
 product: 'forecast'

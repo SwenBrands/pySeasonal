@@ -18,8 +18,8 @@ from pathlib import Path
 
 # INDICATE CONFIGURATION FILE ######################################
 
-configuration_file = 'config_for_pred2tercile_operational_medcof.yaml'
-# configuration_file = 'config_for_pred2tercile_operational_Canarias.yaml'
+# configuration_file = 'config_for_pred2tercile_operational_medcof.yaml'
+configuration_file = 'config_for_pred2tercile_operational_Canarias.yaml'
 # configuration_file = 'config_for_pred2tercile_operational_Iberia.yaml'
 
 ####################################################################
@@ -70,7 +70,7 @@ agg_label = config['agg_label']
 precip_threshold_quotient = config['precip_threshold_quotient']
 datatype = config['datatype']
 domain = config['domain']
-masked_variable_std = config['masked_variable_std']
+masked_variables_std = config['masked_variables_std']
 detrended = config['detrended']
 product = config['product']
 quantile_threshold = config['quantile_threshold']
@@ -130,9 +130,16 @@ for ag in np.arange(len(agg_label)):
             # #load the quantiles file
             filename_quantiles = dir_quantile+'/'+quantile_version+'/'+agg_label[ag]+'/quantiles/quantiles_pticlima_'+agg_label[ag]+'_'+models[mm]+version[mm]+'_'+variable_std[mm][vv]+'_'+domain+'_'+str(years_quantile[mm][0])+'_'+str(years_quantile[mm][1])+'_'+quantile_version+'.nc'
 
-            # check whether the previously stored model and version thereof match those requested by this script
+            # load quantile files and check whether their lats are ascending, correct them if they are descending
             nc_quantile = xr.open_dataset(filename_quantiles)
-            
+            if nc_quantile['y'][0] > nc_quantile['y'][-1]:
+                lat_quantile = 'descending'
+            elif nc_quantile['y'][0] < nc_quantile['y'][-1]:
+                lat_quantile = 'ascending'
+                ValueError('The latitudes in <nc_quantile> are ascending, which is not expected !')
+            else:
+                valueError('latitudes in <nc_quantile> are neither ascending or descending !')
+
             # #check whether the previously stored model and version thereof match those requested by this script
             # nc_quantile = xr.open_dataset(filename_quantiles)
             # if nc_quantile.model == models[mm]+version[mm]:
@@ -156,31 +163,77 @@ for ag in np.arange(len(agg_label)):
                 raise Exception('ERROR: check entry for variables[vv] !')
             
             #filename_forecast = path_gcm_base+'/'+product+'/'+variable_fc[mm][vv]+'/'+models[mm]+'/'+version[mm]+'/'+str(year_init)+str(month_init).zfill(2)+'/'+file_start[mm][vv]+'_'+domain+'_'+product+'_'+variable_fc[mm][vv]+'_'+models[mm]+'_'+version[mm]+'_'+str(year_init)+str(month_init).zfill(2)+'.nc'
-            #pdb.set_trace()
             nc_fc = xr.open_dataset(filename_forecast,decode_timedelta=False)
+            if nc_fc[lat_name[mm][vv]][0] > nc_fc[lat_name[mm][vv]][-1]:
+                lat_nc_fc = 'descending'
+            elif nc_fc[lat_name[mm][vv]][0] < nc_fc[lat_name[mm][vv]][-1]:
+                lat_nc_fc = 'ascending'
+            else:
+                valueError('latitudes in <nc_fc> are neither ascending or descending !')
+
+            #check whethter the latitudes in the quantile and forecast files conincide
+            if any(nc_fc[lat_name[mm][vv]].values != nc_quantile['y'].values) and lat_nc_fc == 'ascending' and lat_quantile == 'descending':
+                print('Warning: The lats in '+filename_forecast+' and '+filename_quantiles+' do not match but the former comes with ascending and the latter with descending latitudes, which is an allowed inconsistency since xarrays stores netcdf file with ascending lats and xarray with descending lats by default ! <nc_fc> will be re-indexed to descending latitudes below...')
+            elif any(nc_fc[lat_name[mm][vv]].values != nc_quantile['y'].values) and lat_nc_fc != 'ascending':
+                raise ValueError('The lats in '+filename_forecast+' and '+filename_quantiles+' do not match for an unknown reason !')
+            else:
+                print('The lats in <nc_fc> and <nc_quantile> match !')
+
+            # in case a match is detected, re-index the quantiles and forecasts with ascending latitudes, if necessary 
+            if nc_quantile['y'][0] < nc_quantile['y'][-1]:
+                print('WARNING: the latitudes in '+filename_quantiles+' come in ascending order and are inverted to be consistent with the order of the remaining datasets / variables (descending) !')
+                nc_quantile = flip_latitudes_and_data(nc_quantile,'y')
+
+            if nc_fc[lat_name[mm][vv]][0] < nc_fc[lat_name[mm][vv]][-1]:
+                print('WARNING: the latitudes in '+filename_forecast+' come in ascending order and are inverted to be consistent with the order of the remaining datasets / variables (descending) !')
+                nc_fc = flip_latitudes_and_data(nc_fc,lat_name[mm][vv])
 
             #optionally apply land sea mask; set values of sea to nan
-            if variable_std[mm][vv] in masked_variable_std:
-                print('Upon user request, values for sea grid-boxes are set to nan for '+variable_std[mm][vv]+' ! ')                
+            if variable_std[mm][vv] in masked_variables_std:
+                print('Upon user request, values for sea grid-boxes are set to nan for '+variable_std[mm][vv]+' ! ')               
+                
                 #get mask label as a function of the requested sub-domain
-                if domain in ('medcof','medcof2'):
-                    masklabel = 'Medcof'
-                elif domain == 'iberia':
-                    masklabel = domain[0].upper()+domain[1:]# mask name is Uppercase for iberian domain, i.e. "Iberia"
+                
+                # if domain in ('medcof','medcof2'):
+                #     masklabel = 'Medcof'
+                # elif domain == 'iberia':
+                #     masklabel = domain[0].upper()+domain[1:]# mask name is Uppercase for iberian domain, i.e. "Iberia"
+                # else:
+                #     raise ValueError('Check entry for <domain> input variable !')                
+                # mask_file = mask_dir+'/ECMWF_Land_'+masklabel+'_ascending_lat.nc'
+
+                if domain == 'medcof':
+                    mask_file_indir = 'ECMWF_Land_Medcof_descending_lat_reformatted.nc' # mask file as it appears in its directory
+                elif domain == 'Iberia':
+                    mask_file_indir = 'PTI-grid_Iberia_descending_lat_reformatted.nc'
+                elif domain == 'Canarias':
+                    mask_file_indir = 'PTI-grid_Canarias_descending_lat_reformatted.nc'
                 else:
-                    raise ValueError('Check entry for <domain> input variable !')                
-                mask_file = mask_dir+'/ECMWF_Land_'+masklabel+'_ascending_lat.nc'
+                    raise ValueError('Check entry for <domain> input parameter !')                
+                
+                mask_file = mask_dir+'/'+mask_file_indir #here, descending lats are needed (check why the DataArrays behave distinct concerning ascending or descending lats in pySeasonal)
+                
                 nc_mask = xr.open_dataset(mask_file) #open the mask file
-                # nc_mask = nc_mask.reindex(latitude=list(reversed(nc_mask.latitude))) #re-index the mask file in order to put the latitudes in ascending order
-                mask_appended = np.tile(nc_mask.mask.values,(len(nc_fc.time),len(nc_fc.member),1,1))
+
+                #check wether the lats and lons in mask is consistent with those found in the forecast array to be masked
+                if any(nc_mask.lat.values != nc_fc[lat_name[mm][vv]].values) or any(nc_mask.lon.values != nc_fc[lon_name[mm][vv]].values):
+                    raise valueError ('The lats and lons in <nc_mask> do not match the '+lat_name[mm][vv]+' and '+lon_name[mm][vv]+' in <nc_fc> !')
+
+                # if nc_mask['lat'][0] < nc_mask['lat'][-1]:
+                #    print('Warning: Reindex mask file with flipped latitudes in order to assure that they are descending !')
+                #    pdb.set_trace()
+                #    nc_mask = nc_mask.reindex(lat=list(reversed(nc_mask.lat))) #re-index the mask file in order to put the latitudes in ascending order
+
+                # pdb.set_trace()
+                mask_appended = np.tile(nc_mask['mask'].values,(len(nc_fc.time),len(nc_fc.member),1,1))                
                 nc_fc = nc_fc.where(mask_appended == 1, np.nan) #retain grid-boxes marked with 1 in mask
                 #nc_fc = nc_fc.where(mask_appended == 1, nc_fc, np.nan) #retain grid-boxes marked with 1 in mask
                 nc_mask.close()
                 del(nc_mask)
-            elif variable_std[mm][vv] not in masked_variable_std:
+            elif variable_std[mm][vv] not in masked_variables_std:
                 print('As requested by the user, the forecast probabilities are not filtered by a land-sea mask for '+variable_std[mm][vv]+' !')
             else:
-                raise ValueError('check whether <variable_std[mm][vv]> is in <masked_variable_std> !')
+                raise ValueError('check whether <variable_std[mm][vv]> is in <masked_variables_std> !')
 
             #a seventh forecast months was erroneously added to the SPEI-3-M from cmcc35. This is corrected here
             if models[mm] == 'cmcc' and version[mm] == '35' and variable_fc[mm][vv] == 'SPEI-3-M':
@@ -193,13 +246,8 @@ for ag in np.arange(len(agg_label)):
             
             #check if the latitudes are in the right order or must be flipped to be consistent with the obserations used for validation
             if nc_fc[lat_name[mm][vv]][0].values < nc_fc[lat_name[mm][vv]][-1].values:
-                print('WARNING: the latitudes in '+filename_forecast+' come in ascending order and are inverted to be consistent with the order of the remaining datasets / variables (descending) !')
-                if lat_name[mm][vv] == 'lat':
-                    nc_fc = nc_fc.reindex(lat=list(reversed(nc_fc.lat)))
-                elif lat_name[mm][vv] == 'y':
-                    nc_fc = nc_fc.reindex(y=list(reversed(nc_fc.y)))
-                else:
-                    raise Exception('ERROR: unexpected entry for <lat_name[mm][vv]> !')
+                print('WARNING: the latitudes and associated data in '+filename_forecast+' come in descending order and are inverted to be consistent with the order of the remaining datasets / variables (descending) !')
+                nc_fc = flip_latitudes_and_data(nc_fc,lat_name[mm][vv])
 
             #transform GCM variables and units, if necessary
             nc_fc, file_valid = transform_gcm_variable(nc_fc,variable_fc[mm][vv],variable_std[mm][vv],models[mm],version[mm])
@@ -325,7 +373,7 @@ for ag in np.arange(len(agg_label)):
             out_arr_singlevar = out_arr.sel(variable=variable_std[mm][vvv]).drop_vars("variable")
             out_arr_singlevar.attrs['variable'] = variable_std[mm][vvv]
             encoding = dict(probability=dict(chunksizes=(1, 1, 1, 1, 1, len(nc_fc[lat_name[mm][-1]]), len(nc_fc[lon_name[mm][-1]])))) #https://docs.xarray.dev/en/stable/user-guide/io.html#writing-encoded-data
-            savename_out_arr_singlevar = dir_forecast+'/probability_'+agg_label[ag]+'_'+models[mm]+version[mm]+'_'+variable_std[mm][vvv]+'_init_'+str(year_init)+str(month_init).zfill(2)+'_dtr_'+detrended+'_refyears_'+str(years_quantile[mm][0])+'_'+str(years_quantile[mm][1])+'_'+quantile_version+'.nc'
+            savename_out_arr_singlevar = dir_forecast+'/probability_'+agg_label[ag]+'_'+models[mm]+version[mm]+'_'+variable_std[mm][vvv]+'_'+domain+'_init_'+str(year_init)+str(month_init).zfill(2)+'_dtr_'+detrended+'_refyears_'+str(years_quantile[mm][0])+'_'+str(years_quantile[mm][1])+'_'+quantile_version+'.nc'
             out_arr_singlevar.to_netcdf(savename_out_arr_singlevar,encoding=encoding)
             out_arr_singlevar.close()
             del(out_arr_singlevar)
@@ -340,7 +388,7 @@ for ag in np.arange(len(agg_label)):
         # del(lower_xr,upper_xr,seas_mean,nc_fc,out_arr)
             
         nc_quantile.close()
-        del(nc_quantile)
+        # del(nc_quantile)
 
 print('INFO: pred2tercile_operational.py has been run successfully ! The netcdf output file has been stored at '+dir_forecast)
 

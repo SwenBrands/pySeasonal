@@ -12,44 +12,61 @@ import os
 import xesmf
 import pandas as pd
 import pdb
-exec(open('functions_seasonal.py').read()) #reads the <functions_seasonal.py> script containing a set of custom functions needed here
+import yaml
+from pathlib import Path
+
+# INDICATE CONFIGURATION FILE ######################################
+
+configuration_file = 'config_for_aggregate_obs_Canarias.yaml'
+# configuration_file = 'config_for_aggregate_obs_Iberia.yaml'
+# configuration_file = 'config_for_aggregate_obs_medcof.yaml'
+
+####################################################################
+
+#this is a function to load the configuration file
+def load_config(config_file='config/'+configuration_file):
+    """Load configuration from YAML file"""
+    config_path = Path(__file__).parent / config_file
+    print('The path of the configuration file is '+str(config_path))
+    with open(config_path, 'r') as file:
+        config = yaml.safe_load(file)
+    
+    # Setup paths based on GCM_STORE environment variable
+    gcm_store = os.getenv('GCM_STORE', 'lustre')
+    if gcm_store in config['paths']:
+        paths = config['paths'][gcm_store]
+        config['paths'] = paths
+    else:
+        raise ValueError('Unknown entry for <gcm_store> !')
+    
+    return config
+
+# Load configuration
+config = load_config()
 
 #set input parameters for observational datasets to be regridded:
-obs = 'PTI-grid-v2' #name of the observational / reanalysis dataset that will be regridded: 'era5', 'PTI-grid-v2'
-agg_src = 'mon' #'day' or 'mon': temporal aggregation of the observational input files, pertains to the <obs> loop indicated with <oo> below
-startyear_file = 1981 #start year of the obs file as indicated in filename
-endyear_file = 2022 #corresponding end year
-#variables = ['pvpot','SPEI-3','fwi'] #variables to be regridded
-#variables_nc = ['pvpot','SPEI-3','FWI'] #variable names with the netCDF file
-variables = ['FD','SU','TR'] #variables to be regridded
-variables_nc = ['FD','SU','TR'] #variable names with the netCDF file
+obs = config['obs'] #name of the observational / reanalysis dataset that will be regridded: 'era5', 'PTI-grid-v2'
+agg_src = config['agg_src'] #'day' or 'mon': temporal aggregation of the observational input files, pertains to the <obs> loop indicated with <oo> below
+startyear_file = config['startyear_file'] #start year of the obs file as indicated in filename
+endyear_file = config['endyear_file'] #corresponding end year
+variables = config['variables'] #variables to be regridded
+variables_nc = config['variables_nc'] #variable names with the netCDF file
 years = [1981,2022] #years to be regridded
-file_system = 'lustre' #lustre or myLaptop; used to create the path structure to the input and output files
+domain = config['domain'] #spatial domain the model data is available on. So far, this is just a label used in the output filename.
+resolution = config['resolution'] #resolution shortcut used in the input variable names
+grid_name = config['grid_name'] #here used as label to save the output netcdf file: ecmwf51 for 1 degree datasets, PTI-grid-v2 for downscaled datasets
+int_method = config['int_method'] #here used as label to save the output netcdf file, ask Adri if this method was used, 'conservative_normed' or 'upscaled'
 
-# #set MEDCOF domain
-# domain = 'medcof' #spatial domain the model data is available on. So far, this is just a label used in the output filename.
-# resolution = '1degree' #resolution shortcut used in the input variable names
-
-#set Iberia or Canarias domains
-domain = 'Canarias' #spatial domain the model data is available on. So far, this is just a label used in the output filename.
-resolution = '5km' #resolution shortcut used in the input variable names
-
-grid_name = 'PTI-grid-v2' #here used as label to save the output netcdf file: ecmwf51 for 1 degree datasets, PTI-grid-v2 for downscaled datasets
-int_method = 'upscaled' #here used as label to save the output netcdf file, ask Adri if this method was used, 'conservative_normed' or 'upscaled'
+# Extract paths from configuration
+paths = config['paths']
+home = paths['home']
+path_obs_base = paths['path_obs_base']
+savepath_base = paths['savepath_base']
+rundir = paths['rundir']
 
 ## EXECUTE #############################################################
-#set basic path structure for observations and land-sea masks from the models
-if file_system == 'lustre' and domain == 'medcof':
-    home = '/lustre/gmeteo/PTICLIMA'
-    path_obs_base = home+'/DATA/REANALYSIS' #base path upon which the final path to the obs data is constructed
-    savepath_base = home+'/Results/seasonal/obs/regridded' #This is the common directory for regridded monthly observations; what is placed here will be processed by get_skill_season.py
-elif file_system == 'lustre' and domain == 'Canarias':  # /lustre/gmeteo/PTICLIMA/DATA/OBSERVATIONS/PTI-grid-v2/data_derived_5km/Canarias/mon
-    home = '/lustre/gmeteo/PTICLIMA'
-    path_obs_base = home+'/DATA/OBSERVATIONS' #base path upon which the final path to the obs data is constructed
-    savepath_base = home+'/Results/seasonal/obs/regridded' #This is the common directory for regridded monthly observations; what is placed here will be processed by get_skill_season.py
-else:
-    raise ValueError('Unknown entry for <file_system> input parameter !')
-print('The file system is '+file_system+'...')
+os.chdir(rundir) #go to running directory
+exec(open('functions_seasonal.py').read()) #reads the <functions_seasonal.py> script containing a set of custom functions needed here
 
 #create output directory if it does not exist.
 if os.path.isdir(savepath_base+'/'+obs) != True:
@@ -57,17 +74,17 @@ if os.path.isdir(savepath_base+'/'+obs) != True:
 
 #Load observations, cut out years indicated in <years> and aggregate to monthly mean value. Then save to netcdf
 for vv in np.arange(len(variables)):
-    print('Processing '+variables[vv]+' from '+obs+' for the years '+str(years)+' on file system '+file_system+'...')
+    print('Processing '+variables[vv]+' from '+obs+' for the years '+str(years))
     if variables[vv] in ('t2m','tp','sst','z500','si10','ssrd','msl'):
         raise ValueError(variables[vv]+' are already available on monthly timescale in '+path_obs_base+' because they have been already donwloaded from CDS!')
     
     #define path to the file and loading function as a function of the variable (variables may come from different providers using distinct rules)
     if domain == 'medcof':
         if variables[vv] == 'fwi':
-            path_obs_data = path_obs_base+'/'+obs.upper()+'/data_derived/'+domain+'_'+resolution+'/'+variables[vv]+'12/'+variables[vv]+'_'+domain+'_'+resolution+'.nc'
+            path_obs_data = path_obs_base+'/'+obs.upper()+'/data_derived/'+domain+'_'+resolution+'/day/'+variables[vv]+'12/'+variables[vv]+'_'+domain+'_'+resolution+'.nc'
             nc = xr.open_dataset(path_obs_data, decode_timedelta=False)
         elif variables[vv] == 'pvpot':
-            path_obs_data = path_obs_base+'/'+obs.upper()+'/data_derived/'+domain+'_'+resolution+'/'+variables[vv]+'/'+variables[vv]+'_'+domain+'_'+resolution+'_DM.nc'
+            path_obs_data = path_obs_base+'/'+obs.upper()+'/data_derived/'+domain+'_'+resolution+'/day/'+variables[vv]+'/'+variables[vv]+'_'+domain+'_'+resolution+'_DM.nc'
             nc = xr.open_dataset(path_obs_data, decode_timedelta=False)
         elif variables[vv] == 'SPEI-3':
             #path_obs_data = path_obs_base+'/'+obs+'/'+agg_src+'/'+domain+'_'+resolution+'/'+variables[vv]+'/'+variables[vv]+'_'+obs.upper()+'_'+agg_src+'_*.nc' #SPEI-3_ERA5_day_2021.nc
@@ -110,17 +127,16 @@ for vv in np.arange(len(variables)):
     # add units
     # add exception for pvpot, which currently comes without units
     try:
-        print(nc[variables[vv]].units)
+        units_content = nc[variables[vv]].units
     except:
+        pdb.set_trace()
         print('WARNING: Units for '+variables[vv]+' are missing and will be added now !')
         if variables[vv] == 'pvpot':
             units_content = 'index value ranging from 0 to 1'
             print('WARNING: Setting unit for '+variables[vv]+' to '+units_content)
-            nc[variables[vv]].attrs['unit'] = units_content
-        # else:
-        #     # pdb.set_trace() #for some reason, xarray does not read the <units> attribute from netcdf files created by climate4R neither does it permit to store a new <units> attribute. As a work-around, <longname> is read instead and saved as <unit>; correct this in future versions !
-        #     units_content = nc[variables[vv]].longname
- 
+    
+    nc[variables[vv]].attrs['units'] = units_content
+    
     # nc.x.attrs('standard_name') = 'longitude'
     # nc.x.attrs('long_name') = 'longitude'
     # nc.x.attrs('units') = 'degrees_east'
@@ -128,6 +144,7 @@ for vv in np.arange(len(variables)):
     # nc.y.attrs('long_name') = 'latitude'
     # nc.y.attrs('units') = 'degrees_north'
     savepath = savepath_base+'/'+obs+'/'+variables[vv]+'_mon_'+obs+'_on_'+grid_name+'_grid_'+int_method+'_'+domain+'_'+str(years[0])+'_'+str(years[1])+'.nc'
+    pdb.set_trace()
     nc.to_netcdf(savepath)
     nc.close()
     del(nc)

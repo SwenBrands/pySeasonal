@@ -13,7 +13,16 @@ import pdb
 import yaml
 from pathlib import Path
 
-def load_config(config_file='config/config_for_seas2ipe.yaml'):
+# INDICATE CONFIGURATION FILE ######################################
+
+configuration_file = 'config_for_seas2ipe_Canarias.yaml'
+# configuration_file = 'config_for_seas2ipe_Iberia.yaml'
+# configuration_file = 'config_for_seas2ipe_medcof.yaml'
+
+####################################################################
+
+
+def load_config(config_file='config/'+configuration_file):
     """Load configuration from YAML file"""
     config_path = Path(__file__).parent.parent / config_file
     print('The path of the configuration file is '+str(config_path))
@@ -55,9 +64,9 @@ else:
     print(date.today())
 print(year_init, month_init)
 
-# # Example year and run to run without passing any input arguments; comment or delete the next two lines in operative use
-# year_init = 2025 #a list containing the years the forecast are initialized on, will be looped through with yy
-# month_init = 10 #a list containing the corresponding months the forecast are initialized on, will be called while looping through <year_init> (with yy), i.e. must have the same length
+# Example year and run to run without passing any input arguments; comment or delete the next two lines in operative use
+year_init = 2024 #a list containing the years the forecast are initialized on, will be looped through with yy
+month_init = 10 #a list containing the corresponding months the forecast are initialized on, will be called while looping through <year_init> (with yy), i.e. must have the same length
 
 # Extract configuration variables
 vers = config['version']
@@ -122,7 +131,7 @@ for ag in np.arange(len(agg_labels)):
         nc_forecast = xr.Dataset() #create empty xarray dataset to be filled with xr data arrays in the next loop
         for vv in np.arange(len(variables_std)):
             #load the forecast for a specific variable
-            filename_forecast = dir_forecast+'/probability_'+agg_labels[ag]+'_'+model[mm]+version[mm]+'_'+variables_std[vv]+'_init_'+str(year_init)+str(month_init).zfill(2)+'_dtr_'+detrended+'_refyears_'+str(years_quantile[mm][0])+'_'+str(years_quantile[mm][1])+'_'+vers+'.nc'
+            filename_forecast = dir_forecast+'/probability_'+agg_labels[ag]+'_'+model[mm]+version[mm]+'_'+variables_std[vv]+'_'+domain+'_init_'+str(year_init)+str(month_init).zfill(2)+'_dtr_'+detrended+'_refyears_'+str(years_quantile[mm][0])+'_'+str(years_quantile[mm][1])+'_'+vers+'.nc'
             nc_forecast_step = xr.open_dataset(filename_forecast) #get the xr data array containing the tercile probabilities for a specific variable
             
             #check whether the previously stored model and version thereof match those requested by this script

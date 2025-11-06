@@ -151,7 +151,7 @@ for ag in np.arange(len(agg_label)):
             filename_input = 'validation_results_season_'+variables[mm][0]+'_'+agg_label[ag]+'_'+models[mm]+'_vs_'+ref_dataset[mm][0]+'_'+domain+'_corroutlier_'+corr_outlier+'_detrended_'+detrending[0]+'_'+str(file_years[mm][0])+'_'+str(file_years[mm][1])+'_'+subperiods[0]+'_'+vers+'.nc'
         else:
             raise ValueError('Unknown entry for <models[mm]> !')
-        nc_results = xr.open_dataset(dir_netcdf_scores+'/'+filename_input) #load the input dataset
+        nc_results = xr.open_dataset(dir_netcdf_scores+'/'+filename_input, decode_timedelta=False) #load the input dataset
         lead_arr[ag,mm] = len(nc_results.lead.values)
         nc_results.close()
 lead_arr = xr.DataArray(lead_arr,coords=[agg_label,models],dims=['aggregation','model'], name='lead-time')
@@ -168,19 +168,35 @@ for ag in np.arange(len(agg_label)):
                     colormaps_meanvals_spatial = []
                     #load netcdf files containing the verification results
                     filename_input = 'validation_results_season_'+variables[mm][vv]+'_'+agg_label[ag]+'_'+models[mm]+'_vs_'+ref_dataset[mm][vv]+'_'+domain+'_corroutlier_'+corr_outlier+'_detrended_'+detrending[det]+'_'+str(file_years[mm][0])+'_'+str(file_years[mm][1])+'_'+subperiods[su]+'_'+vers+'.nc'
-                    nc_results = xr.open_dataset(dir_netcdf_scores+'/'+filename_input) #load the input dataset
+                    nc_results = xr.open_dataset(dir_netcdf_scores+'/'+filename_input, decode_timedelta=False) #load the input dataset
                     
                     #optionally apply land sea mask; set values of sea to nan
                     if variables[mm][vv] in masked_variables:
                         print('Upon user request, values for sea grid-boxes are set to nan for '+variables[mm][vv]+' !')               
                         #get mask label as a function of the requested sub-domain
-                        if sub_domain in ('medcof','medcof2'):
-                            masklabel = 'Medcof'
+                        
+                        # if sub_domain in ('medcof','medcof2'):
+                        #     masklabel = 'Medcof'
+                        # elif domain == 'medcof' and sub_domain == 'iberia':
+                        #     masklabel = sub_domain[0].upper()+sub_domain[1:]
+                        # else:
+                        #     raise Excpetion('ERROR: Xheck entry for <sub_domain> input variable !')                
+                        # mask_file = mask_dir+'/ECMWF_Land_'+masklabel+'_ascending_lat.nc'
+
+                        #get mask label as a function of the requested sub-domain
+                        if domain == 'medcof' and sub_domain in ('medcof','medcof2'):
+                            mask_file_indir = 'ECMWF_Land_Medcof.nc' # mask file as it appears in its directory
                         elif domain == 'medcof' and sub_domain == 'iberia':
-                            masklabel = sub_domain[0].upper()+sub_domain[1:]
+                            mask_file_indir = 'ECMWF_Land_Iberia.nc'
+                        elif domain == 'Iberia' and sub_domain == 'Iberia':
+                            mask_file_indir = 'PTI-grid_Iberia.nc'
+                        elif domain == 'Canarias' and sub_domain == 'Canarias':
+                            mask_file_indir = 'PTI-grid_Canarias.nc'
                         else:
-                            raise Excpetion('ERROR: Xheck entry for <sub_domain> input variable !')                
-                        mask_file = mask_dir+'/ECMWF_Land_'+masklabel+'_ascending_lat.nc'
+                            raise ValueError('Check entry for <domain> and/or <sub_domain> input parameters !')
+
+                        mask_file = mask_dir+'/'+mask_file_indir #here, descending lats are needed (check why the DataArrays behave distinct concerning ascending or descending lats in pySeasonal)    
+                        
                         nc_mask = xr.open_dataset(mask_file)
                         mask_appended = np.tile(nc_mask.mask.values,(len(nc_results.season),len(nc_results.lead),1,1))
                         nc_results = nc_results.where(mask_appended == 1, np.nan) #retain grid-boxes marked with 1 in mask
@@ -321,7 +337,7 @@ for ag in np.arange(len(agg_label)):
                     
                     #load netcdf files containing the verification results
                     filename_input = 'validation_results_season_'+variables[mm][vv]+'_'+agg_label[ag]+'_'+models[mm]+'_vs_'+ref_dataset[mm][vv]+'_'+domain+'_corroutlier_'+corr_outlier+'_detrended_'+detrending[det]+'_'+str(file_years[mm][0])+'_'+str(file_years[mm][1])+'_'+subperiods[su]+'_'+vers+'.nc'
-                    nc_results = xr.open_dataset(dir_netcdf_scores+'/'+filename_input)
+                    nc_results = xr.open_dataset(dir_netcdf_scores+'/'+filename_input, decode_timedelta=False)
                     lead_step = len(nc_results.lead.values) #length of the "lead" dimension
 
                     # #optionally apply land sea mask; set values of sea to nan
@@ -349,14 +365,31 @@ for ag in np.arange(len(agg_label)):
                     #optionally apply land sea mask; set values of sea to nan
                     if variables[mm][vv] in masked_variables:
                         print('Upon user request, values for sea grid-boxes are set to nan for '+variables[mm][vv]+' !')               
+                        
+                        # #get mask label as a function of the requested sub-domain
+                        # if domain == 'medcof' and sub_domain in ('medcof','medcof2'):
+                        #     masklabel = 'Medcof'
+                        # elif domain == 'medcof' and sub_domain == 'iberia':
+                        #     masklabel = sub_domain[0].upper()+sub_domain[1:]
+                        # else:
+                        #     raise Excpetion('ERROR: Xheck entry for <domain> and/or <sub_domain> input parameters !')                
+                        # mask_file = mask_dir+'/ECMWF_Land_'+masklabel+'.nc'
+
+                        print('Upon user request set in ./config/config_for_plot_seasonal_validation_results.py, the skill values above the Sea are set to NAN for '+variables[mm][vv]+' ! ')            
                         #get mask label as a function of the requested sub-domain
                         if domain == 'medcof' and sub_domain in ('medcof','medcof2'):
-                            masklabel = 'Medcof'
+                            mask_file_indir = 'ECMWF_Land_Medcof.nc' # mask file as it appears in its directory
                         elif domain == 'medcof' and sub_domain == 'iberia':
-                            masklabel = sub_domain[0].upper()+sub_domain[1:]
+                            mask_file_indir = 'ECMWF_Land_Iberia.nc'
+                        elif domain == 'Iberia' and sub_domain == 'Iberia':
+                            mask_file_indir = 'PTI-grid_Iberia.nc'
+                        elif domain == 'Canarias' and sub_domain == 'Canarias':
+                            mask_file_indir = 'PTI-grid_Canarias.nc'
                         else:
-                            raise Excpetion('ERROR: Xheck entry for <domain> and/or <sub_domain> input parameters !')                
-                        mask_file = mask_dir+'/ECMWF_Land_'+masklabel+'.nc'
+                            raise ValueError('Check entry for <domain> and/or <sub_domain> input parameters !')                
+                        
+                        mask_file = mask_dir+'/'+mask_file_indir #here, descending lats are needed (check why the DataArrays behave distinct concerning ascending or descending lats in pySeasonal)
+                        
                         nc_mask = xr.open_dataset(mask_file)
                         mask_appended = np.tile(nc_mask.mask.values,(len(nc_results.season),len(nc_results.lead),1,1))
                         nc_results = nc_results.where(mask_appended == 1, np.nan) #retain grid-boxes marked with 1 in mask

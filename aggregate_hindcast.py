@@ -38,8 +38,8 @@ def load_config(config_file='config/'+configuration_file):
     
     # Setup paths based on GCM_STORE environment variable
     gcm_store = os.getenv('GCM_STORE', 'lustre')
-    if gcm_store in config['path']:
-        paths = config['path'][gcm_store]
+    if gcm_store in config['paths']:
+        paths = config['paths'][gcm_store]
         config['paths'] = paths
     else:
         raise ValueError('Unknown entry for <gcm_store> !')

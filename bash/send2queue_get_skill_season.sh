@@ -23,16 +23,17 @@ exectime=${3}
 memory=${4}
 vers=${5}
 model=${6}
-variable=${7}
-agg_label=${8}
-modulator=${9}
-phase=${10}
-RUNDIR=${11}
-BASHDIR=${12}
-PYDIR=${13}
-LOGDIR=${14}
-FLAGDIR=${15}
-jobname=${16}
+domain_for_config=${7}
+variable=${8}
+agg_label=${9}
+modulator=${10}
+phase=${11}
+RUNDIR=${12}
+BASHDIR=${13}
+PYDIR=${14}
+LOGDIR=${15}
+FLAGDIR=${16}
+jobname=${17}
 
 ## EXECUTE #########################################################################
 checkflag=yes
@@ -58,7 +59,7 @@ QSUB="sbatch \
     --mem=${memory} \
     --mail-user=swen.brands@gmail.com \
     --mail-type=FAIL,TIME_LIMIT \
-    ./get_skill_season.sh ${vers} ${model} ${variable} ${agg_label} ${modulator} ${phase} ${RUNDIR} ${PYDIR} ${LOGDIR} ${FLAGDIR} ${jobname}" #get_skill_season.sh contains the Python script to be run on the working node
+    ./get_skill_season.sh ${vers} ${model} ${domain_for_config} ${variable} ${agg_label} ${modulator} ${phase} ${RUNDIR} ${PYDIR} ${LOGDIR} ${FLAGDIR} ${jobname}" #get_skill_season.sh contains the Python script to be run on the working node
 
 #go to bash directory and launch the command to queue
 cd ${BASHDIR}
