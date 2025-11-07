@@ -121,7 +121,7 @@ if os.path.isdir(dir_output) != True:
 for ag in np.arange(len(agg_labels)):    
     for mm in np.arange(len(model)):
         #load the skill masks for a given aggregation window; multiple variables are and models located within the same file.
-        filename_validation = dir_validation+'/'+agg_labels[ag]+'/skill_masks/skill_masks_pticlima_'+domain+'_'+agg_labels[ag]+'_'+model[mm]+version[mm]+'_'+vers+'.nc'
+        filename_validation = dir_validation+'/skill_masks/'+domain+'/'+agg_labels[ag]+'/skill_masks_pticlima_'+domain+'_'+agg_labels[ag]+'_'+model[mm]+version[mm]+'_'+vers+'.nc'
         nc_val = xr.open_dataset(filename_validation)
 
         #check if model name in skill mask file matches the requested model name
@@ -131,7 +131,7 @@ for ag in np.arange(len(agg_labels)):
         nc_forecast = xr.Dataset() #create empty xarray dataset to be filled with xr data arrays in the next loop
         for vv in np.arange(len(variables_std)):
             #load the forecast for a specific variable
-            filename_forecast = dir_forecast+'/probability_'+agg_labels[ag]+'_'+model[mm]+version[mm]+'_'+variables_std[vv]+'_'+domain+'_init_'+str(year_init)+str(month_init).zfill(2)+'_dtr_'+detrended+'_refyears_'+str(years_quantile[mm][0])+'_'+str(years_quantile[mm][1])+'_'+vers+'.nc'
+            filename_forecast = dir_forecast+'/'+domain+'/probability_'+agg_labels[ag]+'_'+model[mm]+version[mm]+'_'+variables_std[vv]+'_'+domain+'_init_'+str(year_init)+str(month_init).zfill(2)+'_dtr_'+detrended+'_refyears_'+str(years_quantile[mm][0])+'_'+str(years_quantile[mm][1])+'_'+vers+'.nc'
             nc_forecast_step = xr.open_dataset(filename_forecast) #get the xr data array containing the tercile probabilities for a specific variable
             
             #check whether the previously stored model and version thereof match those requested by this script

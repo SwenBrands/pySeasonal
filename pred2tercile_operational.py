@@ -128,7 +128,7 @@ for ag in np.arange(len(agg_label)):
         for vv in np.arange(len(variable_fc[mm])):
 
             # #load the quantiles file
-            filename_quantiles = dir_quantile+'/'+quantile_version+'/'+agg_label[ag]+'/quantiles/quantiles_pticlima_'+agg_label[ag]+'_'+models[mm]+version[mm]+'_'+variable_std[mm][vv]+'_'+domain+'_'+str(years_quantile[mm][0])+'_'+str(years_quantile[mm][1])+'_'+quantile_version+'.nc'
+            filename_quantiles = dir_quantile+'/'+quantile_version+'/quantiles/'+domain+'/'+agg_label[ag]+'/quantiles_pticlima_'+agg_label[ag]+'_'+models[mm]+version[mm]+'_'+variable_std[mm][vv]+'_'+domain+'_'+str(years_quantile[mm][0])+'_'+str(years_quantile[mm][1])+'_'+quantile_version+'.nc'
 
             # load quantile files and check whether their lats are ascending, correct them if they are descending
             nc_quantile = xr.open_dataset(filename_quantiles)
@@ -192,16 +192,7 @@ for ag in np.arange(len(agg_label)):
             if variable_std[mm][vv] in masked_variables_std:
                 print('Upon user request, values for sea grid-boxes are set to nan for '+variable_std[mm][vv]+' ! ')               
                 
-                #get mask label as a function of the requested sub-domain
-                
-                # if domain in ('medcof','medcof2'):
-                #     masklabel = 'Medcof'
-                # elif domain == 'iberia':
-                #     masklabel = domain[0].upper()+domain[1:]# mask name is Uppercase for iberian domain, i.e. "Iberia"
-                # else:
-                #     raise ValueError('Check entry for <domain> input variable !')                
-                # mask_file = mask_dir+'/ECMWF_Land_'+masklabel+'_ascending_lat.nc'
-
+                #get path to mask file as a function of the requested sub-domain
                 if domain == 'medcof':
                     mask_file_indir = 'ECMWF_Land_Medcof_descending_lat_reformatted.nc' # mask file as it appears in its directory
                 elif domain == 'Iberia':
@@ -213,23 +204,9 @@ for ag in np.arange(len(agg_label)):
                 
                 mask_file = mask_dir+'/'+mask_file_indir #here, descending lats are needed (check why the DataArrays behave distinct concerning ascending or descending lats in pySeasonal)
                 
-                nc_mask = xr.open_dataset(mask_file) #open the mask file
-
-                #check wether the lats and lons in mask is consistent with those found in the forecast array to be masked
-                if any(nc_mask.lat.values != nc_fc[lat_name[mm][vv]].values) or any(nc_mask.lon.values != nc_fc[lon_name[mm][vv]].values):
-                    raise valueError ('The lats and lons in <nc_mask> do not match the '+lat_name[mm][vv]+' and '+lon_name[mm][vv]+' in <nc_fc> !')
-
-                # if nc_mask['lat'][0] < nc_mask['lat'][-1]:
-                #    print('Warning: Reindex mask file with flipped latitudes in order to assure that they are descending !')
-                #    pdb.set_trace()
-                #    nc_mask = nc_mask.reindex(lat=list(reversed(nc_mask.lat))) #re-index the mask file in order to put the latitudes in ascending order
-
-                # pdb.set_trace()
-                mask_appended = np.tile(nc_mask['mask'].values,(len(nc_fc.time),len(nc_fc.member),1,1))                
-                nc_fc = nc_fc.where(mask_appended == 1, np.nan) #retain grid-boxes marked with 1 in mask
-                #nc_fc = nc_fc.where(mask_appended == 1, nc_fc, np.nan) #retain grid-boxes marked with 1 in mask
-                nc_mask.close()
-                del(nc_mask)
+                #apply land-sea mask
+                nc_fc = apply_sea_mask(nc_fc,mask_file,lat_name[mm][vv],lon_name[mm][vv])
+                
             elif variable_std[mm][vv] not in masked_variables_std:
                 print('As requested by the user, the forecast probabilities are not filtered by a land-sea mask for '+variable_std[mm][vv]+' !')
             else:
@@ -373,7 +350,7 @@ for ag in np.arange(len(agg_label)):
             out_arr_singlevar = out_arr.sel(variable=variable_std[mm][vvv]).drop_vars("variable")
             out_arr_singlevar.attrs['variable'] = variable_std[mm][vvv]
             encoding = dict(probability=dict(chunksizes=(1, 1, 1, 1, 1, len(nc_fc[lat_name[mm][-1]]), len(nc_fc[lon_name[mm][-1]])))) #https://docs.xarray.dev/en/stable/user-guide/io.html#writing-encoded-data
-            savename_out_arr_singlevar = dir_forecast+'/probability_'+agg_label[ag]+'_'+models[mm]+version[mm]+'_'+variable_std[mm][vvv]+'_'+domain+'_init_'+str(year_init)+str(month_init).zfill(2)+'_dtr_'+detrended+'_refyears_'+str(years_quantile[mm][0])+'_'+str(years_quantile[mm][1])+'_'+quantile_version+'.nc'
+            savename_out_arr_singlevar = dir_forecast+'/'+domain+'/probability_'+agg_label[ag]+'_'+models[mm]+version[mm]+'_'+variable_std[mm][vvv]+'_'+domain+'_init_'+str(year_init)+str(month_init).zfill(2)+'_dtr_'+detrended+'_refyears_'+str(years_quantile[mm][0])+'_'+str(years_quantile[mm][1])+'_'+quantile_version+'.nc'
             out_arr_singlevar.to_netcdf(savename_out_arr_singlevar,encoding=encoding)
             out_arr_singlevar.close()
             del(out_arr_singlevar)
@@ -390,7 +367,7 @@ for ag in np.arange(len(agg_label)):
         nc_quantile.close()
         # del(nc_quantile)
 
-print('INFO: pred2tercile_operational.py has been run successfully ! The netcdf output file has been stored at '+dir_forecast)
+    print('INFO: pred2tercile_operational.py has been run successfully ! The netcdf output file containing the tercile probability forecasts has been stored at '+dir_forecast+'/'+domain)
 
 quit()
 #sys.exit(0)

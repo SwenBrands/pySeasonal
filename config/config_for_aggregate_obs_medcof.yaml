@@ -4,11 +4,12 @@ obs: 'era5' #name of the observational / reanalysis dataset that will be regridd
 agg_src: 'mon' #'day' or 'mon': temporal aggregation of the observational input files, pertains to the <obs> loop indicated with <oo> below
 startyear_file: 1981 #start year of the obs file as indicated in filename
 endyear_file: 2022 #corresponding end year
-variables: ['pvpot','SPEI-3','fwi'] #variables to be regridded
-variables_nc: ['pvpot','SPEI-3','FWI'] #variable names with the netCDF file
+variables: ['SPEI-3','fwi'] #variables to be regridded
+variables_nc: ['SPEI-3','FWI'] #variable names with the netCDF file
 years: [1981,2022] #years to be regridded
 
-domain: 'medcof' #spatial domain the model data is available on. So far, this is just a label used in the output filename.
+domain: 'medcof' #spatial domain the model data is available on. So far, this is just a label used in the output filename
+domain_label: 'medcof' #domain label used in file name; <domain_label> is added for consistency with the config files for Iberia and Canarias, whose domain label within the file name is not consistent with the folder the file has been stored in ("pen" for "Iberia" and "can" for "Canarias") 
 resolution: '1degree' #resolution shortcut used in the input variable names
 
 grid_name: 'ecmwf51' #here used as label to save the output netcdf file: ecmwf51 for 1 degree datasets, PTI-grid-v2 for downscaled datasets

@@ -16,48 +16,86 @@ def flip_latitudes_and_data(xr_ds_f,lat_name):
         raise ValueError('Unexpected entry for <lat_name> in flip_latitudes() function !')
     return(xr_ds_f)
 
-def apply_sea_mask(arr_f,mask_file_f):
+def apply_sea_mask(arr_f,mask_file_f,lat_name_f,lon_name_f):
     '''sets the values over the Sea, as provided by the netCDF file locted at <mask_file_f> to nan in <arr_f>;
-    Input: <arr_f> is an xarray DataArray with the dimensions detrended, variable, time, season, lead, y, x;
-    <mask_file_f> is a character string pointing to the path of the maks file in netCDF format. The function tests
-    whether the dimensions in <arr_f> are as expected and whether the latitutes in <arr_f> therein match those in <mask_file_f>.
+    Input: <arr_f> is an xarray DataArray or Dataset with specific dimensions checked below;
+    <mask_file_f> is a character string pointing to the path of the mask file in netCDF format; lat_name_f and lon_name_f are the latitude
+    and longitude names inside <arr_f>; the lat name in the mask file MUST be "lat" ! The function tests performs various consistency tests before actually applying the mask. 
     Ouput: returns the modified <arr_f> with nan values over the Sea'''
     
     nc_mask_f = xr.open_dataset(mask_file_f) #open the mask file
-    
+
     #check whether the latitudes in the mask file are descinding; otherwise return error
     if nc_mask_f.lat[0] <= nc_mask_f.lat[-1]:
-        raise valueError(' The latitudes in '+mask_file_f+' are ASCENDING and must be passed DESCENDING to apply_sea_mask() function ! ')
+        raise ValueError(' The latitudes in '+mask_file_f+' are ASCENDING and must be passed DESCENDING to apply_sea_mask() function ! ')
     elif nc_mask_f.lat[0] > nc_mask_f.lat[-1]:
         print(' The latitudes in '+mask_file_f+' are DESCENDING, as expected by the apply_sea_mask() function !')
     else:
-        raise valueError('unknown latitude order in '+mask_file_f)
+        raise ValueError('unknown latitude order in '+mask_file_f)
     
     #check whether the y coordinate values in the xarray DataArray are are descinding; otherwise return error
-    if arr_f.y[0] <= arr_f.y[-1]:
-        raise valueError(' The y coordinate values in <arr_f> are ASCENDING and must be passed DESCENDING to apply_sea_mask() function ! ')
-    elif arr_f.y[0] > arr_f.y[-1]:
+    if arr_f[lat_name_f][0] <= arr_f[lat_name_f][-1]:
+        raise ValueError(' The y coordinate values in <arr_f> are ASCENDING and must be passed DESCENDING to apply_sea_mask() function ! ')
+    elif arr_f[lat_name_f][0] > arr_f[lat_name_f][-1]:
         print(' The y coordinate values in <arr_f> are DESCENDING, as expected by the apply_sea_mask() function !')
     else:
-        raise valueError('unknown y coordinate order in <arr_f> !')
+        raise ValueError('unknown y coordinate order in <arr_f> !')
 
     #test for equal latitudes
-    if ~np.all(nc_mask_f.lat.values-arr_f.y.values == 0):
-        ValueError('<nc_mask_f.latitude> and <arr_f.y> do not match !')
+    if ~np.all(nc_mask_f.lat.values-arr_f[lat_name_f].values == 0):
+        ValueError('<nc_mask_f.lat> and <arr_f.'+lat_name_f+' do not match !')
 
-    # target_dims = list(dict(arr_f.dims).values())
-    
-    # test if dimensions in <arr_f> are as expected
-    target_dims = arr_f.dims
-    if target_dims != ('detrended', 'variable', 'time', 'season', 'lead', 'y', 'x'):
-        ValueError('The dimensions of <arr_f> are not as expected !')
-    
-    mask_appended_f = np.tile(nc_mask_f.mask.values,(arr_f.shape[0],arr_f.shape[1],arr_f.shape[2],arr_f.shape[3],arr_f.shape[4],1,1))
+    # expand the mask, either for the xr DataArray passed via get_skill_season.py or for the xr Dataset passed via plot_seasonal_validation.results.py
+    if isinstance(arr_f,xr.DataArray): #this is the format needed in get_skill_season.py
+        print('<arr_f> in apply_sea_mask() function is an xarray DataArray !')
+        # test if dimensions in <arr_f> are as expected
+        target_dims_f = arr_f.dims
+        if target_dims_f != ('detrended', 'variable', 'time', 'season', 'lead', lat_name_f, lon_name_f):
+            ValueError('The dimensions of <arr_f> DataArray are not as expected !')
+        elif target_dims_f == ('detrended', 'variable', 'time', 'season', 'lead', lat_name_f, lon_name_f):
+            print('The dimensions of <arr_f> DataArray are as expected: '+str(target_dims_f))
+        else:
+            ValueError('Unknown values in <target_dims_f> within apply_sea_mask() function !')
+        # extend the mask to match seven dimensions
+        mask_appended_f = np.tile(nc_mask_f.mask.values,(arr_f.shape[0],arr_f.shape[1],arr_f.shape[2],arr_f.shape[3],arr_f.shape[4],1,1))
+
+    elif isinstance(arr_f,xr.Dataset):#this is the format needed in plot_seasonal_validation_results.py
+        print('<arr_f> in apply_sea_mask() function is an xarray Dataset !')
+        first_arr_f = arr_f[list(arr_f.data_vars)[0]] #get first dataArray in dataset
+        target_dims_f = first_arr_f.dims #get dimensions of the first data Variable in arr_f
+                
+        # #rename latitudes and longitudes if necessary
+        # if 'lat' in target_dims_f:
+        #     arr_f = arr_f.rename({'lat' : 'y'})
+        # elif 'y' in target_dims_f:
+        #     print('The y coordinate was found in <arr_f> ! No conversion is needed.')
+        # else:
+        #     ValueError('Unknown name for y / latitude coordinate !')
+
+        # if 'lon' in target_dims_f:
+        #     arr_f = arr_f.rename({'lon' : 'x'})
+        # elif 'x' in target_dims_f:
+        #     print('The x coordinate was found in <arr_f> ! No conversion is needed.')
+        # else:
+        #     ValueError('Unknown name for x / longitude coordinate !')
+        
+        #check whether the coordinates sequence is as expected
+        if target_dims_f == ('season', 'lead', lat_name_f, lon_name_f) or target_dims_f == ('time', 'member', lat_name_f, lon_name_f):
+            print('The dimensions of <first_arr_f> data array in <arr_f> dataset are as expected: '+str(target_dims_f))
+        else:
+            ValueError('Unknown values in <target_dims_f> within apply_sea_mask() function !')
+        
+        mask_appended_f = np.tile(nc_mask_f.mask.values,(first_arr_f.shape[0],first_arr_f.shape[1],1,1))
+        first_arr_f.close()
+        del(first_arr_f)
+    else:
+        raise ValueError('unexpected instance for <arr_f> in apply_sea_mask() function !')
+
     arr_f = arr_f.where(~np.isnan(mask_appended_f), np.nan) #retain grid-boxes marked with 1 in mask
 
     #clean everything except arr_f, which will be returned to the script calling this function
     nc_mask_f.close()
-    del(nc_mask_f,mask_appended_f)
+    del(nc_mask_f,mask_appended_f,target_dims_f)
     return(arr_f) #returns masked xarray data array
 
 def assign_season_label(season_list_f):

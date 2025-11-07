@@ -18,7 +18,10 @@ para el fichero:
 En la ruta al fichero FD-C4 está puesto correctamente, pero falta por poner dentro del netCDF.
 
 
-5. Mai y Óscar: Para el pvpot como los índices mensuales nuevos (FD-C4, etc. ) las data variables dentro de los netCDF no tienen unidades, es decir que falta por incluir el atributo "units". Por ejemplo "number of days" o la unidad estándar que se use, si es que la hay.
+5. Hay inconsistencias con las minuscuclas y mayusculas en todas partes
 
 
-6. Hay inconsistencias con las minuscuclas y mayusculas en todas partes
+6. Corregir "TXth" en /lustre/gmeteo/PTICLIMA//DATA/OBSERVATIONS/PTI-grid-v2/data_derived_5km/Iberia/mon/SU/SU_pen.nc a "SU". Al calcular los días de verano, no se ha cambiado el nombre de la variable de orígen
+
+
+7. El indicador de dominio dentro del nombre del fichero netCDF de las obs de la PTI no es consistente con el nombre del directorio indicando el dominio ("pen" en "Iberia" y "can" en "Canarias")  

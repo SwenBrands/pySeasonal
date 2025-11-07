@@ -5,11 +5,11 @@ agg_src: 'mon' #'day' or 'mon': temporal aggregation of the observational input 
 startyear_file: 1981 #start year of the obs file as indicated in filename
 endyear_file: 2022 #corresponding end year
 variables: ['TXm', 'FD', 'SU', 'TR', 'Rx1day', 'Rx5day'] #variables to be regridded
-variables_nc: ['TXm', 'FD', 'SU', 'TR', 'Rx1day', 'Rx5day'] #variable names with the netCDF file
+variables_nc: ['TXm', 'FD', 'TXth', 'TR', 'Rx1day', 'Rx5day'] #variable names with the netCDF file
 years: [1981,2022] #years to be regridded
 
-domain: 'Canarias' #spatial domain the model data is available on. So far, this is just a label used in the output filename.
-domain_label: 'can' #domain label used in file name
+domain: 'Iberia' #spatial domain the model data is available on. So far, this is just a label used in the output filename
+domain_label: 'pen' #domain label used in file name
 resolution: '5km' #resolution shortcut used in the input variable names
 
 grid_name: 'PTI-grid-v2' #here used as label to save the output netcdf file: ecmwf51 for 1 degree datasets, PTI-grid-v2 for downscaled datasets

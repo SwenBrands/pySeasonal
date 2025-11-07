@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-'''aggregates ERA5 data on ecmwf51 grid produced by Predictia to monthly mean values compatible with the netCDF files produce by regrid_obs.py, both of which are then fed to get_skill_season.py'''
+'''aggregates ERA5 data on ecmwf51 grid produced by Predictia or gridded PTI observations to monthly mean values compatible with the netCDF files produce by regrid_obs.py, both of which are then fed to get_skill_season.py'''
 
 #load packages
 import numpy as np
@@ -53,6 +53,7 @@ variables = config['variables'] #variables to be regridded
 variables_nc = config['variables_nc'] #variable names with the netCDF file
 years = [1981,2022] #years to be regridded
 domain = config['domain'] #spatial domain the model data is available on. So far, this is just a label used in the output filename.
+domain_label = config['domain_label'] #domain label used in file name
 resolution = config['resolution'] #resolution shortcut used in the input variable names
 grid_name = config['grid_name'] #here used as label to save the output netcdf file: ecmwf51 for 1 degree datasets, PTI-grid-v2 for downscaled datasets
 int_method = config['int_method'] #here used as label to save the output netcdf file, ask Adri if this method was used, 'conservative_normed' or 'upscaled'
@@ -81,10 +82,10 @@ for vv in np.arange(len(variables)):
     #define path to the file and loading function as a function of the variable (variables may come from different providers using distinct rules)
     if domain == 'medcof':
         if variables[vv] == 'fwi':
-            path_obs_data = path_obs_base+'/'+obs.upper()+'/data_derived/'+domain+'_'+resolution+'/day/'+variables[vv]+'12/'+variables[vv]+'_'+domain+'_'+resolution+'.nc'
+            path_obs_data = path_obs_base+'/'+obs.upper()+'/data_derived/'+domain+'_'+resolution+'/day/'+variables[vv]+'12/'+variables[vv]+'_'+domain_label+'_'+resolution+'.nc'
             nc = xr.open_dataset(path_obs_data, decode_timedelta=False)
         elif variables[vv] == 'pvpot':
-            path_obs_data = path_obs_base+'/'+obs.upper()+'/data_derived/'+domain+'_'+resolution+'/day/'+variables[vv]+'/'+variables[vv]+'_'+domain+'_'+resolution+'_DM.nc'
+            path_obs_data = path_obs_base+'/'+obs.upper()+'/data_derived/'+domain+'_'+resolution+'/day/'+variables[vv]+'/'+variables[vv]+'_'+domain_label+'_'+resolution+'_DM.nc'
             nc = xr.open_dataset(path_obs_data, decode_timedelta=False)
         elif variables[vv] == 'SPEI-3':
             #path_obs_data = path_obs_base+'/'+obs+'/'+agg_src+'/'+domain+'_'+resolution+'/'+variables[vv]+'/'+variables[vv]+'_'+obs.upper()+'_'+agg_src+'_*.nc' #SPEI-3_ERA5_day_2021.nc
@@ -102,11 +103,12 @@ for vv in np.arange(len(variables)):
             raise ValueError('Variable '+variables[vv]+' is not yet supported by this script !')
     elif domain in ('Canarias','Iberia'):
         # path_obs_data = path_obs_base+'/'+obs[0:3].upper()+obs[3:]+'/data_derived_'+resolution+'/'+domain[0].upper()+domain[1:]+'/'+agg_src+'/'+variables[vv]+'/'+variables[vv]+'_'+domain[0:3]+'.nc'
-        path_obs_data = path_obs_base+'/'+obs+'/data_derived_'+resolution+'/'+domain+'/'+agg_src+'/'+variables[vv]+'/'+variables[vv]+'_'+domain.lower()[0:3]+'.nc'
+        path_obs_data = path_obs_base+'/'+obs+'/data_derived_'+resolution+'/'+domain+'/'+agg_src+'/'+variables[vv]+'/'+variables[vv]+'_'+domain_label+'.nc'
         nc = xr.open_dataset(path_obs_data, decode_timedelta=False)
     else:
-        valueError('Unexpected value for <domain> !')
+        ValueError('Unexpected value for <domain> !')
     
+    # pdb.set_trace()
     nc = nc.rename({variables_nc[vv]:variables[vv]})
         
     #cut out target period
@@ -144,7 +146,6 @@ for vv in np.arange(len(variables)):
     # nc.y.attrs('long_name') = 'latitude'
     # nc.y.attrs('units') = 'degrees_north'
     savepath = savepath_base+'/'+obs+'/'+variables[vv]+'_mon_'+obs+'_on_'+grid_name+'_grid_'+int_method+'_'+domain+'_'+str(years[0])+'_'+str(years[1])+'.nc'
-    pdb.set_trace()
     nc.to_netcdf(savepath)
     nc.close()
     del(nc)

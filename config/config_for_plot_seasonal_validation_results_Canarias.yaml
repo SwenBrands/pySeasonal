@@ -64,7 +64,7 @@ sub_domain: 'Canarias'
 plot_maps: 'yes'
 
 # List of variables on which a land-sea mask will be applied, setting values over sea to nan
-masked_variables: ['none']
+masked_variables: ['FD-C4', 'SU-C4', 'TR-C4']
 
 # Load the outlier-corrected validation results; yes or no
 corr_outlier: 'no'
