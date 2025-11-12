@@ -5,6 +5,9 @@
 #author: Swen Brands (IFCA, CSIC-UC)
 ###############################################################################################
 
+# domain identifier
+domain='medcof' #character string specifying the spatial domain for which the verification will be applied
+
 #environmental and job variables
 partition=meteo_long
 exclude_node=wn055
@@ -13,20 +16,19 @@ memory=24gb
 RUNDIR=/lustre/gmeteo/PTICLIMA/Scripts/SBrands/pyPTIclima/pySeasonal
 BASHDIR=/lustre/gmeteo/PTICLIMA/Scripts/SBrands/pyPTIclima/pySeasonal/bash
 PYDIR=/lustre/gmeteo/PTICLIMA/Scripts/SBrands/pyPTIclima/pySeasonal
-LOGDIR=/lustre/gmeteo/PTICLIMA/Scripts/SBrands/pyPTIclima/pySeasonal/LOG/get_skill
-FLAGDIR=/lustre/gmeteo/PTICLIMA/Scripts/SBrands/pyPTIclima/pySeasonal/FLAG/get_skill
+LOGDIR=/lustre/gmeteo/PTICLIMA/Scripts/SBrands/pyPTIclima/pySeasonal/LOG/get_skill/${domain}
+FLAGDIR=/lustre/gmeteo/PTICLIMA/Scripts/SBrands/pyPTIclima/pySeasonal/FLAG/get_skill/${domain}
+
+# # input variables that will be passed to the python script get_skill_season.py
+# vers='v1q' #string format
+# model_list=('eccc5') #bash array containing the model names and versions thereof
+# agg_label_list=('5mon') #bash array containing the temporal aggregation windows to be considered
+# modulator_plus_phase_list=('none') #bash array containing all modulators and phases thereof
+# variable_list=('SPEI-3-M') #bash array of variables to be processed; must coincide with <variables_gcm> in aggregate_hindcast.py
 
 # input variables that will be passed to the python script get_skill_season.py
-vers='v1p' #string format
+vers='v1q' #string format
 model_list=('eccc5' 'ecmwf51') #bash array containing the model names and versions thereof
-domain_for_config='Canarias' #character string specifying the spatial domain for which the verification will be applied: medcof, Iberia or Canarias
 agg_label_list=('1mon' '2mon' '3mon' '4mon' '5mon') #bash array containing the temporal aggregation windows to be considered
 modulator_plus_phase_list=('none' 'enso0' 'enso1' 'enso2') #bash array containing all modulators and phases thereof
 variable_list=('pvpot' 'fwi' 'SPEI-3-M' 't2m' 'tp' 'msl' 'si10' 'ssrd') #bash array of variables to be processed; must coincide with <variables_gcm> in aggregate_hindcast.py
-
-# # input variables that will be passed to the python script get_skill_season.py
-# vers='v1p' #string format
-# model_list=('cmcc4') #bash array containing the model names and versions thereof
-# agg_label_list=('1mon' '2mon' '3mon' '4mon' '5mon') #bash array containing the temporal aggregation windows to be considered
-# modulator_plus_phase_list=('none' 'enso0' 'enso1' 'enso2') #bash array containing all modulators and phases thereof
-# variable_list=('pvpot' 'fwi' 't2m' 'tp' 'msl' 'si10' 'ssrd') #bash array of variables to be processed; must coincide with <variables_gcm> in aggregate_hindcast.py

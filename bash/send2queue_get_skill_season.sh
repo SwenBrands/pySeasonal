@@ -23,7 +23,7 @@ exectime=${3}
 memory=${4}
 vers=${5}
 model=${6}
-domain_for_config=${7}
+domain=${7}
 variable=${8}
 agg_label=${9}
 modulator=${10}
@@ -37,7 +37,7 @@ jobname=${17}
 
 ## EXECUTE #########################################################################
 checkflag=yes
-checktime=60 #time in seconds that passed from one flag check to another
+checktime=120 #time in seconds that passed from one flag check to another
 
 #go to the run directory and launch get_skill_season.py
 cd ${RUNDIR}
@@ -46,8 +46,7 @@ echo "Passing ${jobname} to get_skill_season.sh ..."
 
 #construct the command to be sent to queue
 QSUB="sbatch \
-    --partition=${partition}
-    --exclude=${exclude_node}
+    --partition=${partition} \
     --time=${exectime} \
     --job-name=${jobname}\
     --export=ALL \
@@ -59,7 +58,7 @@ QSUB="sbatch \
     --mem=${memory} \
     --mail-user=swen.brands@gmail.com \
     --mail-type=FAIL,TIME_LIMIT \
-    ./get_skill_season.sh ${vers} ${model} ${domain_for_config} ${variable} ${agg_label} ${modulator} ${phase} ${RUNDIR} ${PYDIR} ${LOGDIR} ${FLAGDIR} ${jobname}" #get_skill_season.sh contains the Python script to be run on the working node
+    ./get_skill_season.sh ${vers} ${model} ${domain} ${variable} ${agg_label} ${modulator} ${phase} ${RUNDIR} ${PYDIR} ${LOGDIR} ${FLAGDIR} ${jobname}" #get_skill_season.sh contains the Python script to be run on the working node
 
 #go to bash directory and launch the command to queue
 cd ${BASHDIR}
@@ -71,7 +70,7 @@ ${QSUB} #sent to queue !
 #--------------------------------------------------------------------------------------------------
 
 if [[ "${checkflag}" == "yes" ]]; then
-    flagfile=${FLAGDIR}/get_skill_season_${vers}_${model}_model_${variable}_${agg_label}_${modulator}_${phase}.flag
+    flagfile=${FLAGDIR}/get_skill_season_${vers}_${domain}_${model}_model_${variable}_${agg_label}_${modulator}_${phase}.flag
     while [ ! -f ${flagfile} ]
         do
         echo "INFO: ${jobname} is still running ! Waiting for the flag file to be written at ${flagfile}..."

@@ -17,7 +17,7 @@ template_lat: ['lat']
 imonth: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]  # month the forecasts are initialized on, 1 refers to the January 1st, 2 to Febrary 1st etc.
 
 # set MEDCOF domain
-domain: 'Canarias'  # spatial domain the model data is available on. So far, this is just a label used to find the input files and name the output files.
+domain: 'Iberia'  # spatial domain the model data is available on. So far, this is just a label used to find the input files and name the output files.
 save_corrected_files: 'no'  # overwrite input nc files with un expected units with newly generated corrected files
 
 paths:
@@ -32,9 +32,9 @@ paths:
 
 model_settings:
   ecmwf51:
-    variables: ['TXm-C4','FD-C4','SU-C4','TR-C4','Rx1day-C4','Rx5day-C4']
-    variables_nc: ['TXm','FD','SU','TR','Rx1day', 'Rx5day']
-    variables_new: ['TXm-C4','FD-C4','SU-C4','TR-C4','Rx1day-C4','Rx5day-C4']
+    variables: ['TR-C4','Rx1day-C4','Rx5day-C4','TXm-C4','FD-C4','SU-C4']
+    variables_nc: ['TNth','Rx1day', 'Rx5day','tasmax','FD','TXth']
+    variables_new: ['TR-C4','Rx1day-C4','Rx5day-C4','TXm-C4','FD-C4','SU-C4']
     time_name: ['time','time','time','time','time','time']
     lon_name: ['lon','lon','lon','lon','lon','lon']
     lat_name: ['lat','lat','lat','lat','lat','lat']

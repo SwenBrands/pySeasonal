@@ -14,18 +14,20 @@ source ${HOME}/.bashrc
 #environmental and job variables
 partition=meteo_long
 exclude_node=wn056
-exectime=00:45:00 # 09:00:00 for plot_maps = 'yes' and 1mon; plot_maps has to be set in the config files contained in the config folder !
+exectime=00:30:00 # 01:30:00 for plot_maps = 'yes', Canarias and 1mon; <plot_maps> has to be set in the config files contained in the config folder !
 memory=16gb
 RUNDIR=/lustre/gmeteo/PTICLIMA/Scripts/SBrands/pyPTIclima/pySeasonal
 BASHDIR=/lustre/gmeteo/PTICLIMA/Scripts/SBrands/pyPTIclima/pySeasonal/bash
 PYDIR=/lustre/gmeteo/PTICLIMA/Scripts/SBrands/pyPTIclima/pySeasonal
-LOGDIR=/lustre/gmeteo/PTICLIMA/Scripts/SBrands/pyPTIclima/pySeasonal/LOG/plot
-FLAGDIR=/lustre/gmeteo/PTICLIMA/Scripts/SBrands/pyPTIclima/pySeasonal/FLAG/plot
 
-
-# input variables that will be passed to the python script get_skill_season.py
+## input variables that will be passed to the python script get_skill_season.py
 agg_label_list=('1mon' '2mon' '3mon' '4mon' '5mon') #bash array containing the temporal aggregation windows to be considered
-vers='v1p'
+vers='v1q'
+domain='Canarias'
+
+# input variables constructed from those defined above
+LOGDIR=/lustre/gmeteo/PTICLIMA/Scripts/SBrands/pyPTIclima/pySeasonal/LOG/plot/${domain}
+FLAGDIR=/lustre/gmeteo/PTICLIMA/Scripts/SBrands/pyPTIclima/pySeasonal/FLAG/plot/${domain}
 
 # EXECUTE #######################################################################################
 #check python version
@@ -57,7 +59,7 @@ do
         --ntasks=1 \
         --cpus-per-task=1 \
         --mem=${memory} \
-        ./plot_seasonal_validation_results.sh ${agg_label} ${vers} ${RUNDIR} ${PYDIR} ${LOGDIR}" #get_skill_season.sh contains the Python script to be run on the working node
+        ./plot_seasonal_validation_results.sh ${agg_label} ${vers} ${domain} ${RUNDIR} ${PYDIR} ${LOGDIR}" #get_skill_season.sh contains the Python script to be run on the working node
     echo ${QSUB} #prints the command sent to queue
     ${QSUB} #sent to queue  !
     sleep 5

@@ -23,8 +23,8 @@ from pathlib import Path
 
 # INDICATE CONFIGURATION FILE ######################################
 
-configuration_file = 'config_for_aggregate_hindcast_Canarias.yaml'
 # configuration_file = 'config_for_aggregate_hindcast_Canarias.yaml'
+configuration_file = 'config_for_aggregate_hindcast_Iberia.yaml'
 
 ####################################################################
 
@@ -157,9 +157,9 @@ for mm in np.arange(len(model)):
         datelist = [] #init date list
         
         #construct path to input GCM files as a function of the variable set in variables[mm][vv]
-        if variables[mm][vv] in ('fwi','pvpot'):
+        if variables[mm][vv] in ('fwi','pvpot','TXm-C4','FD-C4','SU-C4','TR-C4','Rx1day-C4','Rx5day-C4'):
             path_gcm_base_var = path_gcm_base_derived
-        elif variables[mm][vv] in ('SPEI-3','SPEI-3-M','SPEI-3-R','SPEI-3-R_eqm_pullLMs-TRUE','FD-C4','SU-C4','TR-C4'):
+        elif variables[mm][vv] in ('SPEI-3','SPEI-3-M','SPEI-3-R','SPEI-3-R_eqm_pullLMs-TRUE'):
             path_gcm_base_var = path_gcm_base_masked
         elif variables[mm][vv] in ('psl','sfcWind','tas','pr','rsds'):
             path_gcm_base_var = path_gcm_base
@@ -187,7 +187,7 @@ for mm in np.arange(len(model)):
                     path_gcm_data = path_gcm_base_var+'/'+domain+'/'+product+'/'+variables[mm][vv]+'/'+model[mm]+'/'+version[mm]+'/coefs_pool_members/'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'/'+file_start[mm][vv]+'_'+domain+'_'+product+'_'+variables[mm][vv]+'_'+model[mm]+'_'+version[mm]+'_'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'.nc'
                 elif variables[mm][vv] in ('SPEI-3-R_eqm_pullLMs-TRUE'):
                     path_gcm_data = path_gcm_base_var+'/'+domain+'/'+product+'/'+variables[mm][vv]+'/'+model[mm]+'/'+version[mm]+'/coefs_of_reanalysis/'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'/'+file_start[mm][vv]+'_'+domain+'_'+product+'_SPEI-3-R_'+model[mm]+'_'+version[mm]+'_'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'.nc'
-                elif variables[mm][vv] in ('fwi','pvpot','FD-C4','SU-C4','TR-C4'):
+                elif variables[mm][vv] in ('fwi','pvpot','TXm-C4','FD-C4','SU-C4','TR-C4','Rx1day-C4','Rx5day-C4'):
                     path_gcm_data = path_gcm_base_var+'/'+domain+'/'+product+'/'+variables[mm][vv]+'/'+model[mm]+'/'+version[mm]+'/'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'/'+file_start[mm][vv]+'_'+domain+'_'+product+'_'+variables[mm][vv]+'_'+model[mm]+'_'+version[mm]+'_'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'.nc'
                 elif variables[mm][vv] in ('psl','sfcWind','tas','pr','rsds'):
                     path_gcm_data = path_gcm_base_var+'/'+domain+'/'+product+'/'+variables[mm][vv]+'/'+model[mm]+'/'+version[mm]+'/'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'/'+file_start[mm][vv]+'_'+domain+'_'+product+'_'+variables[mm][vv]+'_'+model[mm]+'_'+version[mm]+'_'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'.nc'

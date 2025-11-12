@@ -5,6 +5,7 @@
 from math import radians, cos, sin, asin, sqrt
 import numpy as np
 
+
 def flip_latitudes_and_data(xr_ds_f,lat_name):
     ''' flips latitudes and data variables in xr_ds_f; input: xr_df_f is an xarray dataseet and lat_name a string containing the placeholder name for the latitude in that dataset;
     output: flipped xr_ds_f '''
@@ -64,28 +65,19 @@ def apply_sea_mask(arr_f,mask_file_f,lat_name_f,lon_name_f):
         first_arr_f = arr_f[list(arr_f.data_vars)[0]] #get first dataArray in dataset
         target_dims_f = first_arr_f.dims #get dimensions of the first data Variable in arr_f
                 
-        # #rename latitudes and longitudes if necessary
-        # if 'lat' in target_dims_f:
-        #     arr_f = arr_f.rename({'lat' : 'y'})
-        # elif 'y' in target_dims_f:
-        #     print('The y coordinate was found in <arr_f> ! No conversion is needed.')
-        # else:
-        #     ValueError('Unknown name for y / latitude coordinate !')
-
-        # if 'lon' in target_dims_f:
-        #     arr_f = arr_f.rename({'lon' : 'x'})
-        # elif 'x' in target_dims_f:
-        #     print('The x coordinate was found in <arr_f> ! No conversion is needed.')
-        # else:
-        #     ValueError('Unknown name for x / longitude coordinate !')
-        
         #check whether the coordinates sequence is as expected
-        if target_dims_f == ('season', 'lead', lat_name_f, lon_name_f) or target_dims_f == ('time', 'member', lat_name_f, lon_name_f):
+        if target_dims_f == ('time', lat_name_f, lon_name_f): # for xr Datasets with 3 dimensions
             print('The dimensions of <first_arr_f> data array in <arr_f> dataset are as expected: '+str(target_dims_f))
+            mask_appended_f = np.tile(nc_mask_f.mask.values,(first_arr_f.shape[0],1,1))
+        elif target_dims_f == ('season', 'lead', lat_name_f, lon_name_f) or target_dims_f == ('time', 'member', lat_name_f, lon_name_f): # for xr Datasets with 4 dimensions
+            print('The dimensions of <first_arr_f> data array in <arr_f> dataset are as expected: '+str(target_dims_f))
+            mask_appended_f = np.tile(nc_mask_f.mask.values,(first_arr_f.shape[0],first_arr_f.shape[1],1,1))
+        elif target_dims_f == ('time', 'lead', 'member', lat_name_f, lon_name_f): # # for xr Datasets with 5 dimensions
+            print('The dimensions of <first_arr_f> data array in <arr_f> dataset are as expected: '+str(target_dims_f))
+            mask_appended_f = np.tile(nc_mask_f.mask.values,(first_arr_f.shape[0],first_arr_f.shape[1],first_arr_f.shape[2],1,1))
         else:
             ValueError('Unknown values in <target_dims_f> within apply_sea_mask() function !')
         
-        mask_appended_f = np.tile(nc_mask_f.mask.values,(first_arr_f.shape[0],first_arr_f.shape[1],1,1))
         first_arr_f.close()
         del(first_arr_f)
     else:
@@ -345,15 +337,15 @@ def lin_detrend(xr_ar,rm_mean_f):
     if  xr_ar.dims.index('time') != 0:
         ValueError('The first dimension in the xarray data array xr_ar must be "time" !')
 
-    coeff = xr_ar.polyfit(dim='time',deg=1,skipna=True) #deg = 1 for linear detrending
-    fit = xr.polyval(xr_ar['time'], coeff.polyfit_coefficients)
+    coeff = xr_ar.polyfit(dim='time',deg=1,skipna=True).astype('float32') #deg = 1 for linear detrending
+    fit = xr.polyval(xr_ar['time'], coeff.polyfit_coefficients).astype('float32')
     if rm_mean_f == 'yes':
         xr_ar_detrended = xr_ar - fit
     elif rm_mean_f == 'no':
         tiles_f = np.ones(len(xr_ar.dims))
         tiles_f[0] = len(xr_ar.time)
         meanvals_f = np.tile(xr_ar.mean(dim='time'),tiles_f.astype('int'))
-        xr_ar_detrended = xr_ar - fit + meanvals_f
+        xr_ar_detrended = (xr_ar - fit + meanvals_f).astype('float32')
     else:
         raise Exception('ERROR: check entry for <rm_mean_f> input parameter!')
     return(xr_ar_detrended)

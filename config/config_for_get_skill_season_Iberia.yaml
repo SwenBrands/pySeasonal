@@ -28,16 +28,16 @@ input_parameters:
   bin_edges_reliability: null # probability edges used to calculate the reliability, either <None> in which case the default of xs.reliability() is used (currently 5 bins) or, which should return the same, manually pass 5 bins with np.linspace(0, 1, 6); or 3 bins with np.linspace(0, 1, 4)
   corr_outlier: 'no'
   aggreg: 'mon' # temporal aggregation of the input files
-  domain: 'Canarias' # spatial domain
+  domain: 'Iberia' # spatial domain
   grid_name: 'PTI-grid-v2'
   int_method: 'upscaled' # 'conservative_normed', interpolation method used before in <regrid_obs.py>
   quantiles: [0.3333333333333333, 0.6666666666666666] # quantiles of the year-to-year time series to be calculated and stored
   skillscore_reference: 'rand' # 'clim' or 'rand'; use either the climatological mean or randomly reshuffled observed time series as reference forcast for calculating the CPRSS
-  nr_pseudo_mem: 25 # number of times the climatological mean or randomly reshuffled observarions are replicated along the "member" dimension to mimic a model ensemble representing the naiv climatological forecasts used as reference for calculating the CRPS Skill Score. Results are insensitive to variations in this value; the script has been tested for value=2 and 4.
+  nr_pseudo_mem: 6 # number of times the climatological mean or randomly reshuffled observarions are replicated along the "member" dimension to mimic a model ensemble representing the naiv climatological forecasts used as reference for calculating the CRPS Skill Score. Results are insensitive to variations in this value; the script has been tested for value=2 and 4.
   testlevel: 0.05 # options for methods estimating hindcast skill
-  detrending: ['yes', 'no'] # yes or no, linear detrending of the gcm and obs time series prior to validation
+  detrending: ['no', 'yes'] # yes or no, linear detrending of the gcm and obs time series prior to validation
   masked_variables_std: ['TXm-C4','FD-C4','SU-C4','TR-C4','Rx1day-C4','Rx5day-C4'] # list of variables on which a land-sea mask will be applied, setting values over sea to nan
-
+  
 # Set the lead-times for each model and version thereof, as well as for each aggregation window (currently 1 and 3 months)
 
 ######################################################################################################################################

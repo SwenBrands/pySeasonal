@@ -53,7 +53,7 @@ echo "LOGDIR: "${LOGDIR}
 echo "FLAGDIR: "${FLAGDIR}
 echo "vers: "${vers}
 echo "model_list: "${model_list[@]}
-echo "domain_for_config: "${domain_for_config}
+echo "domain: "${domain}
 echo "agg_label_list: "${agg_label_list[@]}
 echo "modulator_plus_phase: "${modulator_plus_phase_list[@]}
 echo "variable_list: "${variable_list[@]}
@@ -68,9 +68,9 @@ python --version
 #clean the LOG and FLAG directories
 rm -r ${LOGDIR}
 rm -r ${FLAGDIR}
-mkdir ${LOGDIR}
-mkdir ${FLAGDIR}
 sleep 1
+mkdir -p ${LOGDIR}
+mkdir -p ${FLAGDIR}
 
 cd ${RUNDIR}
 
@@ -102,10 +102,10 @@ do
             for variable in "${variable_list[@]}"
             do  
                 #define the job name
-                jobname=${vers}_${model}_${variable}_${agg_label}_${modulator}_${phase}
+                jobname=${vers}_${domain}_${model}_${variable}_${agg_label}_${modulator}_${phase}
                 echo "Passing ${jobname} to send2queue_get_skill_season.sh ..."              
                 #send2queue_get_skill_seasons will send the model evalatuion to queue and is itself sent into the background of the frontal node
-                . ${BASHDIR}/send2queue_get_skill_season.sh ${partition} ${exclude_node} ${exectime} ${memory} ${vers} ${model} ${domain_for_config} ${variable} ${agg_label} ${modulator} ${phase} ${RUNDIR} ${BASHDIR} ${PYDIR} ${LOGDIR} ${FLAGDIR} ${jobname} > ${LOGDIR}/send2queue_get_skill_season_${jobname}.log 2>&1 &
+                . ${BASHDIR}/send2queue_get_skill_season.sh ${partition} ${exclude_node} ${exectime} ${memory} ${vers} ${model} ${domain} ${variable} ${agg_label} ${modulator} ${phase} ${RUNDIR} ${BASHDIR} ${PYDIR} ${LOGDIR} ${FLAGDIR} ${jobname} > ${LOGDIR}/send2queue_get_skill_season_${jobname}.log 2>&1 &
                 sleep 60
             done
         done
