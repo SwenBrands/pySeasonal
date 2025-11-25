@@ -33,7 +33,8 @@ paths:
 model_settings:
   ecmwf51:
     variables: ['TXm-C4','FD-C4','SU-C4','TR-C4','Rx1day-C4','Rx5day-C4']
-    variables_nc: ['TXm','FD','SU','TR','Rx1day', 'Rx5day']
+    # variables_nc: ['TXm','FD','SU','TR','Rx1day', 'Rx5day']
+    variables_nc: ['TXm-C4','FD-C4','SU-C4','TR-C4','Rx1day-C4','Rx5day-C4']
     variables_new: ['TXm-C4','FD-C4','SU-C4','TR-C4','Rx1day-C4','Rx5day-C4']
     time_name: ['time','time','time','time','time','time']
     lon_name: ['lon','lon','lon','lon','lon','lon']

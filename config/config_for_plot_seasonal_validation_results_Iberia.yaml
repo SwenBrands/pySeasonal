@@ -30,10 +30,10 @@ model_settings: # Settings for all available models
 subperiods: ['none', 'enso0init', 'enso1init', 'enso2init']
 
 # The domain the verification results have been saved on by get_skill_season.py
-domain: 'Canarias'
+domain: 'Iberia'
 
 # Domain the results are plotted for; medcof (corresponds to no sub-domain), medcof2 or iberia; If set to <medcof>, then no sub-selection will be applied and the results for the entire medcof domain will be plotted
-sub_domain: 'Canarias'
+sub_domain: 'Iberia'
 
 #plot maps on top of pcolor heat-maps; yes or no
 plot_maps: 'no'

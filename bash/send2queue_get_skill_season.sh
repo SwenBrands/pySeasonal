@@ -48,7 +48,7 @@ echo "Passing ${jobname} to get_skill_season.sh ..."
 QSUB="sbatch \
     --partition=${partition} \
     --time=${exectime} \
-    --job-name=${jobname}\
+    --job-name=${jobname} \
     --export=ALL \
     --begin=now \
     --output=${LOGDIR}/${jobname}.out \

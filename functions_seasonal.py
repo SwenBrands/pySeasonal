@@ -221,24 +221,34 @@ def assign_season_label(season_list_f):
         raise Exception('ERROR: check entry for <season_list_f> !')
     return(season_label_f)
 
-# def get_forecast_prob(nc_quantile,seas_mean):
-def get_forecast_prob(seas_mean,lower_xr,upper_xr):
-    '''Obtains probability forecasts for each tercile in <seas_mean>, using the quantiles stored in <nc_quantile>; all 3 are xarray data arrays;
-    seas_mean is 3D with time x lat x lon, lower_xr and upper_xr are 2d with lat x lon'''
 
-    lower_np = np.tile(lower_xr.values,(seas_mean.shape[0],1,1))
-    upper_np = np.tile(upper_xr.values,(seas_mean.shape[0],1,1))
+def get_forecast_prob(seas_mean_f,lower_xr_f,upper_xr_f):
+    '''Obtains probability forecasts for each tercile in <seas_mean_f>, using the quantiles stored in <nc_quantile>; all 3 are xarray data arrays;
+    seas_mean_f is 3D with time x lat x lon, lower_xr_f and upper_xr_f are 2d with lat x lon'''
+
+    #check whether the NaN occurrence numbers in lower_xr_f and upper_xr_f are identical
+    if np.sum(np.isnan(upper_xr_f)) - np.sum(np.isnan(lower_xr_f)) == 0:
+        print(' The nan occurence number in both <upper_xr_f> and <lower_xr_f> is 0 within the get_forecast_prob() function ! ')
+    elif np.sum(np.isnan(upper_xr_f)) - np.sum(np.isnan(lower_xr_f)) != 0:
+        raise ValueError(' The nan occurence numbers in <upper_xr_f> and <lower_xr_f> do not match within the get_forecast_prob() function ! ')
+    else:
+        ValueError('Check entries for <upper_xr_f> and / or <lower_xr_f> in get_forecast_prob() function ! ')
+
+    lower_np_f = np.tile(lower_xr_f.values,(seas_mean_f.shape[0],1,1))
+    upper_np_f = np.tile(upper_xr_f.values,(seas_mean_f.shape[0],1,1))
     
-    upper_ind = (seas_mean > upper_np) & (~np.isnan(upper_np))
-    center_ind = (seas_mean >= lower_np) & (seas_mean <= upper_np) & (~np.isnan(upper_np))
-    lower_ind = (seas_mean < lower_np) & (~np.isnan(lower_np))
+    valid_ind_f = ~np.isnan(upper_np_f) & ~np.isnan(lower_np_f)
+    upper_ind_f = (seas_mean_f > upper_np_f) & valid_ind_f
+    center_ind_f = (seas_mean_f > lower_np_f) & (seas_mean_f <= upper_np_f) & valid_ind_f
+    lower_ind_f = (seas_mean_f <= lower_np_f) & valid_ind_f
                     
     #sum members in each category and devide by the number of members, thus obtaining the probability
-    nr_mem = upper_ind.shape[0]
-    upper_prob = upper_ind.sum(dim='member')/nr_mem
-    center_prob = center_ind.sum(dim='member')/nr_mem
-    lower_prob = lower_ind.sum(dim='member')/nr_mem
-    return(nr_mem,upper_prob,center_prob,lower_prob)
+    nr_mem_f = len(seas_mean_f.member)
+    upper_prob_f = upper_ind_f.sum(dim='member')/nr_mem_f
+    center_prob_f = center_ind_f.sum(dim='member')/nr_mem_f
+    lower_prob_f = lower_ind_f.sum(dim='member')/nr_mem_f
+    return(nr_mem_f,upper_prob_f,center_prob_f,lower_prob_f)
+
 
 def get_years_of_subperiod(subperiod_f):
     ''' obtain target years used for validation as a function of the sole input parameter <subperiod_f>.
@@ -585,11 +595,11 @@ def get_reliability_or_roc(obs_f,gcm_f,obs_quantile_f,gcm_quantile_f,dist_part_f
         obs_bin = xr.where(obs_f > obs_upper_tercile_f, 1, 0).astype('int8') #here the nan values over the sea are lost. They will be brought back below.
         gcm_bin = xr.where(gcm_f > gcm_upper_tercile_f, 1, 0).astype('int8')
     elif dist_part_f == 'lower_tercile':
-        obs_bin = xr.where(obs_f < obs_lower_tercile_f, 1, 0).astype('int8') #here the nan values over the sea are lost. They will be brought back below.
-        gcm_bin = xr.where(gcm_f < gcm_lower_tercile_f, 1, 0).astype('int8')
+        obs_bin = xr.where(obs_f <= obs_lower_tercile_f, 1, 0).astype('int8') #here the nan values over the sea are lost. They will be brought back below.
+        gcm_bin = xr.where(gcm_f <= gcm_lower_tercile_f, 1, 0).astype('int8')
     elif dist_part_f in ('center_tercile','centre_tercile'):
-        obs_bin = xr.where((obs_f >= obs_lower_tercile_f) & (obs_f <= obs_upper_tercile_f), 1, 0).astype('int8') #here the nan values over the sea are lost. They will be brought back below.
-        gcm_bin = xr.where((gcm_f >= gcm_lower_tercile_f) & (gcm_f <= gcm_upper_tercile_f), 1, 0).astype('int8')
+        obs_bin = xr.where((obs_f > obs_lower_tercile_f) & (obs_f <= obs_upper_tercile_f), 1, 0).astype('int8') #here the nan values over the sea are lost. They will be brought back below.
+        gcm_bin = xr.where((gcm_f > gcm_lower_tercile_f) & (gcm_f <= gcm_upper_tercile_f), 1, 0).astype('int8')
     else:
         raise Exception("ERROR: check entry for dist_part_f !")
         

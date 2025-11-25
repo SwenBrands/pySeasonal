@@ -6,7 +6,7 @@
 version: 'v1q'  # version number of the validation results
 model: ['ecmwf']  # list containing the acronyms of the models to be assessed
 model_version: ['51']  # list containing the versions of these models
-obs: 'era5'  # string containing the observational reference
+obs: 'PTI-grid-v2'  # string containing the observational reference
 
 # Quantile and validation configuration
 years_quantile: [[1993, 2022]]  # list containing the years used to calculate quantiles, one sub-list per model
@@ -16,13 +16,13 @@ agg_labels: ['3mon']  # considered aggregation windows
 nan_placeholder: 0
 
 # Variable mapping
-variables_std: ['SPEI-3-M', 'pvpot', 'fwi', 't2m', 'tp', 'si10', 'ssrd']  # standardized variable names
-variables_out: ['spei3', 'pvpot', 'fwi', 'gtg', 'rti', 'fg', 'ssrd']  # output variable names, as defined in PTI-Clima variable table: https://docs.google.com/spreadsheets/d/1K5n3aM0vGgnJEwlghjK1BtqJr0Ug0mQYlzZKQxB2wJU/edit?gid=0#gid=0https://docs.google.com/spreadsheets/d/1K5n3aM0vGgnJEwlghjK1BtqJr0Ug0mQYlzZKQxB2wJU/edit?gid=0#gid=0
+variables_std: ['FD-C4', 'SU-C4', 'TR-C4']  # standardized variable names
+variables_out: ['fd', 'su', 'tr']  # output variable names, as defined in PTI-Clima variable table: https://docs.google.com/spreadsheets/d/1K5n3aM0vGgnJEwlghjK1BtqJr0Ug0mQYlzZKQxB2wJU/edit?gid=0#gid=0
 masked_variables_std: ['none']  # list of variables on which land-sea mask will be applied
 
 # Data type and domain configuration
 datatype: 'float32'  # data type of variables in output netcdf files
-domain: 'medcof'  # spatial domain
+domain: 'Iberia'  # spatial domain
 detrended: 'no'  # yes or no, linear detrending
 
 # Path configuration

@@ -10,6 +10,8 @@ n_lead: [7, 7, 8, 7, 8]  # considered lead-time in months, pertains to <model> l
 template_init: ['199910', '199910', '199910', '199910', '199910']  # single init from the hindcast period, expressed as YYYYMM known to be availble, this is to extract the dimensions of the netCDF file for the specific model; it is necessary to set <base_init> because entire hindcast months will be missing for newly introduced models
 template_var: ['tas', 'tas', 'tas', 'tas', 'tas']  # variable for that single init, the file for that variable must be formated by Predictia
 template_file_start: ['seasonal-original-single-levels', 'seasonal-original-single-levels', 'seasonal-original-single-levels', 'seasonal-original-single-levels', 'seasonal-original-single-levels']
+template_lon: ['x','x','x','x','x']
+template_lat: ['y','y','y','y','y']
 
 # fixed parameters not passing through loops
 imonth: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]  # month the forecasts are initialized on, 1 refers to the January 1st, 2 to Febrary 1st etc.

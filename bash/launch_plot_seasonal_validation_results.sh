@@ -14,8 +14,8 @@ source ${HOME}/.bashrc
 #environmental and job variables
 partition=meteo_long
 exclude_node=wn056
-exectime=00:30:00 # 01:30:00 for plot_maps = 'yes', Canarias and 1mon; <plot_maps> has to be set in the config files contained in the config folder !
-memory=16gb
+exectime=03:00:00 # 00:45:00 for plot_maps = 'no' and medcof; 04:00:00 for plot_maps = 'yes' and Iberia and 1mon; 01:30:00 for plot_maps = 'yes' and 00:30:00 for plot_maps = 'no' and Canarias and 1mon; <plot_maps> has to be set in the config files contained in the config folder !
+memory=32gb #32 gb for medcof, 64gb for Iberia
 RUNDIR=/lustre/gmeteo/PTICLIMA/Scripts/SBrands/pyPTIclima/pySeasonal
 BASHDIR=/lustre/gmeteo/PTICLIMA/Scripts/SBrands/pyPTIclima/pySeasonal/bash
 PYDIR=/lustre/gmeteo/PTICLIMA/Scripts/SBrands/pyPTIclima/pySeasonal
@@ -23,7 +23,7 @@ PYDIR=/lustre/gmeteo/PTICLIMA/Scripts/SBrands/pyPTIclima/pySeasonal
 ## input variables that will be passed to the python script get_skill_season.py
 agg_label_list=('1mon' '2mon' '3mon' '4mon' '5mon') #bash array containing the temporal aggregation windows to be considered
 vers='v1q'
-domain='Canarias'
+domain='medcof'
 
 # input variables constructed from those defined above
 LOGDIR=/lustre/gmeteo/PTICLIMA/Scripts/SBrands/pyPTIclima/pySeasonal/LOG/plot/${domain}

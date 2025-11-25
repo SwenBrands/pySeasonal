@@ -2,46 +2,98 @@ Este fichero txt contiene las rutas a los ficheros y las funciones a actualizar 
 
 versión actual: v1q
 
+
+dominios espaciales: medcof, Iberia, Canarias
+
+
+aggregaciones temporales: 1mon, 2mon, 3mon, 4mon, 5mon
+
+
+observaciones: era5 para mecof, PTI-grid-v2 para Iberia y Canarias
+
+
+existe un fichero de configuración yaml para cada dominio que pone los modelos y variables disponibles
+
+1) /lustre/gmeteo/PTICLIMA/Scripts/SBrands/pyPTIclima/pySeasonal/config/config_for_pred2tercile_operational_medcof.yaml
+2) /lustre/gmeteo/PTICLIMA/Scripts/SBrands/pyPTIclima/pySeasonal/config/config_for_pred2tercile_operational_Canarias.yaml
+3) /lustre/gmeteo/PTICLIMA/Scripts/SBrands/pyPTIclima/pySeasonal/config/config_for_pred2tercile_operational_Iberia.yaml
+
+
+## Rutas a los ficheros estáticos ##########################################################################################################
+
 --------------------------------------------------------------------------------------------------------------------------------------------
-A) máscaras de skill, generados con plot_seaonsal_validation_results.py (1 fichero por dominio espacial, ventana de aggregación temporal y modelo)
+A) Para Jaime y Daniel: máscaras de skill, generados con plot_seaonsal_validation_results.py (1 fichero por dominio espacial, ventana de aggregación temporal y modelo)
 
-aún se tienen que calcular para la versión v1q
+carpeta padre:
+
+/lustre/gmeteo/PTICLIMA/Results/seasonal/validation/v1q/skill_masks
+
+fichero ejemplo:
+
+/lustre/gmeteo/PTICLIMA/Results/seasonal/validation/v1q/skill_masks/Canarias/1mon/skill_masks_pticlima_Canarias_1mon_ecmwf51_v1q.nc
 
 
 --------------------------------------------------------------------------------------------------------------------------------------------
-B) quantiles para generar predicciones probabilistas, generados con get_skill_season.py (1 fichero por dominio espacial, ventana de aggregación temporal, modelo y variable)
+B) Para Jaime: quantiles para generar predicciones probabilistas (Jaime), generados con get_skill_season.py (1 fichero por dominio espacial, ventana de aggregación temporal, modelo y variable)
+
+carpeta padre:
 
 /lustre/gmeteo/PTICLIMA/Results/seasonal/validation/v1q/quantiles
 
 por ejemplo:
 
-/lustre/gmeteo/PTICLIMA/Results/seasonal/validation/v1q/quantiles/medcof/5mon/quantiles_pticlima_5mon_eccc5_SPEI-3-M_medcof_1993_2022_v1q.nc
+/lustre/gmeteo/PTICLIMA/Results/seasonal/validation/v1q/quantiles/medcof/3mon/quantiles_pticlima_3mon_eccc5_SPEI-3-M_medcof_1993_2022_v1q.nc
 
 
 --------------------------------------------------------------------------------------------------------------------------------------------
-C) series temporales con las probabilidades por tercil para el período hindcast, generados con get_skill_season.py (1 fichero por dominio espacial, ventana de aggregación temporal, modelo o observación, y variable)
+C) Para Daniel: series temporales con las probabilidades por tercil para el período hindcast+forecast (Daniel), generados con get_skill_season.py (1 fichero por dominio espacial, ventana de aggregación temporal, modelo o observación, y variable)
 
-/lustre/gmeteo/PTICLIMA/Results/seasonal/validation/v1q/skill_masks
+/lustre/gmeteo/PTICLIMA/Results/seasonal/validation/v1q/tercile_probabilities
 
 por ejemplo:
 
-/lustre/gmeteo/PTICLIMA/Results/seasonal/validation/v1q/tercile_probabilities/medcof/5mon/tercile_prob_pticlima_5mon_eccc5_SPEI-3-M_medcof_1993_2022_v1q.nc # para un modelo
+/lustre/gmeteo/PTICLIMA/Results/seasonal/validation/v1q/tercile_probabilities/Iberia/2mon/tercile_prob_pticlima_2mon_ecmwf51_FD-C4_Iberia_1981_2022_v1q.nc # para un modelo
 y
-/lustre/gmeteo/PTICLIMA/Results/seasonal/validation/v1q/tercile_probabilities/medcof/5mon/tercile_bin_pticlima_5mon_era5_SPEI-3_medcof_1993_2022_v1q.nc #para las quasi-observaciones de ERA55
+/lustre/gmeteo/PTICLIMA/Results/seasonal/validation/v1q/tercile_probabilities/Iberia/2mon/tercile_bin_pticlima_2mon_PTI-grid-v2_FD_Iberia_1981_2022_v1q.nc #para las observaciones
 
 
 --------------------------------------------------------------------------------------------------------------------------------------------
-D) ficheros de predicción con las probabilidades por tercil, generados con pred2tercile_operational.py (1 fichero por domninio espacial, ventana de aggregación temporal, modelo y variable)
+D) Para Jaime: Máscaras tierra-mar; se usan en pred2tercile_operational.py y son activados por al parámetro de configuration 'masked_variables_std'
+
+/lustre/gmeteo/PTICLIMA/Auxiliary-material/Masks/
+
+
+--------------------------------------------------------------------------------------------------------------------------------------------
+
+
+## Rutas a los ficheros de produccións ##########################################################################################################
+
+--------------------------------------------------------------------------------------------------------------------------------------------
+E) Para Jaime: ficheros de predicción con las probabilidades por tercil, generados con pred2tercile_operational.py (1 fichero por domninio espacial, ventana de aggregación temporal, modelo y variable)
 
 /lustre/gmeteo/PTICLIMA/Results/seasonal/forecast
 
 por ejemplo:
 
+/lustre/gmeteo/PTICLIMA/Results/seasonal/forecast/Iberia/probability_5mon_ecmwf51_SU-C4_Iberia_init_202410_dtr_no_refyears_1993_2022_v1q.nc
 
 
 --------------------------------------------------------------------------------------------------------------------------------------------
-E) scripts a actualizar para generar la predicción operativa, versión actual v1q:
+F) Para Jaime: ficheros del producto para el Instituto Pirenaico de Ecología, generados con products/seas2ipe.py (1 fichero por domninio espacial, para una sóloa ventana de aggregación: 1mon y un sólo modelo: ecmwf51)
+
+/lustre/gmeteo/WORK/WWW/PTICLIMA/PRODUCTS/seas2ipe/
+
+por ejemplo:
+
+/lustre/gmeteo/WORK/WWW/PTICLIMA/PRODUCTS/seas2ipe/seas2ipe_ecmwf51_Iberia_init_202410_3mon_dtr_no_refyears_1993_2022.nc
+
+
+--------------------------------------------------------------------------------------------------------------------------------------------
+
+
+## Scripts a actualizar para generar la predicción operativa y el producto para el IPE; versión actual v1q ######################################
 
 https://github.com/SwenBrands/pySeasonal/blob/main/pred2tercile_operational.py
+https://github.com/SwenBrands/pySeasonal/blob/main/products/seas2ipe.py
 https://github.com/SwenBrands/pySeasonal/blob/main/oni2enso.py
 https://github.com/SwenBrands/pySeasonal/blob/main/functions_seasonal.py

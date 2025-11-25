@@ -13,8 +13,8 @@ paths:
     dir_netcdf: '/lustre/gmeteo/PTICLIMA/Results/seasonal/validation/' #path to outupt netcdf files produced with this script, containing an xarray dataset with all verification results
     mask_dir: '/lustre/gmeteo/PTICLIMA/Auxiliary-material/Masks' #path to the land-sea masks
 
-# models: ['cmcc4', 'eccc5', 'ecmwf51'] # list of models to be evaluated
-models: ['cmcc4'] # list of models to be evaluated
+models: ['cmcc4', 'eccc5', 'ecmwf51'] # list of models to be evaluated
+# models: ['cmcc4'] # list of models to be evaluated
 
 model_settings: # Settings for all available models
   ecmwf51: # ECMWF SEAS5.1
@@ -62,7 +62,7 @@ sub_domain: 'medcof'
 plot_maps: 'yes'
 
 # List of variables on which a land-sea mask will be applied, setting values over sea to nan
-masked_variables: ['fwi', 'SPEI-3-M']
+masked_variables: ['fwi', 'SPEI-3-M', 'pvpot']
 
 # Load the outlier-corrected validation results; yes or no
 corr_outlier: 'no'

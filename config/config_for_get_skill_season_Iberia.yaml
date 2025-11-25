@@ -24,7 +24,7 @@ input_parameters:
   years_quantile: [1993, 2022] # start and end years of the time series used to calculate the quantiles from obserations and model data
   precision: 'float32' # data type of the variables in the output netcdf files
   compression_level: 1
-  precip_threshold: 0.03333333333333333 # 1/30; monthly mean daily precipitation threshold in mm below which the modelled and quasi-observed monthly precipitation amount is set to 0; Bring the parameter in pred2tercile.py in exact agreement with this script in future versions
+  precip_threshold: 0.03333333333333333 # monthly mean daily precipitation threshold in mm below which the modelled and quasi-observed monthly precipitation amount is set to 0; Bring the parameter in pred2tercile.py in exact agreement with this script in future versions
   bin_edges_reliability: null # probability edges used to calculate the reliability, either <None> in which case the default of xs.reliability() is used (currently 5 bins) or, which should return the same, manually pass 5 bins with np.linspace(0, 1, 6); or 3 bins with np.linspace(0, 1, 4)
   corr_outlier: 'no'
   aggreg: 'mon' # temporal aggregation of the input files

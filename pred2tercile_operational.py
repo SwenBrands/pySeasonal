@@ -16,358 +16,374 @@ import time
 import yaml
 from pathlib import Path
 
-# INDICATE CONFIGURATION FILE ######################################
+# CREATE LIST CONTAINING ALL DOMAINS TO BE PROCESSED ######################################
 
-# configuration_file = 'config_for_pred2tercile_operational_medcof.yaml'
-configuration_file = 'config_for_pred2tercile_operational_Canarias.yaml'
-# configuration_file = 'config_for_pred2tercile_operational_Iberia.yaml'
+domain_list = ['Iberia','Canarias','medcof']
 
 ####################################################################
 
-def load_config(config_file='config/'+configuration_file):
-    """Load configuration from YAML file"""
-    config_path = Path(__file__).parent / config_file
-    print('The path of the configuration file is '+str(config_path))
-    with open(config_path, 'r') as file:
-        config = yaml.safe_load(file)
-    
-    # Setup paths based on GCM_STORE environment variable
-    gcm_store = os.getenv('GCM_STORE', 'lustre')
-    if gcm_store in config['paths']:
-        paths = config['paths'][gcm_store]
-        config['paths'] = paths
+for do in np.arange(len(domain_list)):
+
+    ## CONSTRUCT CONFIGURATION FILE ######################################
+
+    configuration_file = 'config_for_pred2tercile_operational_'+domain_list[do]+'.yaml'
+
+    ######################################################################
+
+    def load_config(config_file='config/'+configuration_file):
+        """Load configuration from YAML file"""
+        config_path = Path(__file__).parent / config_file
+        print('The path of the configuration file is '+str(config_path))
+        with open(config_path, 'r') as file:
+            config = yaml.safe_load(file)
+        
+        # Setup paths based on GCM_STORE environment variable
+        gcm_store = os.getenv('GCM_STORE', 'lustre')
+        if gcm_store in config['paths']:
+            paths = config['paths'][gcm_store]
+            config['paths'] = paths
+        else:
+            raise Exception(f'ERROR: unknown entry for <gcm_store> !')
+        
+        return config
+
+    # Load configuration
+    config = load_config()
+
+    #the init of the forecast (year and month) can passed by bash; if nothing is passed these parameters will be set by python
+    if len(sys.argv) == 2:
+        print("Reading from input parameters passed via bash")
+        year_init = str(sys.argv[1])[0:4]
+        month_init = str(sys.argv[1])[-2:]
+        if len(year_init) != 4 or len(month_init) != 2:
+            raise Exception('ERROR: check length of <year_month_init> input parameter !')
     else:
-        raise Exception(f'ERROR: unknown entry for <gcm_store> !')
-    
-    return config
+        print("No input parameter have been provided by the user and the script will set the <year_init> and <month_init> variables for the year and month of the current date...")
+        year_init = str(date.today().year)
+        month_init = f"{date.today().month:02d}"
+        print(date.today())
+    print(year_init, month_init)
 
-# Load configuration
-config = load_config()
+    # overwrite the aformentioned variables for develompment purposes
+    year_init = 2024 #a list containing the years the forecast are initialized on, will be looped through with yy
+    month_init = 10 #a list containing the corresponding months the forecast are initialized on, will be called while looping through <year_init> (with yy), i.e. must have the same length
 
-#the init of the forecast (year and month) can passed by bash; if nothing is passed these parameters will be set by python
-if len(sys.argv) == 2:
-    print("Reading from input parameters passed via bash")
-    year_init = str(sys.argv[1])[0:4]
-    month_init = str(sys.argv[1])[-2:]
-    if len(year_init) != 4 or len(month_init) != 2:
-        raise Exception('ERROR: check length of <year_month_init> input parameter !')
-else:
-    print("No input parameter have been provided by the user and the script will set the <year_init> and <month_init> variables for the year and month of the current date...")
-    year_init = str(date.today().year)
-    month_init = f"{date.today().month:02d}"
-    print(date.today())
-print(year_init, month_init)
+    # Extract configuration variables
+    models = config['models']
+    version = config['version']
+    quantile_version = config['quantile_version']
+    agg_label = config['agg_label']
+    precip_threshold_quotient = config['precip_threshold_quotient']
+    datatype = config['datatype']
+    domain = config['domain']
+    masked_variables_std = config['masked_variables_std']
+    detrended = config['detrended']
+    product = config['product']
+    quantile_threshold = config['quantile_threshold']
+    lon_name_out = config['lon_name_out']
+    lat_name_out = config['lat_name_out']
 
-# overwrite the aformentioned variables for develompment purposes
-year_init = 2024 #a list containing the years the forecast are initialized on, will be looped through with yy
-month_init = 10 #a list containing the corresponding months the forecast are initialized on, will be called while looping through <year_init> (with yy), i.e. must have the same length
+    ## EXECUTE #############################################################
 
-# Extract configuration variables
-models = config['models']
-version = config['version']
-quantile_version = config['quantile_version']
-agg_label = config['agg_label']
-precip_threshold_quotient = config['precip_threshold_quotient']
-datatype = config['datatype']
-domain = config['domain']
-masked_variables_std = config['masked_variables_std']
-detrended = config['detrended']
-product = config['product']
-quantile_threshold = config['quantile_threshold']
+    # Extract paths from configuration
+    paths = config['paths'] # get paths from configuration
+    home = paths['home']
+    path_gcm_base = paths['path_gcm_base']
+    path_gcm_base_derived = paths['path_gcm_base_derived']
+    path_gcm_base_masked = paths['path_gcm_base_masked']
+    rundir = paths['rundir']
+    dir_quantile = paths['dir_quantile']
+    dir_forecast = paths['dir_forecast']
+    mask_dir = paths['mask_dir']
 
-## EXECUTE #############################################################
+    #go to rundir and load pySeasonal's functions
+    os.chdir(rundir)
+    exec(open('functions_seasonal.py').read()) #reads the <functions_seasonal.py> script containing a set of custom functions needed here
 
-# #check consistency of input parameters
-# if (lon_name[-1] != 'x') | (lat_name[-1] != 'y'):
-    # raise Exception('ERROR: the last entries of the <lon_name> and <lat_name> input lists must be "x" and "y" respectively to ensure that the output netCDF file is consistent!')
+    #load model specific variables to be processed 
+    model_settings = config['model_settings'] #load all model settings stored in yaml file
+    variable_std = []
+    variable_fc = []
+    variable_fc_nc = []
+    time_name = []
+    lon_name = []
+    lat_name = []
+    file_start = []
+    years_quantile = []
+    for mm in range(len(models)):
+        variable_std.append(model_settings[models[mm]+version[mm]]['variable_std']) # standard model variable names used by the pySeasonal package. Here used to load the quantile threshold files and to write the output netCDF files generated by this script
+        variable_fc.append(model_settings[models[mm]+version[mm]]['variable_fc'])
+        variable_fc_nc.append(model_settings[models[mm]+version[mm]]['variable_fc_nc'])
+        time_name.append(model_settings[models[mm]+version[mm]]['time_name'])
+        lon_name.append(model_settings[models[mm]+version[mm]]['lon_name'])
+        lat_name.append(model_settings[models[mm]+version[mm]]['lat_name'])
+        file_start.append(model_settings[models[mm]+version[mm]]['file_start'])
+        years_quantile.append(model_settings[models[mm]+version[mm]]['years_quantile'])
 
-# Extract paths from configuration
-paths = config['paths'] # get paths from configuration
-home = paths['home']
-path_gcm_base = paths['path_gcm_base']
-path_gcm_base_derived = paths['path_gcm_base_derived']
-path_gcm_base_masked = paths['path_gcm_base_masked']
-rundir = paths['rundir']
-dir_quantile = paths['dir_quantile']
-dir_forecast = paths['dir_forecast']
-mask_dir = paths['mask_dir']
+    #create output directory of the forecasts generated here, if it does not exist.
+    if os.path.isdir(dir_forecast+'/'+domain) != True:
+        os.makedirs(dir_forecast+'/'+domain)
 
-#go to rundir and load pySeasonal's functions
-os.chdir(rundir)
-exec(open('functions_seasonal.py').read()) #reads the <functions_seasonal.py> script containing a set of custom functions needed here
+    #make forecast for each aggregation window, model and variable
+    for ag in np.arange(len(agg_label)):
+        precip_threshold = 1 / (precip_threshold_quotient*int(agg_label[ag][0]))
+        season_length = int(agg_label[ag][0])
+        for mm in np.arange(len(models)):    
+            for vv in np.arange(len(variable_fc[mm])):
 
-#load model specific variables to be processed 
-model_settings = config['model_settings'] #load all model settings stored in yaml file
-variable_std = []
-variable_fc = []
-variable_fc_nc = []
-time_name = []
-lon_name = []
-lat_name = []
-file_start = []
-years_quantile = []
-for mm in range(len(models)):
-    variable_std.append(model_settings[models[mm]+version[mm]]['variable_std']) # standard model variable names used by the pySeasonal package. Here used to load the quantile threshold files and to write the output netCDF files generated by this script
-    variable_fc.append(model_settings[models[mm]+version[mm]]['variable_fc'])
-    variable_fc_nc.append(model_settings[models[mm]+version[mm]]['variable_fc_nc'])
-    time_name.append(model_settings[models[mm]+version[mm]]['time_name'])
-    lon_name.append(model_settings[models[mm]+version[mm]]['lon_name'])
-    lat_name.append(model_settings[models[mm]+version[mm]]['lat_name'])
-    file_start.append(model_settings[models[mm]+version[mm]]['file_start'])
-    years_quantile.append(model_settings[models[mm]+version[mm]]['years_quantile'])
+                # #load the quantiles file
+                filename_quantiles = dir_quantile+'/'+quantile_version+'/quantiles/'+domain+'/'+agg_label[ag]+'/quantiles_pticlima_'+agg_label[ag]+'_'+models[mm]+version[mm]+'_'+variable_std[mm][vv]+'_'+domain+'_'+str(years_quantile[mm][0])+'_'+str(years_quantile[mm][1])+'_'+quantile_version+'.nc'
 
-#create output directory of the forecasts generated here, if it does not exist.
-if os.path.isdir(dir_forecast) != True:
-    os.makedirs(dir_forecast)
+                # load quantile files and check whether their lats are ascending, correct them if they are descending
+                nc_quantile = xr.open_dataset(filename_quantiles)
 
-#make forecast for each aggregation window, model and variable
-for ag in np.arange(len(agg_label)):
-    precip_threshold = 1 / (precip_threshold_quotient*int(agg_label[ag][0]))
-    season_length = int(agg_label[ag][0])
-    for mm in np.arange(len(models)):    
-        for vv in np.arange(len(variable_fc[mm])):
-
-            # #load the quantiles file
-            filename_quantiles = dir_quantile+'/'+quantile_version+'/quantiles/'+domain+'/'+agg_label[ag]+'/quantiles_pticlima_'+agg_label[ag]+'_'+models[mm]+version[mm]+'_'+variable_std[mm][vv]+'_'+domain+'_'+str(years_quantile[mm][0])+'_'+str(years_quantile[mm][1])+'_'+quantile_version+'.nc'
-
-            # load quantile files and check whether their lats are ascending, correct them if they are descending
-            nc_quantile = xr.open_dataset(filename_quantiles)
-            if nc_quantile['y'][0] > nc_quantile['y'][-1]:
-                lat_quantile = 'descending'
-            elif nc_quantile['y'][0] < nc_quantile['y'][-1]:
-                lat_quantile = 'ascending'
-                ValueError('The latitudes in <nc_quantile> are ascending, which is not expected !')
-            else:
-                valueError('latitudes in <nc_quantile> are neither ascending or descending !')
-
-            # #check whether the previously stored model and version thereof match those requested by this script
-            # nc_quantile = xr.open_dataset(filename_quantiles)
-            # if nc_quantile.model == models[mm]+version[mm]:
-            #     print('The requested model '+models[mm]+' and its version '+version[mm]+' coincide with the entry previously stored in <nc_quantile.model>: '+str(nc_quantile.model)+'!')
-            # else:
-            #     raise ValueError('The requested model '+models[mm]+' and its version '+version[mm]+' do NOT coincide with the entry previously stored in <nc_quantile.model>: '+str(nc_quantile.model)+'!')
-            
-            if nc_quantile.model == models[mm]+version[mm]:
-                print('The requested model '+models[mm]+' and its version '+version[mm]+' coincide with the entry previously stored in <nc_quantile.model>: '+str(nc_quantile.model)+'!')
-            else:
-                raise ValueError('The requested model '+models[mm]+' and its version '+version[mm]+' do NOT coincide with the entry previously stored in <nc_quantile.model>: '+str(nc_quantile.model)+'!')
-
-            #load forecast file
-            if variable_fc[mm][vv] in ('SPEI-3','SPEI-3-M','SPEI-3-R'):
-                filename_forecast = path_gcm_base_masked+'/'+domain+'/'+product+'/'+variable_fc[mm][vv]+'/'+models[mm]+'/'+version[mm]+'/coefs_pool_members/'+str(year_init)+str(month_init).zfill(2)+'/'+file_start[mm][vv]+'_'+domain+'_'+product+'_'+variable_fc[mm][vv]+'_'+models[mm]+'_'+version[mm]+'_'+str(year_init)+str(month_init).zfill(2)+'.nc'
-            elif variable_fc[mm][vv] in ('fwi','pvpot','FD-C4','SU-C4'):
-                filename_forecast = path_gcm_base_derived+'/'+domain+'/'+product+'/'+variable_fc[mm][vv]+'/'+models[mm]+'/'+version[mm]+'/'+str(year_init)+str(month_init).zfill(2)+'/'+file_start[mm][vv]+'_'+domain+'_'+product+'_'+variable_fc[mm][vv]+'_'+models[mm]+'_'+version[mm]+'_'+str(year_init)+str(month_init).zfill(2)+'.nc'
-            elif variable_fc[mm][vv] in ('psl','sfcWind','tas','pr','rsds'):
-                filename_forecast = path_gcm_base+'/'+domain+'/'+product+'/'+variable_fc[mm][vv]+'/'+models[mm]+'/'+version[mm]+'/'+str(year_init)+str(month_init).zfill(2)+'/'+file_start[mm][vv]+'_'+domain+'_'+product+'_'+variable_fc[mm][vv]+'_'+models[mm]+'_'+version[mm]+'_'+str(year_init)+str(month_init).zfill(2)+'.nc'
-            else:
-                raise Exception('ERROR: check entry for variables[vv] !')
-            
-            #filename_forecast = path_gcm_base+'/'+product+'/'+variable_fc[mm][vv]+'/'+models[mm]+'/'+version[mm]+'/'+str(year_init)+str(month_init).zfill(2)+'/'+file_start[mm][vv]+'_'+domain+'_'+product+'_'+variable_fc[mm][vv]+'_'+models[mm]+'_'+version[mm]+'_'+str(year_init)+str(month_init).zfill(2)+'.nc'
-            nc_fc = xr.open_dataset(filename_forecast,decode_timedelta=False)
-            if nc_fc[lat_name[mm][vv]][0] > nc_fc[lat_name[mm][vv]][-1]:
-                lat_nc_fc = 'descending'
-            elif nc_fc[lat_name[mm][vv]][0] < nc_fc[lat_name[mm][vv]][-1]:
-                lat_nc_fc = 'ascending'
-            else:
-                valueError('latitudes in <nc_fc> are neither ascending or descending !')
-
-            #check whethter the latitudes in the quantile and forecast files conincide
-            if any(nc_fc[lat_name[mm][vv]].values != nc_quantile['y'].values) and lat_nc_fc == 'ascending' and lat_quantile == 'descending':
-                print('Warning: The lats in '+filename_forecast+' and '+filename_quantiles+' do not match but the former comes with ascending and the latter with descending latitudes, which is an allowed inconsistency since xarrays stores netcdf file with ascending lats and xarray with descending lats by default ! <nc_fc> will be re-indexed to descending latitudes below...')
-            elif any(nc_fc[lat_name[mm][vv]].values != nc_quantile['y'].values) and lat_nc_fc != 'ascending':
-                raise ValueError('The lats in '+filename_forecast+' and '+filename_quantiles+' do not match for an unknown reason !')
-            else:
-                print('The lats in <nc_fc> and <nc_quantile> match !')
-
-            # in case a match is detected, re-index the quantiles and forecasts with ascending latitudes, if necessary 
-            if nc_quantile['y'][0] < nc_quantile['y'][-1]:
-                print('WARNING: the latitudes in '+filename_quantiles+' come in ascending order and are inverted to be consistent with the order of the remaining datasets / variables (descending) !')
-                nc_quantile = flip_latitudes_and_data(nc_quantile,'y')
-
-            if nc_fc[lat_name[mm][vv]][0] < nc_fc[lat_name[mm][vv]][-1]:
-                print('WARNING: the latitudes in '+filename_forecast+' come in ascending order and are inverted to be consistent with the order of the remaining datasets / variables (descending) !')
-                nc_fc = flip_latitudes_and_data(nc_fc,lat_name[mm][vv])
-
-            #optionally apply land sea mask; set values of sea to nan
-            if variable_std[mm][vv] in masked_variables_std:
-                print('Upon user request, values for sea grid-boxes are set to nan for '+variable_std[mm][vv]+' ! ')               
-                
-                #get path to mask file as a function of the requested sub-domain
-                if domain == 'medcof':
-                    mask_file_indir = 'ECMWF_Land_Medcof_descending_lat_reformatted.nc' # mask file as it appears in its directory
-                elif domain == 'Iberia':
-                    mask_file_indir = 'PTI-grid_Iberia_descending_lat_reformatted.nc'
-                elif domain == 'Canarias':
-                    mask_file_indir = 'PTI-grid_Canarias_descending_lat_reformatted.nc'
+                if nc_quantile['y'][0] > nc_quantile['y'][-1]:
+                    lat_quantile = 'descending'
+                elif nc_quantile['y'][0] < nc_quantile['y'][-1]:
+                    lat_quantile = 'ascending'
+                    ValueError('The latitudes in <nc_quantile> are ascending, which is not expected !')
                 else:
-                    raise ValueError('Check entry for <domain> input parameter !')                
-                
-                mask_file = mask_dir+'/'+mask_file_indir #here, descending lats are needed (check why the DataArrays behave distinct concerning ascending or descending lats in pySeasonal)
-                
-                #apply land-sea mask
-                nc_fc = apply_sea_mask(nc_fc,mask_file,lat_name[mm][vv],lon_name[mm][vv])
-                
-            elif variable_std[mm][vv] not in masked_variables_std:
-                print('As requested by the user, the forecast probabilities are not filtered by a land-sea mask for '+variable_std[mm][vv]+' !')
-            else:
-                raise ValueError('check whether <variable_std[mm][vv]> is in <masked_variables_std> !')
+                    valueError('latitudes in <nc_quantile> are neither ascending or descending !')
 
-            #a seventh forecast months was erroneously added to the SPEI-3-M from cmcc35. This is corrected here
-            if models[mm] == 'cmcc' and version[mm] == '35' and variable_fc[mm][vv] == 'SPEI-3-M':
-                print('Removing 7th forecast months from '+models[mm]+version[mm]+' and '+variable_fc[mm][vv])
-                time_ind = np.arange(len(nc_fc.time)-1) #get time index with the last month removed
-                pdb.set_trace()
-                nc_fc = nc_fc.isel(time=time_ind)
-            else:
-                print('No correction is necessary for '+models[mm]+version[mm]+' and '+variable_fc[mm][vv]+'. The forecast data will be processed as it is.')
-            
-            #check if the latitudes are in the right order or must be flipped to be consistent with the obserations used for validation
-            if nc_fc[lat_name[mm][vv]][0].values < nc_fc[lat_name[mm][vv]][-1].values:
-                print('WARNING: the latitudes and associated data in '+filename_forecast+' come in descending order and are inverted to be consistent with the order of the remaining datasets / variables (descending) !')
-                nc_fc = flip_latitudes_and_data(nc_fc,lat_name[mm][vv])
-
-            #transform GCM variables and units, if necessary
-            nc_fc, file_valid = transform_gcm_variable(nc_fc,variable_fc[mm][vv],variable_std[mm][vv],models[mm],version[mm])
-            #check whether there is a problem with the variable units as revealed in transform_gcm_variable()
-            if file_valid == 0:
-                raise Exception('ERROR: There is a problem with the expected variable units in '+filename_forecast+' !')
-            
-            #get forecast seasons from file
-            dates_fc = pd.DatetimeIndex(nc_fc.time.values)
-            #check whether the model input data is monthly, otherwise daily is assumed and this must be improved in future versions
-            if len(dates_fc.month) == len(np.unique(dates_fc.month)):
-                print('INFO: the model input data for '+variable_fc[mm][vv]+' is monthly !')
-                months_fc_uni = dates_fc.month
-            else:
-                months_fc_uni = dates_fc[15::30].month #get unique forecast month in the right order, i.e. as appears in the file
-            
-            season = []
-            season_label = []
-            season_start_month = np.arange(len(months_fc_uni)-season_length+1) #index of the first month of each 3-month period
-            
-            #init final output array
-            if vv == 0:
-                out_arr = np.zeros((len(variable_fc[mm]),len(quantile_threshold)+1,len(season_start_month),len(nc_fc[lat_name[mm][vv]]),len(nc_fc[lon_name[mm][vv]])),dtype=datatype)
-                out_arr[:] = np.nan
-            for mo in season_start_month:
-                season_i = months_fc_uni[mo:mo+season_length].to_list()
-                season_i_label = assign_season_label(season_i)
-                season_ind = np.where(np.isin(dates_fc.month,season_i))[0]
-                if time_name[mm][vv] == 'forecast_time':
-                    seas_mean = nc_fc[variable_fc_nc[mm][vv]].isel(forecast_time=season_ind).mean(dim=time_name[mm][vv])
-                elif time_name[mm][vv] == 'time':
-                    seas_mean = nc_fc[variable_fc_nc[mm][vv]].isel(time=season_ind).mean(dim=time_name[mm][vv])
+                # #check whether the previously stored model and version thereof match those requested by this script
+                # nc_quantile = xr.open_dataset(filename_quantiles)
+                # if nc_quantile.model == models[mm]+version[mm]:
+                #     print('The requested model '+models[mm]+' and its version '+version[mm]+' coincide with the entry previously stored in <nc_quantile.model>: '+str(nc_quantile.model)+'!')
+                # else:
+                #     raise ValueError('The requested model '+models[mm]+' and its version '+version[mm]+' do NOT coincide with the entry previously stored in <nc_quantile.model>: '+str(nc_quantile.model)+'!')
+                
+                if nc_quantile.model == models[mm]+version[mm]:
+                    print('The requested model '+models[mm]+' and its version '+version[mm]+' coincide with the entry previously stored in <nc_quantile.model>: '+str(nc_quantile.model)+'!')
                 else:
-                    raise Exception('ERROR: unkwnown entry for <time_name[mm][vv]> input parameter!')
+                    raise ValueError('The requested model '+models[mm]+' and its version '+version[mm]+' do NOT coincide with the entry previously stored in <nc_quantile.model>: '+str(nc_quantile.model)+'!')
+
+                #load forecast file
+                if variable_fc[mm][vv] in ('psl','sfcWind','tas','pr','rsds'): #raw model variables
+                    filename_forecast = path_gcm_base+'/'+domain+'/'+product+'/'+variable_fc[mm][vv]+'/'+models[mm]+'/'+version[mm]+'/'+str(year_init)+str(month_init).zfill(2)+'/'+file_start[mm][vv]+'_'+domain+'_'+product+'_'+variable_fc[mm][vv]+'_'+models[mm]+'_'+version[mm]+'_'+str(year_init)+str(month_init).zfill(2)+'.nc'
+                elif variable_fc[mm][vv] in ('fwi','pvpot','TXm-C4','FD-C4','SU-C4','TR-C4','Rx1day-C4','Rx5day-C4','SPEI-3-M-C4','FWI-C4'): # derived model variables
+                    filename_forecast = path_gcm_base_derived+'/'+domain+'/'+product+'/'+variable_fc[mm][vv]+'/'+models[mm]+'/'+version[mm]+'/'+str(year_init)+str(month_init).zfill(2)+'/'+file_start[mm][vv]+'_'+domain+'_'+product+'_'+variable_fc[mm][vv]+'_'+models[mm]+'_'+version[mm]+'_'+str(year_init)+str(month_init).zfill(2)+'.nc'
+                elif variable_fc[mm][vv] in ('SPEI-3','SPEI-3-M','SPEI-3-R'): #derived variables, special case of SPEI
+                    filename_forecast = path_gcm_base_derived+'/'+domain+'/'+product+'/'+variable_fc[mm][vv]+'/'+models[mm]+'/'+version[mm]+'/coefs_pool_members/'+str(year_init)+str(month_init).zfill(2)+'/'+file_start[mm][vv]+'_'+domain+'_'+product+'_'+variable_fc[mm][vv]+'_'+models[mm]+'_'+version[mm]+'_'+str(year_init)+str(month_init).zfill(2)+'.nc'
+                else:
+                    raise Exception('ERROR: check entry for variables[vv] !')
                 
-                #precipitation correction, is here done on seasonal timescale, but must be done on montly timescale in the future to be consistent with get_skill_season.py!
-                if variable_fc[mm][vv] == 'pr':
-                    print('INFO: setting seasonal mean '+variable_fc[mm][vv]+' values from '+models[mm]+version[mm]+' < '+str(precip_threshold)+' to 0...')
-                    #zero_mask = seas_mean[variable_fc[mm][vv]].values < precip_threshold
-                    #seas_mean[variable_fc[mm][vv]].values[zero_mask] = 0.
-                    zero_mask = seas_mean.values < precip_threshold
-                    seas_mean.values[zero_mask] = 0.
+                #filename_forecast = path_gcm_base+'/'+product+'/'+variable_fc[mm][vv]+'/'+models[mm]+'/'+version[mm]+'/'+str(year_init)+str(month_init).zfill(2)+'/'+file_start[mm][vv]+'_'+domain+'_'+product+'_'+variable_fc[mm][vv]+'_'+models[mm]+'_'+version[mm]+'_'+str(year_init)+str(month_init).zfill(2)+'.nc'
+                nc_fc = xr.open_dataset(filename_forecast,decode_timedelta=False)
 
-                # get the ensemble terciles for this season and leadtime (note that the season and leadtime have the same index !)
+                if nc_fc[lat_name[mm][vv]][0] > nc_fc[lat_name[mm][vv]][-1]:
+                    lat_nc_fc = 'descending'
+                elif nc_fc[lat_name[mm][vv]][0] < nc_fc[lat_name[mm][vv]][-1]:
+                    lat_nc_fc = 'ascending'
+                else:
+                    valueError('latitudes in <nc_fc> are neither ascending or descending !')
+
+                #check whethter the latitudes in the quantile and forecast files conincide
+                if any(nc_fc[lat_name[mm][vv]].values != nc_quantile['y'].values) and lat_nc_fc == 'ascending' and lat_quantile == 'descending':
+                    print('Warning: The lats in '+filename_forecast+' and '+filename_quantiles+' do not match but the former comes with ascending and the latter with descending latitudes, which is an allowed inconsistency since xarrays stores netcdf file with ascending lats and xarray with descending lats by default ! <nc_fc> will be re-indexed to descending latitudes below...')
+                elif any(nc_fc[lat_name[mm][vv]].values != nc_quantile['y'].values) and lat_nc_fc != 'ascending':
+                    raise ValueError('The lats in '+filename_forecast+' and '+filename_quantiles+' do not match for an unknown reason !')
+                else:
+                    print('The lats in <nc_fc> and <nc_quantile> match !')
+
+                # in case a match is detected, re-index the quantiles and forecasts with ascending latitudes, if necessary 
+                if nc_quantile['y'][0] < nc_quantile['y'][-1]:
+                    print('WARNING: the latitudes in '+filename_quantiles+' come in ascending order and are inverted to be consistent with the order of the remaining datasets / variables (descending) !')
+                    nc_quantile = flip_latitudes_and_data(nc_quantile,'y')
+
+                if nc_fc[lat_name[mm][vv]][0] < nc_fc[lat_name[mm][vv]][-1]:
+                    print('WARNING: the latitudes in '+filename_forecast+' come in ascending order and are inverted to be consistent with the order of the remaining datasets / variables (descending) !')
+                    nc_fc = flip_latitudes_and_data(nc_fc,lat_name[mm][vv])
+
+                #optionally apply land sea mask; set values of sea to nan
+                if variable_std[mm][vv] in masked_variables_std:
+                    print('Upon user request, values for sea grid-boxes are set to nan for '+variable_std[mm][vv]+' ! ')               
+                    
+                    #get path to mask file as a function of the requested sub-domain
+                    if domain == 'medcof':
+                        mask_file_indir = 'ECMWF_Land_Medcof_descending_lat_reformatted.nc' # mask file as it appears in its directory
+                    elif domain == 'Iberia':
+                        mask_file_indir = 'PTI-grid_Iberia_descending_lat_reformatted.nc'
+                    elif domain == 'Canarias':
+                        mask_file_indir = 'PTI-grid_Canarias_descending_lat_reformatted.nc'
+                    else:
+                        raise ValueError('Check entry for <domain> input parameter !')                
+                    
+                    mask_file = mask_dir+'/'+mask_file_indir #here, descending lats are needed (check why the DataArrays behave distinct concerning ascending or descending lats in pySeasonal)
+                    
+                    #apply land-sea mask
+                    nc_fc = apply_sea_mask(nc_fc,mask_file,lat_name[mm][vv],lon_name[mm][vv])
+                    
+                elif variable_std[mm][vv] not in masked_variables_std:
+                    print('As requested by the user, the forecast probabilities are not filtered by a land-sea mask for '+variable_std[mm][vv]+' !')
+                else:
+                    raise ValueError('check whether <variable_std[mm][vv]> is in <masked_variables_std> !')
+
+                #a seventh forecast months was erroneously added to the SPEI-3-M from cmcc35. This is corrected here
+                if models[mm] == 'cmcc' and version[mm] == '35' and variable_fc[mm][vv] == 'SPEI-3-M':
+                    print('Removing 7th forecast months from '+models[mm]+version[mm]+' and '+variable_fc[mm][vv])
+                    time_ind = np.arange(len(nc_fc.time)-1) #get time index with the last month removed
+                    pdb.set_trace()
+                    nc_fc = nc_fc.isel(time=time_ind)
+                else:
+                    print('No correction is necessary for '+models[mm]+version[mm]+' and '+variable_fc[mm][vv]+'. The forecast data will be processed as it is.')
                 
-                # # option to load quantile files containing multiple variables without the singleton dimensions <aggregation> and <model> requested by front-end.
-                # lower_xr = nc_quantile.sel(detrended=detrended,quantile_threshold=quantile_threshold[0],variable=variable_std[mm][vv],season=season_i_label).quantile_ensemble.isel(lead=mo) #is a 2D xarray data array
-                # upper_xr = nc_quantile.sel(detrended=detrended,quantile_threshold=quantile_threshold[1],variable=variable_std[mm][vv],season=season_i_label).quantile_ensemble.isel(lead=mo)
+                #check if the latitudes are in the right order or must be flipped to be consistent with the obserations used for validation
+                if nc_fc[lat_name[mm][vv]][0].values < nc_fc[lat_name[mm][vv]][-1].values:
+                    print('WARNING: the latitudes and associated data in '+filename_forecast+' come in descending order and are inverted to be consistent with the order of the remaining datasets / variables (descending) !')
+                    nc_fc = flip_latitudes_and_data(nc_fc,lat_name[mm][vv])
+
+                #transform GCM variables and units, if necessary
+                nc_fc, file_valid = transform_gcm_variable(nc_fc,variable_fc[mm][vv],variable_std[mm][vv],models[mm],version[mm])
+                #check whether there is a problem with the variable units as revealed in transform_gcm_variable()
+                if file_valid == 0:
+                    raise Exception('ERROR: There is a problem with the expected variable units in '+filename_forecast+' !')
                 
-                # #  option to load quantile files containing single variables with the singleton dimensions <aggregation> and <model> requested by front-end.
-                lower_xr = nc_quantile.sel(aggregation=agg_label[ag],model=models[mm]+version[mm],detrended=detrended,quantile_threshold=quantile_threshold[0],season=season_i_label).quantile_ensemble.isel(lead=mo) #is a 2D xarray data array
-                upper_xr = nc_quantile.sel(aggregation=agg_label[ag],model=models[mm]+version[mm],detrended=detrended,quantile_threshold=quantile_threshold[1],season=season_i_label).quantile_ensemble.isel(lead=mo)
-
-                # calculate the forecast probabilities with these terciles
-                # pdb.set_trace()
-                nr_mem,upper_prob,center_prob,lower_prob = get_forecast_prob(seas_mean,lower_xr,upper_xr)
-
-                ##set ocean points to nan
-                # upper_prob = upper_prob.where(~np.isnan(lower_xr.values))
-                # center_prob = center_prob.where(~np.isnan(lower_xr.values))
-                # lower_prob = lower_prob.where(~np.isnan(lower_xr.values))
+                #get forecast seasons from file
+                dates_fc = pd.DatetimeIndex(nc_fc.time.values)
+                #check whether the model input data is monthly, otherwise daily is assumed and this must be improved in future versions
+                if len(dates_fc.month) == len(np.unique(dates_fc.month)):
+                    print('INFO: the model input data for '+variable_fc[mm][vv]+' is monthly !')
+                    months_fc_uni = dates_fc.month
+                else:
+                    months_fc_uni = dates_fc[15::30].month #get unique forecast month in the right order, i.e. as appears in the file
                 
-                #stack and turn to numpy format
-                probab = np.stack((lower_prob.values,center_prob.values,upper_prob.values),axis=0)
-                probab_nan = np.zeros((probab.shape))
-                probab_nan[:] = np.nan
-                #get index of the tercile having the maximum forecast probability at each grid box; save this probability at the given tercile; at the other terciles the nan value will be kept.
-                for ii in np.arange(probab.shape[1]):
-                    for jj in np.arange(probab.shape[2]):
-                        maxind = np.argmax(probab[:,ii,jj])
-                        probab_nan[maxind,ii,jj] = probab[maxind,ii,jj]
-                        probab_nan[probab_nan == 0] = np.nan #set 0 probabilities to nan
-                #probab_nan[maxprob_ind] = probab[maxprob_ind,:,:]
-                out_arr[vv,:,mo,:,:] = probab_nan
-                season.append(season_i)
-                season_label.append(season_i_label)
+                season = []
+                season_label = []
+                season_start_month = np.arange(len(months_fc_uni)-season_length+1) #index of the first month of each 3-month period
+                
+                #init final output array
+                if vv == 0:
+                    out_arr = np.zeros((len(variable_fc[mm]),len(quantile_threshold)+1,len(season_start_month),len(nc_fc[lat_name[mm][vv]]),len(nc_fc[lon_name[mm][vv]])),dtype=datatype)
+                    out_arr[:] = np.nan
+                for mo in season_start_month:
+                    season_i = months_fc_uni[mo:mo+season_length].to_list()
+                    season_i_label = assign_season_label(season_i)
+                    season_ind = np.where(np.isin(dates_fc.month,season_i))[0]
+                    if time_name[mm][vv] == 'forecast_time':
+                        seas_mean = nc_fc[variable_fc_nc[mm][vv]].isel(forecast_time=season_ind).mean(dim=time_name[mm][vv])
+                    elif time_name[mm][vv] == 'time':
+                        seas_mean = nc_fc[variable_fc_nc[mm][vv]].isel(time=season_ind).mean(dim=time_name[mm][vv])
+                    else:
+                        raise Exception('ERROR: unkwnown entry for <time_name[mm][vv]> input parameter!')
+                    
+                    #precipitation correction, is here done on seasonal timescale, but must be done on montly timescale in the future to be consistent with get_skill_season.py!
+                    if variable_fc[mm][vv] == 'pr':
+                        print('INFO: setting seasonal mean '+variable_fc[mm][vv]+' values from '+models[mm]+version[mm]+' < '+str(precip_threshold)+' to 0...')
+                        #zero_mask = seas_mean[variable_fc[mm][vv]].values < precip_threshold
+                        #seas_mean[variable_fc[mm][vv]].values[zero_mask] = 0.
+                        zero_mask = seas_mean.values < precip_threshold
+                        seas_mean.values[zero_mask] = 0.
 
-        #create xarray data array and save to netCDF format
-        date_init = [nc_fc.time[0].values.astype(str)]
-        out_arr = np.expand_dims(out_arr,axis=0) #add "rtime" dimension to add the date of the forecast init
+                    # get the ensemble terciles for this season and leadtime (note that the season and leadtime have the same index !)
+                    
+                    # # option to load quantile files containing multiple variables without the singleton dimensions <aggregation> and <model> requested by front-end.
+                    # lower_xr = nc_quantile.sel(detrended=detrended,quantile_threshold=quantile_threshold[0],variable=variable_std[mm][vv],season=season_i_label).quantile_ensemble.isel(lead=mo) #is a 2D xarray data array
+                    # upper_xr = nc_quantile.sel(detrended=detrended,quantile_threshold=quantile_threshold[1],variable=variable_std[mm][vv],season=season_i_label).quantile_ensemble.isel(lead=mo)
+                    
+                    # #  option to load quantile files containing single variables with the singleton dimensions <aggregation> and <model> requested by front-end.
+                    lower_xr = nc_quantile.sel(aggregation=agg_label[ag],model=models[mm]+version[mm],detrended=detrended,quantile_threshold=quantile_threshold[0],season=season_i_label).quantile_ensemble.isel(lead=mo) #is a 2D xarray data array
+                    upper_xr = nc_quantile.sel(aggregation=agg_label[ag],model=models[mm]+version[mm],detrended=detrended,quantile_threshold=quantile_threshold[1],season=season_i_label).quantile_ensemble.isel(lead=mo)
 
-        # output file format option without singleton dimensions for aggregation and model
-        # out_arr = xr.DataArray(out_arr, coords=[date_init,variable_std,np.array((1,2,3)),season_label,nc_fc[lat_name[mm][-1]],nc_fc[lon_name[mm][-1]]], dims=['rtime','variable','tercile','season','y','x'], name='probability')
-        
-        # output file format option with singleton dimensions for aggregation and model, as requested by Jaime.
-        out_arr = np.expand_dims(out_arr,axis=0)
-        out_arr = np.expand_dims(out_arr,axis=0)
-        out_arr = xr.DataArray(out_arr, coords=[[agg_label[ag]],[models[mm]+version[mm]],date_init,variable_std[mm],np.array((1,2,3)),season_label,nc_fc[lat_name[mm][-1]],nc_fc[lon_name[mm][-1]]], dims=['aggregation','model','rtime','variable','tercile','season','y','x'], name='probability')
-        out_arr = out_arr.to_dataset()
-        
-        #set dimension attributes
-        out_arr['rtime'].attrs['standard_name'] = 'forecast_reference_time'
-        out_arr['rtime'].attrs['long_name'] = 'initialization date of the forecast'
-        out_arr['tercile'].attrs['long_name'] = 'terciles in ascending order, 1 = lower, 2 = center, 3 = upper'
-        out_arr['tercile'].attrs['tercile_period'] = years_quantile[mm]
-        out_arr['tercile'].attrs['tercile_version'] = nc_quantile.version[mm]
-        out_arr['variable'].attrs['long_name'] = 'name of the meteorological variable'
-        out_arr['season'].attrs['long_name'] = 'season the forecast is valid for'
-        out_arr['season'].attrs['length_in_months'] = season_length
-        #set variable attributes
-        out_arr['probability'].attrs['units'] = 'forecast probability ('+str(np.round(out_arr['probability'].min().values,3))+' - '+str(np.round(out_arr['probability'].max().values,3))+') for the most probable tercile, otherwise nan'
-        out_arr['probability'].attrs['detrended'] = detrended
-        #set global attributes
-        out_arr.attrs['model'] = models[mm]+version[mm]
-        out_arr.attrs['temporal_aggregation'] = agg_label[ag]
-        out_arr.attrs['init'] = str(date_init[0])
-        out_arr.attrs['file_author'] = nc_quantile.author
+                    # calculate the forecast probabilities with these terciles
+                    nr_mem,upper_prob,center_prob,lower_prob = get_forecast_prob(seas_mean,lower_xr,upper_xr)
 
-        ##set chunking and save the file
-        #out_arr = out_arr.chunk({"variable":1, "tercile":1, "season":1, "y":len(nc_fc[lat_name[mm][-1]]), "x":len(nc_fc[lon_name[mm][-1]])})        
+                    # #set the tercile probabilities of zero-bound variables bound to 0 if the lower tercil equals 0
+                    # if variable_fc[mm][vv] in ('FD-C4','SU-C4','TR-C4','Rx1day-C4','Rx5day-C4'):
+                    #     print('The tercile probabilities for the zero-bound variable '+variable_fc[mm][vv]+' are set to nan at grid-boxes where the lower tercile equals 0.')
+                    #     valid_ind = lower_xr.values > 0
+                    #     lower_prob = lower_prob.where(valid_ind, np.nan)
+                    #     center_prob = center_prob.where(valid_ind, np.nan)
+                    #     upper_prob = upper_prob.where(valid_ind, np.nan)
+                    #     del(valid_ind)
+                    # else:
+                    #     print(variable_fc[mm][vv]+ ' is a variable not bound to zero for which tercile values equalling 0 are allowed.')
 
-        # options to save multiple variables per file
-        # encoding for output file format option without singleton dimensions for aggregation and model
-        # encoding = dict(probability=dict(chunksizes=(1, 1, 1, 1, len(nc_fc[lat_name[mm][-1]]), len(nc_fc[lon_name[mm][-1]])))) #https://docs.xarray.dev/en/stable/user-guide/io.html#writing-encoded-data
-        
-        # # encoding for output file format option with singleton dimensions for aggregation and model
-        # encoding = dict(probability=dict(chunksizes=(1, 1, 1, 1, 1, 1, len(nc_fc[lat_name[mm][-1]]), len(nc_fc[lon_name[mm][-1]])))) #https://docs.xarray.dev/en/stable/user-guide/io.html#writing-encoded-data
-        # savename = dir_forecast+'/probability_'+agg_label[ag]+'_'+models[mm]+version[mm]+'_init_'+str(year_init)+str(month_init).zfill(2)+'_'+str(season_length)+'mon_dtr_'+detrended+'_refyears_'+str(years_quantile[mm][0])+'_'+str(years_quantile[mm][1])+'_'+quantile_version+'.nc'
-        # out_arr.to_netcdf(savename,encoding=encoding)
+                    ##set ocean points to nan
+                    # upper_prob = upper_prob.where(~np.isnan(lower_xr.values))
+                    # center_prob = center_prob.where(~np.isnan(lower_xr.values))
+                    # lower_prob = lower_prob.where(~np.isnan(lower_xr.values))
+                    
+                    #stack and turn to numpy format
+                    probab = np.stack((lower_prob.values,center_prob.values,upper_prob.values),axis=0)
+                    probab_nan = np.zeros((probab.shape))
+                    probab_nan[:] = np.nan
+                    #get index of the tercile having the maximum forecast probability at each grid box; save this probability at the given tercile; at the other terciles the nan value will be kept.
+                    for ii in np.arange(probab.shape[1]):
+                        for jj in np.arange(probab.shape[2]):
+                            maxind = np.argmax(probab[:,ii,jj])
+                            probab_nan[maxind,ii,jj] = probab[maxind,ii,jj]
+                            probab_nan[probab_nan == 0] = np.nan #set 0 probabilities to nan
+                    #probab_nan[maxprob_ind] = probab[maxprob_ind,:,:]
+                    out_arr[vv,:,mo,:,:] = probab_nan
+                    season.append(season_i)
+                    season_label.append(season_i_label)
 
-        # option to save one variable per file
-        for vvv in np.arange(len(variable_std[mm])):
-            out_arr_singlevar = out_arr.sel(variable=variable_std[mm][vvv]).drop_vars("variable")
-            out_arr_singlevar.attrs['variable'] = variable_std[mm][vvv]
-            encoding = dict(probability=dict(chunksizes=(1, 1, 1, 1, 1, len(nc_fc[lat_name[mm][-1]]), len(nc_fc[lon_name[mm][-1]])))) #https://docs.xarray.dev/en/stable/user-guide/io.html#writing-encoded-data
-            savename_out_arr_singlevar = dir_forecast+'/'+domain+'/probability_'+agg_label[ag]+'_'+models[mm]+version[mm]+'_'+variable_std[mm][vvv]+'_'+domain+'_init_'+str(year_init)+str(month_init).zfill(2)+'_dtr_'+detrended+'_refyears_'+str(years_quantile[mm][0])+'_'+str(years_quantile[mm][1])+'_'+quantile_version+'.nc'
-            out_arr_singlevar.to_netcdf(savename_out_arr_singlevar,encoding=encoding)
-            out_arr_singlevar.close()
-            del(out_arr_singlevar)
-            time.sleep(1)
+            #create xarray data array and save to netCDF format
+            date_init = [nc_fc.time[0].values.astype(str)]
+            out_arr = np.expand_dims(out_arr,axis=0) #add "rtime" dimension to add the date of the forecast init
 
-        # close all xarray objects
-        lower_xr.close()
-        upper_xr.close()
-        seas_mean.close()
-        nc_fc.close()
-        out_arr.close()
-        # del(lower_xr,upper_xr,seas_mean,nc_fc,out_arr)
+            # output file format option without singleton dimensions for aggregation and model
+            # out_arr = xr.DataArray(out_arr, coords=[date_init,variable_std,np.array((1,2,3)),season_label,nc_fc[lat_name[mm][vv]],nc_fc[lon_name[mm][vv]]], dims=['rtime','variable','tercile','season','y','x'], name='probability')
             
-        nc_quantile.close()
-        # del(nc_quantile)
+            # output file format option with singleton dimensions for aggregation and model, as requested by Jaime.
+            out_arr = np.expand_dims(out_arr,axis=0)
+            out_arr = np.expand_dims(out_arr,axis=0)
+            out_arr = xr.DataArray(out_arr, coords=[[agg_label[ag]],[models[mm]+version[mm]],date_init,variable_std[mm],np.array((1,2,3)),season_label,nc_fc[lat_name[mm][vv]],nc_fc[lon_name[mm][vv]]], dims=['aggregation','model','rtime','variable','tercile','season',lat_name_out,lon_name_out], name='probability')
+            out_arr = out_arr.to_dataset()
+            
+            #set dimension attributes
+            out_arr['rtime'].attrs['standard_name'] = 'forecast_reference_time'
+            out_arr['rtime'].attrs['long_name'] = 'initialization date of the forecast'
+            out_arr['tercile'].attrs['long_name'] = 'terciles in ascending order, 1 = lower, 2 = center, 3 = upper'
+            out_arr['tercile'].attrs['tercile_period'] = years_quantile[mm]
+            out_arr['tercile'].attrs['tercile_version'] = nc_quantile.version[mm]
+            out_arr['variable'].attrs['long_name'] = 'name of the meteorological variable'
+            out_arr['season'].attrs['long_name'] = 'season the forecast is valid for'
+            out_arr['season'].attrs['length_in_months'] = season_length
+            #set variable attributes
+            out_arr['probability'].attrs['units'] = 'forecast probability ('+str(np.round(out_arr['probability'].min().values,3))+' - '+str(np.round(out_arr['probability'].max().values,3))+') for the most probable tercile, otherwise nan'
+            out_arr['probability'].attrs['detrended'] = detrended
+            #set global attributes
+            out_arr.attrs['model'] = models[mm]+version[mm]
+            out_arr.attrs['temporal_aggregation'] = agg_label[ag]
+            out_arr.attrs['init'] = str(date_init[0])
+            out_arr.attrs['file_author'] = nc_quantile.author
 
-    print('INFO: pred2tercile_operational.py has been run successfully ! The netcdf output file containing the tercile probability forecasts has been stored at '+dir_forecast+'/'+domain)
+            ##set chunking and save the file
+            #out_arr = out_arr.chunk({"variable":1, "tercile":1, "season":1, "y":len(nc_fc[lat_name[mm][vv]]), "x":len(nc_fc[lon_name[mm][vv]])})        
+
+            # options to save multiple variables per file
+            # encoding for output file format option without singleton dimensions for aggregation and model
+            # encoding = dict(probability=dict(chunksizes=(1, 1, 1, 1, len(nc_fc[lat_name[mm][vv]]), len(nc_fc[lon_name[mm][vv]])))) #https://docs.xarray.dev/en/stable/user-guide/io.html#writing-encoded-data
+            
+            # # encoding for output file format option with singleton dimensions for aggregation and model
+            # encoding = dict(probability=dict(chunksizes=(1, 1, 1, 1, 1, 1, len(nc_fc[lat_name[mm][vv]]), len(nc_fc[lon_name[mm][vv]])))) #https://docs.xarray.dev/en/stable/user-guide/io.html#writing-encoded-data
+            # savename = dir_forecast+'/probability_'+agg_label[ag]+'_'+models[mm]+version[mm]+'_init_'+str(year_init)+str(month_init).zfill(2)+'_'+str(season_length)+'mon_dtr_'+detrended+'_refyears_'+str(years_quantile[mm][0])+'_'+str(years_quantile[mm][1])+'_'+quantile_version+'.nc'
+            # out_arr.to_netcdf(savename,encoding=encoding)
+
+            # option to save one variable per file
+            for vvv in np.arange(len(variable_std[mm])):
+                out_arr_singlevar = out_arr.sel(variable=variable_std[mm][vvv]).drop_vars("variable")
+                out_arr_singlevar.attrs['variable'] = variable_std[mm][vvv]
+                encoding = dict(probability=dict(chunksizes=(1, 1, 1, 1, 1, len(out_arr[lat_name_out]), len(out_arr[lon_name_out])))) #https://docs.xarray.dev/en/stable/user-guide/io.html#writing-encoded-data
+                savename_out_arr_singlevar = dir_forecast+'/'+domain+'/probability_'+agg_label[ag]+'_'+models[mm]+version[mm]+'_'+variable_std[mm][vvv]+'_'+domain+'_init_'+str(year_init)+str(month_init).zfill(2)+'_dtr_'+detrended+'_refyears_'+str(years_quantile[mm][0])+'_'+str(years_quantile[mm][1])+'_'+quantile_version+'.nc'
+                out_arr_singlevar.to_netcdf(savename_out_arr_singlevar,encoding=encoding)
+                out_arr_singlevar.close()
+                del(out_arr_singlevar)
+                time.sleep(1)
+
+            # close all xarray objects
+            lower_xr.close()
+            upper_xr.close()
+            seas_mean.close()
+            nc_fc.close()
+            out_arr.close()
+            del(lower_xr,upper_xr,seas_mean,nc_fc,out_arr)
+                
+            nc_quantile.close()
+            del(nc_quantile)
+
+        print('INFO: pred2tercile_operational.py has been run successfully ! The netcdf output file containing the tercile probability forecasts has been stored at '+dir_forecast+'/'+domain)
 
 quit()
 #sys.exit(0)

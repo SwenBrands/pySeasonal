@@ -448,7 +448,7 @@ for ag in np.arange(len(agg_label)):
                             pcolorme_mean = get_spatial_aggregation(nc_results[scores[sc]].values,mode_f='mean',lat_f=yy)
                             mapme = nc_results[scores[sc]].values
                             label_pcolor_mean = 'areal mean '+nc_results[scores[sc]].name
-                            label_pcolor_fraction = 'areal fraction whith '+nc_results[scores[sc]].name+' < 1'
+                            label_pcolor_fraction = 'areal fraction with '+nc_results[scores[sc]].name+' < 1'
                             units_pcolor_mean = nc_results[scores[sc]].units
                             units_pcolor_fraction = '%'                    
                             binmask = np.zeros(mapme.shape)

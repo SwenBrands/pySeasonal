@@ -23,6 +23,7 @@ from pathlib import Path
 
 # INDICATE CONFIGURATION FILE ######################################
 
+# configuration_file = 'config_for_aggregate_hindcast_medcof.yaml'
 # configuration_file = 'config_for_aggregate_hindcast_Canarias.yaml'
 configuration_file = 'config_for_aggregate_hindcast_Iberia.yaml'
 
@@ -160,7 +161,7 @@ for mm in np.arange(len(model)):
         if variables[mm][vv] in ('fwi','pvpot','TXm-C4','FD-C4','SU-C4','TR-C4','Rx1day-C4','Rx5day-C4'):
             path_gcm_base_var = path_gcm_base_derived
         elif variables[mm][vv] in ('SPEI-3','SPEI-3-M','SPEI-3-R','SPEI-3-R_eqm_pullLMs-TRUE'):
-            path_gcm_base_var = path_gcm_base_masked
+            path_gcm_base_var = path_gcm_base_derived
         elif variables[mm][vv] in ('psl','sfcWind','tas','pr','rsds'):
             path_gcm_base_var = path_gcm_base
         else:

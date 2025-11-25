@@ -3,7 +3,7 @@
 # Configuration file for seas2ipe.py script
 
 # Version and model configuration
-version: 'v_test'  # version number of the validation results
+version: 'v1q'  # version number of the validation results
 model: ['ecmwf']  # list containing the acronyms of the models to be assessed
 model_version: ['51']  # list containing the versions of these models
 obs: 'PTI-grid-v2'  # string containing the observational reference
@@ -12,12 +12,12 @@ obs: 'PTI-grid-v2'  # string containing the observational reference
 years_quantile: [[1993, 2022]]  # list containing the years used to calculate quantiles, one sub-list per model
 subperiod: 'none'  # climate oscillation: "enso" or "none"
 score: 'pearson_r_binary'  # score of the binary skill mask
-agg_labels: ['1mon']  # considered aggregation windows
+agg_labels: ['3mon']  # considered aggregation windows
 nan_placeholder: 0
 
 # Variable mapping
-variables_std: ['FD-C4','SU-C4']  # standardized variable names
-variables_out: ['fd', 'su']  # output variable names, as defined in PTI-Clima variable table: https://docs.google.com/spreadsheets/d/1K5n3aM0vGgnJEwlghjK1BtqJr0Ug0mQYlzZKQxB2wJU/edit?gid=0#gid=0
+variables_std: ['FD-C4', 'SU-C4', 'TR-C4']  # standardized variable names
+variables_out: ['fd', 'su', 'tr']  # output variable names, as defined in PTI-Clima variable table: https://docs.google.com/spreadsheets/d/1K5n3aM0vGgnJEwlghjK1BtqJr0Ug0mQYlzZKQxB2wJU/edit?gid=0#gid=0
 masked_variables_std: ['none']  # list of variables on which land-sea mask will be applied
 
 # Data type and domain configuration

@@ -17,9 +17,9 @@ from pathlib import Path
 
 # INDICATE CONFIGURATION FILE ######################################
 
-configuration_file = 'config_for_aggregate_obs_Canarias.yaml'
+# configuration_file = 'config_for_aggregate_obs_Canarias.yaml'
 # configuration_file = 'config_for_aggregate_obs_Iberia.yaml'
-# configuration_file = 'config_for_aggregate_obs_medcof.yaml'
+configuration_file = 'config_for_aggregate_obs_medcof.yaml'
 
 ####################################################################
 
@@ -89,7 +89,7 @@ for vv in np.arange(len(variables)):
             nc = xr.open_dataset(path_obs_data, decode_timedelta=False)
         elif variables[vv] == 'SPEI-3':
             #path_obs_data = path_obs_base+'/'+obs+'/'+agg_src+'/'+domain+'_'+resolution+'/'+variables[vv]+'/'+variables[vv]+'_'+obs.upper()+'_'+agg_src+'_*.nc' #SPEI-3_ERA5_day_2021.nc
-            path_obs_data = path_obs_base+'/'+obs.upper()+'/data_masked/'+domain+'_'+resolution+'/'+variables[vv] #SPEI-3_ERA5_day_2021.nc
+            path_obs_data = path_obs_base+'/'+obs.upper()+'/data_derived/'+domain+'_'+resolution+'/mon/'+variables[vv] #SPEI-3_ERA5_day_2021.nc
             #get list of input files
             inputfiles_list = []
             for yy in np.arange(years[0],years[1]+1):
