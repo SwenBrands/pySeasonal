@@ -64,9 +64,9 @@ for do in np.arange(len(domain_list)):
         print(date.today())
     print(year_init, month_init)
 
-    # overwrite the aformentioned variables for develompment purposes
-    year_init = 2024 #a list containing the years the forecast are initialized on, will be looped through with yy
-    month_init = 10 #a list containing the corresponding months the forecast are initialized on, will be called while looping through <year_init> (with yy), i.e. must have the same length
+    # # overwrite the aformentioned variables for develompment purposes
+    # year_init = 2024 #a list containing the years the forecast are initialized on, will be looped through with yy
+    # month_init = 10 #a list containing the corresponding months the forecast are initialized on, will be called while looping through <year_init> (with yy), i.e. must have the same length
 
     # Extract configuration variables
     models = config['models']
@@ -160,7 +160,7 @@ for do in np.arange(len(domain_list)):
                 #load forecast file
                 if variable_fc[mm][vv] in ('psl','sfcWind','tas','pr','rsds'): #raw model variables
                     filename_forecast = path_gcm_base+'/'+domain+'/'+product+'/'+variable_fc[mm][vv]+'/'+models[mm]+'/'+version[mm]+'/'+str(year_init)+str(month_init).zfill(2)+'/'+file_start[mm][vv]+'_'+domain+'_'+product+'_'+variable_fc[mm][vv]+'_'+models[mm]+'_'+version[mm]+'_'+str(year_init)+str(month_init).zfill(2)+'.nc'
-                elif variable_fc[mm][vv] in ('fwi','pvpot','TXm-C4','FD-C4','SU-C4','TR-C4','Rx1day-C4','Rx5day-C4','SPEI-3-M-C4','FWI-C4'): # derived model variables
+                elif variable_fc[mm][vv] in ('fwi','pvpot','Rx1day-C4', 'Rx5day-C4','TNm-C4','PRtot-C4','PRm-C4','TXm-C4','FD-C4','SU-C4','TR-C4','Rx5day-C4_up010','TNm-C4_up010','PRtot-C4_up010','PRm-C4_up010','TXm-C4_up010','FD-C4_up010', 'SU-C4_up010','TR-C4_up010'): # derived model variables
                     filename_forecast = path_gcm_base_derived+'/'+domain+'/'+product+'/'+variable_fc[mm][vv]+'/'+models[mm]+'/'+version[mm]+'/'+str(year_init)+str(month_init).zfill(2)+'/'+file_start[mm][vv]+'_'+domain+'_'+product+'_'+variable_fc[mm][vv]+'_'+models[mm]+'_'+version[mm]+'_'+str(year_init)+str(month_init).zfill(2)+'.nc'
                 elif variable_fc[mm][vv] in ('SPEI-3','SPEI-3-M','SPEI-3-R'): #derived variables, special case of SPEI
                     filename_forecast = path_gcm_base_derived+'/'+domain+'/'+product+'/'+variable_fc[mm][vv]+'/'+models[mm]+'/'+version[mm]+'/coefs_pool_members/'+str(year_init)+str(month_init).zfill(2)+'/'+file_start[mm][vv]+'_'+domain+'_'+product+'_'+variable_fc[mm][vv]+'_'+models[mm]+'_'+version[mm]+'_'+str(year_init)+str(month_init).zfill(2)+'.nc'
@@ -202,7 +202,7 @@ for do in np.arange(len(domain_list)):
                     if domain == 'medcof':
                         mask_file_indir = 'ECMWF_Land_Medcof_descending_lat_reformatted.nc' # mask file as it appears in its directory
                     elif domain == 'Iberia':
-                        mask_file_indir = 'PTI-grid_Iberia_descending_lat_reformatted.nc'
+                        mask_file_indir = 'PTI-grid_Iberia_010_descending_lat_reformatted.nc'
                     elif domain == 'Canarias':
                         mask_file_indir = 'PTI-grid_Canarias_descending_lat_reformatted.nc'
                     else:

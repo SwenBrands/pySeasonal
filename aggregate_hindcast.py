@@ -23,9 +23,9 @@ from pathlib import Path
 
 # INDICATE CONFIGURATION FILE ######################################
 
-# configuration_file = 'config_for_aggregate_hindcast_medcof.yaml'
-# configuration_file = 'config_for_aggregate_hindcast_Canarias.yaml'
-configuration_file = 'config_for_aggregate_hindcast_Iberia.yaml'
+# configuration_file = 'config_for_aggregate_hindcast_Iberia.yaml'
+configuration_file = 'config_for_aggregate_hindcast_Canarias.yaml'
+# configuration_file = 'config_for_aggregate_hindcast_Iberia.yaml'
 
 ####################################################################
 
@@ -129,7 +129,7 @@ nc_template.close()
 for mm in np.arange(len(model)):
 
     #get model dimensions from a template modell initialization, needed for entirely missing hindcast months. This init data of this template file and other information is set in <config_for_aggregate_hindcast.yaml>; <members>, <lons> and <lats> from this file will be overwritten if other init files are found during execution of this script
-    if template_var[mm] in ('tas','psl','pr','FD-C4','SU-C4','TR-C4'):
+    if template_var[mm] in ('tas','psl','pr','FD-C4','SU-C4','TR-C4','FD-C4_up010'):
         path_template_gcm = path_gcm_base+'/'+domain+'/hindcast/'+template_var[mm]+'/'+model[mm]+'/'+version[mm]+'/'+str(template_init[mm][0:4])+str(template_init[mm][-2:]).zfill(2)+'/'+template_file_start[mm]+'_'+domain+'_hindcast_'+template_var[mm]+'_'+model[mm]+'_'+version[mm]+'_'+str(template_init[mm][0:4])+str(template_init[mm][-2:]).zfill(2)+'.nc'
         nc_template_gcm = xr.open_dataset(path_template_gcm, decode_timedelta=False)
         nc_template_gcm = nc_template_gcm.isel(member=np.arange(n_mem[mm])) #select members within the template netCDF file
@@ -158,7 +158,7 @@ for mm in np.arange(len(model)):
         datelist = [] #init date list
         
         #construct path to input GCM files as a function of the variable set in variables[mm][vv]
-        if variables[mm][vv] in ('fwi','pvpot','TXm-C4','FD-C4','SU-C4','TR-C4','Rx1day-C4','Rx5day-C4'):
+        if variables[mm][vv] in ('fwi','pvpot','Rx1day-C4','Rx5day-C4','TNm-C4','PRtot-C4','PRm-C4','TXm-C4','FD-C4','SU-C4','TR-C4','PRtot-C4_up010','PRm-C4_up010','TNm-C4_up010','TXm-C4_up010','FD-C4_up010','SU-C4_up010','TR-C4_up010','Rx5day-C4_up010'):
             path_gcm_base_var = path_gcm_base_derived
         elif variables[mm][vv] in ('SPEI-3','SPEI-3-M','SPEI-3-R','SPEI-3-R_eqm_pullLMs-TRUE'):
             path_gcm_base_var = path_gcm_base_derived
@@ -180,6 +180,7 @@ for mm in np.arange(len(model)):
                 product = 'hindcast'                
             #load each monthly init separately, aggregate daily to monthly-mean data and fill the numpy array <data_mon> interatively.
             for im in np.arange(len(imonth)):
+                #pdb.set_trace()
                 print('INFO: Loading '+variables[mm][vv]+' from '+model[mm]+version[mm]+' on '+domain+' domain for '+str(imonth[im]).zfill(2)+' '+str(years_vec[yy]))
                 
                 #print complete path to the GCM input file
@@ -188,7 +189,7 @@ for mm in np.arange(len(model)):
                     path_gcm_data = path_gcm_base_var+'/'+domain+'/'+product+'/'+variables[mm][vv]+'/'+model[mm]+'/'+version[mm]+'/coefs_pool_members/'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'/'+file_start[mm][vv]+'_'+domain+'_'+product+'_'+variables[mm][vv]+'_'+model[mm]+'_'+version[mm]+'_'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'.nc'
                 elif variables[mm][vv] in ('SPEI-3-R_eqm_pullLMs-TRUE'):
                     path_gcm_data = path_gcm_base_var+'/'+domain+'/'+product+'/'+variables[mm][vv]+'/'+model[mm]+'/'+version[mm]+'/coefs_of_reanalysis/'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'/'+file_start[mm][vv]+'_'+domain+'_'+product+'_SPEI-3-R_'+model[mm]+'_'+version[mm]+'_'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'.nc'
-                elif variables[mm][vv] in ('fwi','pvpot','TXm-C4','FD-C4','SU-C4','TR-C4','Rx1day-C4','Rx5day-C4'):
+                elif variables[mm][vv] in ('fwi','pvpot','Rx1day-C4','Rx5day-C4','TNm-C4','PRtot-C4','PRm-C4','TXm-C4','FD-C4','SU-C4','TR-C4','PRtot-C4_up010','PRm-C4_up010','TNm-C4_up010','TXm-C4_up010','FD-C4_up010','SU-C4_up010','TR-C4_up010','Rx5day-C4_up010'):
                     path_gcm_data = path_gcm_base_var+'/'+domain+'/'+product+'/'+variables[mm][vv]+'/'+model[mm]+'/'+version[mm]+'/'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'/'+file_start[mm][vv]+'_'+domain+'_'+product+'_'+variables[mm][vv]+'_'+model[mm]+'_'+version[mm]+'_'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'.nc'
                 elif variables[mm][vv] in ('psl','sfcWind','tas','pr','rsds'):
                     path_gcm_data = path_gcm_base_var+'/'+domain+'/'+product+'/'+variables[mm][vv]+'/'+model[mm]+'/'+version[mm]+'/'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'/'+file_start[mm][vv]+'_'+domain+'_'+product+'_'+variables[mm][vv]+'_'+model[mm]+'_'+version[mm]+'_'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'.nc'
@@ -225,52 +226,45 @@ for mm in np.arange(len(model)):
                 ##select ensemble members. This is done because the ensemble members in the forecast period may be more than in the hindcast period, e.g. 25 vs. 50 in ECWMF 51
                 print('INFO: Selecting the first '+str(n_mem[mm])+' ensemble members from a total of '+str(nc.member.shape[0])+' members...') 
                 nc = nc.isel(member=np.arange(n_mem[mm]))
-                
+
+                #set variable units and target region
+                try:
+                    var_units = nc[variables_nc[mm][vv]].units
+                except:
+                    print('WARNING: no units have been stored in netcdf input file for '+variables[mm][vv]+' located at '+path_gcm_data)
+                    if variables_nc[mm][vv] == 'pvpot':
+                        print('Units are set to: zero-bound index')
+                        print('For '+variables_nc[mm][vv]+', the units are set to: zero-bound index')
+                        var_units = 'zero-bound index'
+                    elif variables_nc[mm][vv] in ('FD','SU','TR'):
+                            print('For '+variables_nc[mm][vv]+', the units are set to: number of days')
+                            var_units = 'number of days'
+                    else:
+                        raise ValueError('No units are defined for '+variables_nc[mm][vv]+' !!')
+                    
+                #try to retrieve region defintion (i.e. the domain) from the input netCDF file. The region is provided by the files from Predictia but not so by fwi files. If not provided, the value in the <domain> input parameter is set.
+                try:
+                    region = nc.region.values
+                except:
+                    print('WARNING: The region / domain is not provided with the input file '+path_gcm_data+'. Consequently, it is set to '+domain+', this values being provided by the <domain> input parameter set by the user above in this script.')
+                    region = domain
+
+                #this overwrites <members> from the template per model file <nc_template_gcm> loaded above
+                del(members)
+                members = np.array([int(str(nc.member[ii].astype(str).values).replace('Member_','')) for ii in np.arange(len(nc.member))]) #this option also works for the first SPEI-3-R version
+                members = np.arange(len(members)) #force the members to start with 0 irrespective of the input format (the first SPEI-3-R version started with 1)
+
+                #this overwrites <lons and lats> from the template per model file <nc_template_gcm> loaded above
+                del(lons,lats)  
+                lons = nc[lon_name[mm][vv]].values
+                #lon_attrs = nc[lon_name[mm][vv]].attrs #currently not used
+                lats = nc[lat_name[mm][vv]].values
+                #lat_attrs = nc[lat_name[mm][vv]].attrs #currently not used
+
+                # pdb.set_trace()
                 nc_mon = nc[variables_nc[mm][vv]].resample(time="1MS").mean(dim=time_name[mm][vv]) #https://stackoverflow.com/questions/50564459/using-xarray-to-make-monthly-average
                 dates_mon = pd.DatetimeIndex(nc_mon.time)
                 datelist = datelist+list(nc_mon.time.values) #concatenate the date list to create a monthly unique date vector covering the whole period considered in <years>; see below.
-                if yy == 0 and im == 0:
-                    # data_mon = np.zeros((n_mon,n_lead[mm],len(nc_mon['member']),nc_mon.shape[2],nc_mon.shape[3]))
-                    # data_mon[:] = np.nan
-
-                    ##get dimensions and metadata to save in output netCDF file below
-                    try:
-                        var_units = nc[variables_nc[mm][vv]].units
-                    except:
-                        print('WARNING: no units have been stored in netcdf input file for '+variables[mm][vv]+' located at '+path_gcm_data)
-                        if variables_nc[mm][vv] == 'pvpot':
-                            print('Units are set to: zero-bound index')
-                            print('For '+variables_nc[mm][vv]+', the units are set to: zero-bound index')
-                            var_units = 'zero-bound index'
-                        # if variables_nc[mm][vv] in ('FD','SU','TR'):
-                        #     print('For '+variables_nc[mm][vv]+', the units are set to: number of days')
-                        #     var_units = 'number of days'
-                        else:
-                            raise ValueError('No units are defined for '+variables_nc[mm][vv]+' !!')
-                        
-                    #var_name = nc[variables_nc[mm][vv]].name #optionally use variable name from input netCDF files
-                    
-                    ##get members from the input file and transform the variety of possible formats to integer
-                    #members = nc.member.values.astype(int) #this option does not work for the first SPEI-3-R version
-                    
-                    #this overwrites <members> from the template per model file <nc_template_gcm> loaded above
-                    del(members)
-                    members = np.array([int(str(nc.member[ii].astype(str).values).replace('Member_','')) for ii in np.arange(len(nc.member))]) #this option also works for the first SPEI-3-R version
-                    members = np.arange(len(members)) #force the members to start with 0 irrespective of the input format (the first SPEI-3-R version started with 1)
-                    
-                    #try to retrieve region defintion (i.e. the domain) from the input netCDF file. The region is provided by the files from Predictia but not so by fwi files. If not provided, the value in the <domain> input parameter is set.
-                    try:
-                        region = nc.region.values
-                    except:
-                        print('WARNING: The region / domain is not provided with the input file '+path_gcm_data+'. Consequently, it is set to '+domain+', this values being provided by the <domain> input parameter set by the user above in this script.')
-                        region = domain
-
-                    #this overwrites <lons and lats> from the template per model file <nc_template_gcm> loaded above
-                    del(lons,lats)  
-                    lons = nc[lon_name[mm][vv]].values
-                    #lon_attrs = nc[lon_name[mm][vv]].attrs #currently not used
-                    lats = nc[lat_name[mm][vv]].values
-                    #lat_attrs = nc[lat_name[mm][vv]].attrs #currently not used
                 
                 pos_time = dates_mon.month-1 + ((dates_mon.year - years_vec[0])* 12)
                 pos_lead = np.arange(len(dates_mon.month)) #corresponding position along the "lead" dimension
@@ -314,6 +308,8 @@ for mm in np.arange(len(model)):
                     del(nc)
                 elif file_valid == 1:
                     print('INFO: The input file is valid following the criteria defined in transform_gcm_variable() and no corrections are necessary.')
+                    # nc.close()
+                    # del(nc)
                 else:
                     nc.close()
                     del(nc)
@@ -374,7 +370,7 @@ for mm in np.arange(len(model)):
 
 #write flag documenting the correct execution of this script
 print('INFO: aggregate_hindcast.py has been run successfully. A flag is written at '+FLAGDIR)
-flagfile = FLAGDIR+'/aggregate_hindcast_'+domain+'_corrfiles_'+save_corrected_files+'_'+str(model)+'_newvars_'+str(variables_new)+'.flag'
+flagfile = FLAGDIR+'/aggregate_hindcast_'+domain+'_corrfiles_'+save_corrected_files+'_'+str(model)+'_newvars_'+str(np.unique(sum(variables_new, [])))+'.flag'
 flagfile = flagfile.replace("[","").replace("]","").replace("'","").replace(",","_").replace(" ","")
 file = open(flagfile,'w')
 file.write('aggregate_hindcast.py has been run successfully for '+save_corrected_files+', '+str(model)+', '+str(version)+', '+str(variables)+', '+str(variables_nc)+', '+str(variables_new))

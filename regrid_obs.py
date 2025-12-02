@@ -111,7 +111,7 @@ for oo in np.arange(len(obs)):
             nc_obs_int = regridder(nc_obs_data, keep_attrs=True)
             savepath = savepath_base+'/'+obs[oo]+'/'+variables[vv]+'_'+agg_src[oo]+'_'+obs[oo]+'_on_'+model[mm]+version[mm]+'_grid_'+int_method+'_'+domain+'_'+str(years[0])+'_'+str(years[1])+'.nc'
             print('INFO: Writing '+obs[oo]+' '+variables[vv]+' data regridded to '+model[mm]+version[mm]+' grid on '+domain+' domain with '+int_method+' method to: '+savepath)
-            nc_obs_int.to_netcdf(savepath)
+            nc_obs_int.astype('float32').to_netcdf(savepath)
             nc_obs_int.close()
             nc_obs_data.close()
 print('INFO: regrid_obs.py has been run successfully! The output nc files containing the observational data interpolated to a model grid can be found in '+savepath_base)

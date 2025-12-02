@@ -13,8 +13,7 @@ paths:
     dir_netcdf: '/lustre/gmeteo/PTICLIMA/Results/seasonal/validation/' #path to outupt netcdf files produced with this script, containing an xarray dataset with all verification results
     mask_dir: '/lustre/gmeteo/PTICLIMA/Auxiliary-material/Masks' #path to the land-sea masks
 
-models: ['cmcc4', 'eccc5', 'ecmwf51'] # list of models to be evaluated
-# models: ['cmcc4'] # list of models to be evaluated
+models: ['dwd22', 'cmcc4', 'eccc5', 'ecmwf51'] # list of models to be evaluated
 
 model_settings: # Settings for all available models
   ecmwf51: # ECMWF SEAS5.1
@@ -37,9 +36,9 @@ model_settings: # Settings for all available models
   
   dwd22: # DWD GCFS2.2 (System 22 in CDS)
     file_years: [1993, 2022]
-    variables: ['tp', 'ssrd', 'si10', 't2m', 'msl']
-    variables_out: ['tp', 'ssrd', 'si10', 't2m', 'msl']
-    ref_dataset:  ['era5', 'era5', 'era5', 'era5', 'era5']
+    variables: ['fwi', 'pvpot', 'tp', 'ssrd', 'si10', 't2m', 'msl']
+    variables_out: ['fwi', 'pvpot', 'tp', 'ssrd', 'si10', 't2m', 'msl']
+    ref_dataset:  ['era5', 'era5', 'era5', 'era5', 'era5', 'era5', 'era5']
   
   eccc5: # ECCC System 5, based on the CanESM5.1p1bc atmosphere and terrestial ecosystem coupled model, see https://confluence.ecmwf.int/display/CKB/Description+of+CanESM5.1p1bc-v20240611+C3S+contribution
     file_years: [1993, 2022]
@@ -50,6 +49,7 @@ model_settings: # Settings for all available models
 # List of strings defining the modulating oscillations and their phase
 # Constructed from the modulator and phase input arguments in get_skill_season.py
 # Currently "none", "enso0init", "enso1init" or "enso2init"
+
 subperiods: ['none', 'enso0init', 'enso1init', 'enso2init']
 
 # The domain the verification results have been saved on by get_skill_season.py
@@ -59,7 +59,7 @@ domain: 'medcof'
 sub_domain: 'medcof'
 
 #plot maps on top of pcolor heat-maps; yes or no
-plot_maps: 'yes'
+plot_maps: 'no'
 
 # List of variables on which a land-sea mask will be applied, setting values over sea to nan
 masked_variables: ['fwi', 'SPEI-3-M', 'pvpot']

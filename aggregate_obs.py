@@ -17,9 +17,9 @@ from pathlib import Path
 
 # INDICATE CONFIGURATION FILE ######################################
 
-# configuration_file = 'config_for_aggregate_obs_Canarias.yaml'
+configuration_file = 'config_for_aggregate_obs_Canarias.yaml'
 # configuration_file = 'config_for_aggregate_obs_Iberia.yaml'
-configuration_file = 'config_for_aggregate_obs_medcof.yaml'
+# configuration_file = 'config_for_aggregate_obs_medcof.yaml'
 
 ####################################################################
 
@@ -146,7 +146,7 @@ for vv in np.arange(len(variables)):
     # nc.y.attrs('long_name') = 'latitude'
     # nc.y.attrs('units') = 'degrees_north'
     savepath = savepath_base+'/'+obs+'/'+variables[vv]+'_mon_'+obs+'_on_'+grid_name+'_grid_'+int_method+'_'+domain+'_'+str(years[0])+'_'+str(years[1])+'.nc'
-    nc.to_netcdf(savepath)
+    nc.astype('float32').to_netcdf(savepath)
     nc.close()
     del(nc)
     

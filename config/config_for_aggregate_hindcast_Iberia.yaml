@@ -8,7 +8,7 @@ n_lead: [8]  # considered lead-time in months, pertains to <model> loop indicate
 
 # details example file per model that is available on your file system; the example file must be for the base variables as provided by Jaime, i.e. no climate indices are permitted
 template_init: ['199910']  # single init from the hindcast period, expressed as YYYYMM known to be availble, this is to extract the dimensions of the netCDF file for the specific model; it is necessary to set <base_init> because entire hindcast months will be missing for newly introduced models
-template_var: ['FD-C4']  # variable for that single init, the file for that variable must be formated by Predictia
+template_var: ['FD-C4_up010']  # variable for that single init, the file for that variable must be formated by Predictia
 template_file_start: ['seasonal-original-single-levels_derived']
 template_lon: ['lon']
 template_lat: ['lat']
@@ -41,12 +41,12 @@ model_settings:
     # lat_name: ['lat','lat','lat','lat','lat','lat']
     # file_start: ['seasonal-original-single-levels_derived','seasonal-original-single-levels_derived','seasonal-original-single-levels_derived','seasonal-original-single-levels_derived','seasonal-original-single-levels_derived','seasonal-original-single-levels_derived']
 
-    variables: ['TXm-C4','FD-C4','SU-C4','TR-C4']
-    variables_nc: ['TXm-C4','FD-C4','SU-C4','TR-C4']
-    variables_new: ['TXm-C4','FD-C4','SU-C4','TR-C4']
-    time_name: ['time','time','time','time']
-    lon_name: ['lon','lon','lon','lon']
-    lat_name: ['lat','lat','lat','lat']
-    file_start: ['seasonal-original-single-levels_derived','seasonal-original-single-levels_derived','seasonal-original-single-levels_derived','seasonal-original-single-levels_derived']
+    variables: ['Rx5day-C4_up010', 'TNm-C4_up010', 'PRtot-C4_up010', 'PRm-C4_up010', 'TXm-C4_up010', 'FD-C4_up010', 'SU-C4_up010', 'TR-C4_up010']
+    variables_nc: ['Rx5day-C4', 'TNm-C4', 'PRtot-C4', 'PRm-C4', 'TXm-C4', 'FD-C4', 'SU-C4', 'TR-C4']
+    variables_new: ['Rx5day-C4_up010', 'TNm-C4_up010', 'PRtot-C4_up010', 'PRm-C4_up010', 'TXm-C4_up010', 'FD-C4_up010', 'SU-C4_up010', 'TR-C4_up010']
+    time_name: ['time','time', 'time', 'time', 'time', 'time', 'time', 'time']
+    lon_name: ['lon','lon', 'lon', 'lon', 'lon', 'lon', 'lon', 'lon']
+    lat_name: ['lat','lat', 'lat', 'lat', 'lat', 'lat', 'lat', 'lat']
+    file_start: ['seasonal-original-single-levels_derived','seasonal-original-single-levels_derived', 'seasonal-original-single-levels_derived', 'seasonal-original-single-levels_derived', 'seasonal-original-single-levels_derived', 'seasonal-original-single-levels_derived' ,'seasonal-original-single-levels_derived', 'seasonal-original-single-levels_derived']
 
     years: [1981, 2023]
