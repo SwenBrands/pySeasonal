@@ -1,0 +1,38 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pyseasonal"
+version = "0.1.0"
+description = "Python package for seasonal prediction verification and real-time forecasts using Copernicus Data Store products"
+readme = "README.md"
+requires-python = ">=3.8"
+authors = [
+    {name = "Swen Brands", email = "brandssf@ifca.unican.es"}
+]
+maintainers = [
+    {name = "Swen Brands", email = "swen.brands@gmail.com"},
+    {name = "Jaime Diez", email = "jaime.diez.gp@gmail.com"}
+]
+
+dependencies = [
+    "numpy>=1.20.0",
+    "xarray>=0.19.0",
+    "pandas>=1.3.0",
+    "matplotlib>=3.4.0",
+    "cartopy>=0.20.0",
+    "xskillscore>=0.0.23",
+    "xesmf>=0.6.0",
+    "dask>=2021.6.0",
+    "scipy>=1.7.0",
+    "pyyaml>=5.4.0",
+    "psutil>=5.8.0",
+    "netCDF4>=1.5.7",
+]
+
+[project.urls]
+Homepage = "https://github.com/yourusername/pySeasonal"
+Documentation = "https://github.com/yourusername/pySeasonal/blob/main/README.md"
+Repository = "https://github.com/yourusername/pySeasonal"
+Issues = "https://github.com/yourusername/pySeasonal/issues"
