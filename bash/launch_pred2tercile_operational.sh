@@ -25,7 +25,7 @@ cd ${RUNDIR}
 for initdate in "${initdate_list[@]}"
 do
   echo "The forecast initialized on "${initdate}" will be generated..."
-  python pred2tercile_operational.py ${initdate}
+  python pyseasonal/pred2tercile_operational.py ${initdate}
 done
 
 echo "launch_pred2tercile_operational.sh has run successfully, exiting now..."

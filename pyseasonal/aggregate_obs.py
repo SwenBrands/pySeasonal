@@ -26,11 +26,11 @@ configuration_file = 'config_for_aggregate_obs_Canarias.yaml'
 #this is a function to load the configuration file
 def load_config(config_file='config/'+configuration_file):
     """Load configuration from YAML file"""
-    config_path = Path(__file__).parent / config_file
+    config_path = Path(__file__).parent.parent / config_file
     print('The path of the configuration file is '+str(config_path))
     with open(config_path, 'r') as file:
         config = yaml.safe_load(file)
-    
+
     # Setup paths based on GCM_STORE environment variable
     gcm_store = os.getenv('GCM_STORE', 'lustre')
     if gcm_store in config['paths']:
@@ -38,7 +38,7 @@ def load_config(config_file='config/'+configuration_file):
         config['paths'] = paths
     else:
         raise ValueError('Unknown entry for <gcm_store> !')
-    
+
     return config
 
 # Load configuration
@@ -78,7 +78,7 @@ for vv in np.arange(len(variables)):
     print('Processing '+variables[vv]+' from '+obs+' for the years '+str(years))
     if variables[vv] in ('t2m','tp','sst','z500','si10','ssrd','msl'):
         raise ValueError(variables[vv]+' are already available on monthly timescale in '+path_obs_base+' because they have been already donwloaded from CDS!')
-    
+
     #define path to the file and loading function as a function of the variable (variables may come from different providers using distinct rules)
     if domain == 'medcof':
         if variables[vv] == 'fwi':
@@ -107,10 +107,10 @@ for vv in np.arange(len(variables)):
         nc = xr.open_dataset(path_obs_data, decode_timedelta=False)
     else:
         ValueError('Unexpected value for <domain> !')
-    
+
     # pdb.set_trace()
     nc = nc.rename({variables_nc[vv]:variables[vv]})
-        
+
     #cut out target period
     dates = pd.DatetimeIndex(nc.time.values)
     years_ind = np.where((dates.year >= years[0]) & (dates.year <= years[-1]))[0]
@@ -120,7 +120,7 @@ for vv in np.arange(len(variables)):
     print('INFO: calculating monthly mean values for the period '+str(dates[0])+' to '+str(dates[-1])+'. This may take a while...')
     #nc[variables[vv]] = nc[variables[vv]].resample(time="1MS").mean(dim='time') #retains an xr data array
     nc = nc.resample(time="1MS").mean(dim='time') #retains an xr dataset
-    
+
     ##bring format to CDS standard for monthly mean values and save to netcdf format
     nc = nc.reindex(lat=list(reversed(nc.lat))) #brings latitudes to descending order
     nc = nc.rename_dims(lon='x',lat='y') #note that this does not rename the indices !
@@ -136,9 +136,9 @@ for vv in np.arange(len(variables)):
         if variables[vv] == 'pvpot':
             units_content = 'index value ranging from 0 to 1'
             print('WARNING: Setting unit for '+variables[vv]+' to '+units_content)
-    
+
     nc[variables[vv]].attrs['units'] = units_content
-    
+
     # nc.x.attrs('standard_name') = 'longitude'
     # nc.x.attrs('long_name') = 'longitude'
     # nc.x.attrs('units') = 'degrees_east'
@@ -149,6 +149,6 @@ for vv in np.arange(len(variables)):
     nc.astype('float32').to_netcdf(savepath)
     nc.close()
     del(nc)
-    
+
 print('INFO: aggregate_obs.py has been run successfully! The output nc files containing the re-organized data is '+savepath)
 

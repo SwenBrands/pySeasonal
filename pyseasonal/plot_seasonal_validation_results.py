@@ -45,11 +45,11 @@ configuration_file = 'config_for_plot_seasonal_validation_results_'+domain+'.yam
 #this is a function to load the configuration file
 def load_config(config_file='config/'+configuration_file):
     """Load configuration from YAML file"""
-    config_path = Path(__file__).parent / config_file
+    config_path = Path(__file__).parent.parent / config_file
     print('The path of the configuration file is '+str(config_path))
     with open(config_path, 'r') as file:
         config = yaml.safe_load(file)
-    
+
     # Setup paths based on GCM_STORE environment variable
     gcm_store = os.getenv('GCM_STORE', 'lustre')
     if gcm_store in config['paths']:
@@ -57,7 +57,7 @@ def load_config(config_file='config/'+configuration_file):
         config['paths'] = paths
     else:
         raise ValueError('Unknown entry for <gcm_store> !')
-    
+
     return config
 
 #load configuration from YAML file
@@ -170,10 +170,10 @@ for ag in np.arange(len(agg_label)):
                     #load netcdf files containing the verification results
                     filename_input = 'validation_results_season_'+variables[mm][vv]+'_'+agg_label[ag]+'_'+models[mm]+'_vs_'+ref_dataset[mm][vv]+'_'+domain+'_corroutlier_'+corr_outlier+'_detrended_'+detrending[det]+'_'+str(file_years[mm][0])+'_'+str(file_years[mm][1])+'_'+subperiods[su]+'_'+vers+'.nc'
                     nc_results = xr.open_dataset(dir_netcdf_scores+'/'+filename_input, decode_timedelta=False) #load the input dataset
-                    
+
                     #optionally apply land sea mask; set values of sea to nan
                     if variables[mm][vv] in masked_variables:
-                        print('Upon user request, values for sea grid-boxes are set to nan for '+variables[mm][vv]+' !')               
+                        print('Upon user request, values for sea grid-boxes are set to nan for '+variables[mm][vv]+' !')
 
                         #get mask label as a function of the requested sub-domain
                         if domain == 'medcof' and sub_domain in ('medcof','medcof2'):
@@ -187,14 +187,14 @@ for ag in np.arange(len(agg_label)):
                         else:
                             raise ValueError('Check entry for <domain> and/or <sub_domain> input parameters !')
 
-                        mask_file = mask_dir+'/'+mask_file_indir #here, descending lats are needed (check why the DataArrays behave distinct concerning ascending or descending lats in pySeasonal)    
+                        mask_file = mask_dir+'/'+mask_file_indir #here, descending lats are needed (check why the DataArrays behave distinct concerning ascending or descending lats in pySeasonal)
                         nc_results = apply_sea_mask(nc_results,mask_file,'y','x')
 
                     elif variables[mm][vv] not in masked_variables:
                         print('As requested by the user, the verification results are not filtered by a land-sea mask for '+variables[mm][vv]+' !')
                     else:
                         ValueError('check whether <variables[mm][vv]> is in <masked_variables> !')
-                        
+
                     #optionally cut out sub domain
                     if domain == 'medcof' and sub_domain in ('iberia','medcof2'):
                         nc_results = get_sub_domain(nc_results,sub_domain) #select sub-domain to be verified
@@ -202,12 +202,12 @@ for ag in np.arange(len(agg_label)):
                         print('Upon user request, verification results for the '+domain+' domain will not be sub-sampled in space !')
                     else:
                         raise ValueError('Unknown entry for the <domain> and/or <sub_domain> input parameters !')
-                    
+
                     #initializing output numpy matrix containing a binary resutls array (1 = significant skill, 0 = spurious skill)
                     if det == 0 and vv == 0 and mm == 0:
-                        #get meshes for obtaining the areal average or areal percentage of significant hindcast correlation coefficient 
+                        #get meshes for obtaining the areal average or areal percentage of significant hindcast correlation coefficient
                         xx,yy = np.meshgrid(nc_results.x.values,nc_results.y.values)
-                
+
                     #extract the min and max values for each score, <map> prefix points to values used for mapping at the grid-box scale and <pcolor> points to the values used in the pcolor figure
                     for sc in np.arange(len(scores)):
                         if scores[sc] in ('bias','relbias'):
@@ -293,7 +293,7 @@ for ag in np.arange(len(agg_label)):
                     ##close file
                     nc_results.close()
                     del(nc_results)
-        
+
 #get minimum and maximum colorbar colours
 
 minvals_pcolor_fraction = xr.DataArray(minvals_pcolor_fraction,coords=[agg_label,subperiods,detrending,variables[mm],models,scores],dims=['aggregation','subperiod', 'detrending','variable','model','score'], name='minimum_values')
@@ -309,11 +309,11 @@ maxvals_map = xr.DataArray(maxvals_map,coords=[agg_label,subperiods,detrending,v
 for ag in np.arange(len(agg_label)):
     dir_netcdf_scores = dir_netcdf+'/scores/'+sub_domain+'/'+agg_label[ag] #set path to the directory containing the validation results
     dir_netcdf_skillmasks = dir_netcdf+'/skill_masks/'+sub_domain+'/'+agg_label[ag] #set path to the directory containing the validation results
-    
+
     #create netCDF output directory if necessary
     if os.path.isdir(dir_netcdf_skillmasks) != True:
         os.makedirs(dir_netcdf_skillmasks)
-    
+
     for mm in range(len(models)):
         dir_figs = dir_netcdf+'/skill_figs/'+sub_domain+'/'+agg_label[ag]+'/'+models[mm]+'/'+str(file_years[mm][0])+'_'+str(file_years[mm][1]) #path to output figures file generated by this script
         for su in np.arange(len(subperiods)):
@@ -322,7 +322,7 @@ for ag in np.arange(len(agg_label)):
                     #create output directories if they do not exist.
                     if os.path.isdir(dir_figs+'/'+subperiods[su]+'/'+variables[mm][vv]+'/maps') != True:
                         os.makedirs(dir_figs+'/'+subperiods[su]+'/'+variables[mm][vv]+'/maps')
-                    
+
                     #load netcdf files containing the verification results
                     filename_input = 'validation_results_season_'+variables[mm][vv]+'_'+agg_label[ag]+'_'+models[mm]+'_vs_'+ref_dataset[mm][vv]+'_'+domain+'_corroutlier_'+corr_outlier+'_detrended_'+detrending[det]+'_'+str(file_years[mm][0])+'_'+str(file_years[mm][1])+'_'+subperiods[su]+'_'+vers+'.nc'
                     nc_results = xr.open_dataset(dir_netcdf_scores+'/'+filename_input, decode_timedelta=False)
@@ -330,8 +330,8 @@ for ag in np.arange(len(agg_label)):
 
                     #optionally apply land sea mask; set values of sea to nan
                     if variables[mm][vv] in masked_variables:
-                        print('Upon user request, values for sea grid-boxes are set to nan for '+variables[mm][vv]+' !')               
-                        
+                        print('Upon user request, values for sea grid-boxes are set to nan for '+variables[mm][vv]+' !')
+
                         #get mask label as a function of the requested sub-domain
                         if domain == 'medcof' and sub_domain in ('medcof','medcof2'):
                             mask_file_indir = 'ECMWF_Land_Medcof_descending_lat_reformatted.nc' # mask file as it appears in its directory
@@ -344,14 +344,14 @@ for ag in np.arange(len(agg_label)):
                         else:
                             raise ValueError('Check entry for <domain> and/or <sub_domain> input parameters !')
 
-                        mask_file = mask_dir+'/'+mask_file_indir #here, descending lats are needed (check why the DataArrays behave distinct concerning ascending or descending lats in pySeasonal)    
+                        mask_file = mask_dir+'/'+mask_file_indir #here, descending lats are needed (check why the DataArrays behave distinct concerning ascending or descending lats in pySeasonal)
                         nc_results = apply_sea_mask(nc_results,mask_file,'y','x')
-                    
+
                     elif variables[mm][vv] not in masked_variables:
                         print('As requested by the user, the verification results are not filtered by a land-sea mask for '+variables[mm][vv]+' !')
                     else:
                         ValueError('check whether <variables[mm][vv]> is in <masked_variables> !')
-                    
+
                     #optionally cut out sub domain
                     if sub_domain in ('iberia','medcof2'):
                         nc_results = get_sub_domain(nc_results,sub_domain)
@@ -359,14 +359,14 @@ for ag in np.arange(len(agg_label)):
                         print('Upon user request, verification results for the '+domain+' domain will not be sub-sampled in space !')
                     else:
                         raise ValueError('ERROR: unknown entry for <sub_domain> input parameter !')
-                    
+
                     #initializing output numpy matrix containing a binary resutls array (1 = significant skill, 0 = spurious skill)
                     if su == 0 and det == 0 and vv == 0:
                         #get meshes for plotting the maps and init the output binary mask; halfres is used for plotting maps below
                         y_coord = nc_results.y.values
                         x_coord = nc_results.x.values
                         xx,yy = np.meshgrid(x_coord,y_coord)
-                        
+
                         #pdb.set_trace()
                         binary_mask = np.zeros((len(subperiods),len(detrending),len(variables_out[mm]),len(scores),len(nc_results.season),int(lead_arr.sel(aggregation=agg_label[ag],model=models[mm]).max().values),len(y_coord),len(x_coord)),dtype='single')
                         binary_mask[:] = np.nan
@@ -392,9 +392,9 @@ for ag in np.arange(len(agg_label)):
                             units_pcolor_mean = 'skill score'
                             units_pcolor_fraction = '%'
                             label_pcolor_mean = 'areal mean '+scores[sc]
-                            label_pcolor_fraction = 'areal fraction > '+str(critval_skillscore)+' '+scores[sc]                   
+                            label_pcolor_fraction = 'areal fraction > '+str(critval_skillscore)+' '+scores[sc]
                             mapme = nc_results[scores[sc]].values
-                            
+
                             binmask = np.zeros(mapme.shape)
                             binmask[:] = np.nan
                             mask1 = mapme > 0
@@ -418,7 +418,7 @@ for ag in np.arange(len(agg_label)):
                                 score_pval = 'spearman_pval'
                             else:
                                 raise ValueError('Check entry in <scores[sc]> !')
-                            
+
                             #areal percentage of significant grid-box scale correlation coefficients is calculated and plotted
                             savename_fraction = dir_figs+'/'+subperiods[su]+'/'+variables[mm][vv]+'/pcolor_arealfraction_'+variables[mm][vv]+'_'+agg_label[ag]+'_'+scores[sc]+'_'+sub_domain+'_'+models[mm]+'_vs_'+score_ref+'_corr_outlier_'+corr_outlier+'_detrended_'+detrending[det]+'_testlvl_'+str(round(critval_rho*100))+'_'+str(file_years[mm][0])+'_'+str(file_years[mm][1])+'_'+subperiods[su]+'_'+vers+'.'+figformat
                             savename_mean = dir_figs+'/'+subperiods[su]+'/'+variables[mm][vv]+'/pcolor_arealmean_'+variables[mm][vv]+'_'+agg_label[ag]+'_'+scores[sc]+'_'+sub_domain+'_'+models[mm]+'_vs_'+score_ref+'_corr_outlier_'+corr_outlier+'_detrended_'+detrending[det]+'_testlvl_'+str(round(critval_rho*100))+'_'+str(file_years[mm][0])+'_'+str(file_years[mm][1])+'_'+subperiods[su]+'_'+vers+'.'+figformat
@@ -431,7 +431,7 @@ for ag in np.arange(len(agg_label)):
                             units_pcolor_fraction = '%'
                             label_pcolor_fraction = 'areal fraction of sig. positive '+scores[sc]
                             label_pcolor_mean = 'areal mean '+scores[sc]
-                            
+
                             binmask = np.zeros(mapme.shape)
                             binmask[:] = np.nan
                             mask1 = (pval < critval_rho) & (rho > 0)
@@ -440,7 +440,7 @@ for ag in np.arange(len(agg_label)):
                             binmask[mask0] = 0
                             score_unit[sc] = 'binary'
                             score_info[sc] = 'significant '+scores[sc]+' at '+str(round(critval_rho*100))+' percent test-level and positive sign for the ensemble mean time series, yes (1) or no (0)'
-                        
+
                         elif scores[sc] == 'rpc':
                             savename_mean = dir_figs+'/'+subperiods[su]+'/'+variables[mm][vv]+'/pcolor_arealmean_'+variables[mm][vv]+'_'+agg_label[ag]+'_'+scores[sc]+'_'+sub_domain+'_'+models[mm]+'_vs_'+score_ref+'_corr_outlier_'+corr_outlier+'_detrended_'+detrending[det]+'_'+str(file_years[mm][0])+'_'+str(file_years[mm][1])+'_'+subperiods[su]+'_'+vers+'.'+figformat
                             savename_fraction = dir_figs+'/'+subperiods[su]+'/'+variables[mm][vv]+'/pcolor_arealfraction_'+variables[mm][vv]+'_'+agg_label[ag]+'_'+scores[sc]+'_'+sub_domain+'_'+models[mm]+'_vs_'+score_ref+'_corr_outlier_'+corr_outlier+'_detrended_'+detrending[det]+'_'+str(file_years[mm][0])+'_'+str(file_years[mm][1])+'_'+subperiods[su]+'_'+vers+'.'+figformat
@@ -450,7 +450,7 @@ for ag in np.arange(len(agg_label)):
                             label_pcolor_mean = 'areal mean '+nc_results[scores[sc]].name
                             label_pcolor_fraction = 'areal fraction with '+nc_results[scores[sc]].name+' < 1'
                             units_pcolor_mean = nc_results[scores[sc]].units
-                            units_pcolor_fraction = '%'                    
+                            units_pcolor_fraction = '%'
                             binmask = np.zeros(mapme.shape)
                             binmask[:] = np.nan
                             mask1 = mapme > critval_rpc
@@ -459,7 +459,7 @@ for ag in np.arange(len(agg_label)):
                             binmask[mask0] = 0
                             score_unit[sc] = 'binary'
                             score_info[sc] = nc_results[scores[sc]].long_name +' following '+nc_results[scores[sc]].source+' 1 for rpc > 1, 0 for rpc <= 1'
-        
+
                         elif scores[sc] in ('bias','relbias'):
                             savename_mean = dir_figs+'/'+subperiods[su]+'/'+variables[mm][vv]+'/pcolor_arealmean_'+variables[mm][vv]+'_'+agg_label[ag]+'_'+scores[sc]+'_'+sub_domain+'_'+models[mm]+'_vs_'+score_ref+'_corr_outlier_'+corr_outlier+'_detrended_'+detrending[det]+'_'+str(file_years[mm][0])+'_'+str(file_years[mm][1])+'_'+subperiods[su]+'_'+vers+'.'+figformat
                             savename_fraction = dir_figs+'/'+subperiods[su]+'/'+variables[mm][vv]+'/pcolor_arealfraction_'+variables[mm][vv]+'_'+agg_label[ag]+'_'+scores[sc]+'_'+sub_domain+'_'+models[mm]+'_vs_'+score_ref+'_corr_outlier_'+corr_outlier+'_detrended_'+detrending[det]+'_'+str(file_years[mm][0])+'_'+str(file_years[mm][1])+'_'+subperiods[su]+'_'+vers+'.'+figformat
@@ -467,7 +467,7 @@ for ag in np.arange(len(agg_label)):
                             #pcolorme = nc_results[scores[sc]].stack(flat_dim=('x', 'y')).median(dim='flat_dim') #get spatial median
                             pcolorme_fraction = get_spatial_aggregation(nc_results[scores[sc]].values,critval_bias,pval_f=nc_results[scores[sc]].values,mode_f='fraction_smaller',lat_f=yy)
                             mapme = nc_results[scores[sc]].values
-                            
+
                             label_pcolor_mean = 'areal mean absolute '+nc_results[scores[sc]].name
                             label_pcolor_fraction = 'areal fraction with '+nc_results[scores[sc]].name+' < '+str(critval_bias)
                             units_pcolor_mean = nc_results[scores[sc]].units
@@ -481,7 +481,7 @@ for ag in np.arange(len(agg_label)):
                                 threshold = critval_bias
                             else:
                                 raise ValueError('Unknown entry for <scores[sc]> !')
-                            
+
                             score_info[sc] = info_string
                             #create binary mask (skill yes/no)
                             binmask = np.zeros(mapme.shape)
@@ -521,9 +521,9 @@ for ag in np.arange(len(agg_label)):
                             binmask[mask1] = 1
                             binmask[mask0] = 0
                             score_unit[sc] = 'binary'
-                        else:                    
+                        else:
                             raise ValueError(scores[sc]+' is currently not supported by plot_seasonal_validation_results.py !')
-                        
+
                         ## PLOT pcolor figures, x-axis: season / month the prediction is valid for and y-axis lead-time (1 season / month)
                         #convert to xr dataArray and add metadata necessary for plotting
                         pcolorme_mean = xr.DataArray(pcolorme_mean,coords=[np.arange(len(nc_results.season.values)),np.arange(len(nc_results.lead.values))],dims=['season', 'lead'], name=label_pcolor_mean)
@@ -534,7 +534,7 @@ for ag in np.arange(len(agg_label)):
                         pcolorme_fraction.attrs['season_label'] = nc_results.season.values
                         pcolorme_mean.attrs['lead_label'] = nc_results.lead.values
                         pcolorme_fraction.attrs['lead_label'] = nc_results.lead.values
-                        
+
                         #make the pcolor plots
                         plot_pcolormesh_seasonal(pcolorme_mean,minvals_pcolor_mean.sel(aggregation=agg_label[ag],variable=variables[mm][vv],score=scores[sc]).min().values,maxvals_pcolor_mean.sel(aggregation=agg_label[ag],variable=variables[mm][vv],score=scores[sc]).max().values,savename_mean,colormaps_meanvals_spatial[sc],dpival)
                         plot_pcolormesh_seasonal(pcolorme_fraction,minvals_pcolor_fraction.sel(aggregation=agg_label[ag],variable=variables[mm][vv],score=scores[sc]).min().values,maxvals_pcolor_fraction.sel(aggregation=agg_label[ag],variable=variables[mm][vv],score=scores[sc]).max().values,savename_fraction,colormaps_fractions_spatial[sc],dpival)
@@ -569,7 +569,7 @@ for ag in np.arange(len(agg_label)):
                                         title = variables[mm][vv]+' '+seasons[sea]+' '+leads[ll]+' '+scores[sc]+' '+critval_label+' dtr'+detrending[det]+' '+sub_domain+' '+models[mm]+' vs '+score_ref+' '+str(file_years[mm][0])+' '+str(file_years[mm][1])
                                         savename = dir_figs+'/'+subperiods[su]+'/'+variables[mm][vv]+'/maps/'+scores[sc]+'/map_'+variables[mm][vv]+'_'+agg_label[ag]+'_'+seasons[sea]+'_'+leads[ll]+'_'+scores[sc]+'_'+critval_label+'_'+sub_domain+'_'+models[mm]+'_vs_'+score_ref+'_corr_outlier_'+corr_outlier+'_detrended_'+detrending[det]+'_'+str(file_years[mm][0])+str(file_years[mm][1])+'_'+subperiods[su]+'_'+vers+'.'+figformat
                                         cbarlabel = scores[sc]+' ('+str(nc_results[scores[sc]].units)+')'
-                                        
+
                                         # set variables-specific limits for bias and relative bias
                                         # if scores[sc] in ('bias','relbias') and variables[mm][vv] in manual_cbar_variables:
                                         if scores[sc] in ('bias','relbias') and variables[mm][vv]:
@@ -593,18 +593,18 @@ for ag in np.arange(len(agg_label)):
                             print('As requested by the user, no verification maps are plotted !')
                         else:
                             ValueError('Check entry for <plot_maps> !')
-                        
+
                         #fill numpy array with binary mask
-                        binary_mask[su,det,vv,sc,:,0:lead_step,:,:] = binmask                        
-                    
+                        binary_mask[su,det,vv,sc,:,0:lead_step,:,:] = binmask
+
                     #fill numpy array with continuous skill scores to be added to the above binary mask
                     for csc in np.arange(len(cont_scores)):
                         continuous_score[su,det,vv,csc,:,0:lead_step,:,:] = nc_results[cont_scores[csc]].values
-                    
+
                     ##close input nc files and produced xr dataset
                     pcolorme_mean.close()
                     pcolorme_fraction.close()
-            
+
         #bring the binary result masks into xarray data array format, one array per score. Then assign metadata to score / dataarray and stack them all as variables into a definite xarray dataset to be stored on netCDF
         for sc in np.arange(len(scores)):
             if scores[sc] in ('rpc','bias','relbias','pearson_r','spearman_r','crps_ensemble_skillscore_clim','crps_ensemble_skillscore_rand','roc_auc_lower_tercile_skillscore','roc_auc_center_tercile_skillscore','roc_auc_upper_tercile_skillscore'):
@@ -622,19 +622,19 @@ for ag in np.arange(len(agg_label)):
                     ds_binary_mask[scores[sc]+'_binary'] = binary_mask_score_i
                 binary_mask_score_i.close()
                 del(binary_mask_score_i)
-                
+
                 # #set version of the netCDF output file
                 # if vers == 'as_input_file':
                     # version_label = nc_results.version
                 # else:
                     # version_label = vers
-                
+
                 if nc_results.version != vers:
-                    raise ValueError('Validation versions requested by the user in <vers> input variable does not match with metadata obtained from input file !')            
+                    raise ValueError('Validation versions requested by the user in <vers> input variable does not match with metadata obtained from input file !')
             else:
                 print('WARNING: Validation results for '+scores[sc]+' are not yet saved to netCDF because the transition to binary format still has to be discussed with the other PTI members.')
                 continue
-            
+
         for csc in np.arange(len(cont_scores)):
             print('INFO: saving continuous validation results for '+cont_scores[csc])
             continuous_score_i = continuous_score[:,:,:,csc,:,:,:,:]
@@ -674,11 +674,11 @@ for ag in np.arange(len(agg_label)):
         nc_results.close()
         savename_netcdf = dir_netcdf_skillmasks+'/skill_masks_pticlima_'+sub_domain+'_'+agg_label[ag]+'_'+models[mm]+'_'+vers+'.nc'
         ds_mask_plus_cont.to_netcdf(savename_netcdf)
-        
+
         ds_binary_mask.close()
         ds_mask_plus_cont.close()
         del(nc_results,ds_binary_mask,ds_mask_plus_cont)
-    
+
     print('INFO: saving results at:')
     print(savename_netcdf)
 

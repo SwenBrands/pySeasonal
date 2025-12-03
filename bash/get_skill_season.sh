@@ -10,7 +10,7 @@
 # and finally stores all the results in netCDF format. Separate files are generated for each tempora
 # aggregation window (1 to 5 months), model and variable. <get_skill_season.py> is designed like this
 # on purpose in order to send small and short jobs to queue that accomplish the aformentioned tasks in
-# a modular manner. 
+# a modular manner.
 #
 # Author: Swen Brands (CSIC-UC)
 ####################################################################################################
@@ -45,7 +45,7 @@ log_label=get_skill_season_py_${jobname}
 echo "The log_label sent to get_skill_season.py is "${log_label}
 # run the Python script
 
-python ${PYDIR}/get_skill_season.py ${vers} ${model} ${domain} ${variable} ${agg_label} ${modulator} ${phase} ${FLAGDIR} > ${LOGDIR}/${log_label}.log
+python ${PYDIR}/pyseasonal/get_skill_season.py ${vers} ${model} ${domain} ${variable} ${agg_label} ${modulator} ${phase} ${FLAGDIR} > ${LOGDIR}/${log_label}.log
 
 echo "get_skill_season.sh has been sent to queue successfully with the parameters vers: ${vers}, model: ${model}, domain: ${domain}, variable: ${variable}, agg_label: ${agg_label}, modulator: ${modulator}, phase: ${phase}, FLAGDIR: ${FLAGDIR}, LOGDIR: ${LOGDIR}, log_label: ${log_label}."
 echo "Exiting now..."
