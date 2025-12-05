@@ -82,7 +82,6 @@ save_corrected_files = config['save_corrected_files']
 # Extract paths from configuration
 paths = config['paths'] # get paths from configuration
 home = paths['home']
-rundir = paths['rundir']
 path_gcm_base = paths['path_gcm_base']
 path_gcm_base_derived = paths['path_gcm_base_derived']
 path_gcm_base_masked = paths['path_gcm_base_masked']
@@ -90,12 +89,6 @@ savepath_base = paths['savepath_base']
 FLAGDIR = paths['FLAGDIR']
 
 ## EXECUTE #############################################################
-os.chdir(rundir) #go to running directory
-
-# #alternatively, add directories to your system path in oder to import the configuration files and functions; this however requires restarting Pyhton every time the functions and config files are updated, which is why the exec option mentioned above is preferred for script development
-# sys.path.append(rundir) #add the running directory
-# sys.path.append(rundir+'/config') #add the dirctory containg the config files
-# print('IMPORTANT NOTE: The configuration file containing all input parameters is located at: '+rundir+'/config')
 
 # #import all input variables located in the config directory, go to running directory, and load the functions script located there
 # from config_for_aggregate_hindcast import model, version, n_mem, n_lead, variables, variables_nc, variables_new, time_name, lon_name, lat_name, file_start, years, imonth, domain, save_corrected_files

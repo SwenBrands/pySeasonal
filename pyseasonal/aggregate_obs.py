@@ -60,10 +60,8 @@ paths = config['paths']
 home = paths['home']
 path_obs_base = paths['path_obs_base']
 savepath_base = paths['savepath_base']
-rundir = paths['rundir']
 
 ## EXECUTE #############################################################
-os.chdir(rundir) #go to running directory
 
 #create output directory if it does not exist.
 if os.path.isdir(savepath_base+'/'+obs) != True:

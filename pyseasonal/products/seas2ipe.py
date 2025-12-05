@@ -110,15 +110,11 @@ for do in np.arange(len(domain_list)):
     path_gcm_base = paths['path_gcm_base']
     path_gcm_base_derived = paths['path_gcm_base_derived']
     path_gcm_base_masked = paths['path_gcm_base_masked']
-    rundir = paths['rundir']
     dir_validation = paths['dir_validation'] + '/' + vers
     dir_forecast = paths['dir_forecast']
     dir_output = paths['dir_output']
 
     print('The GCM files will be loaded from the base directory '+path_gcm_base+'...')
-
-    #go to rundir and load custom Python functions
-    os.chdir(rundir)
 
     #create output directory of the forecasts generated here, if it does not exist.
     if os.path.isdir(dir_output) != True:

@@ -106,16 +106,12 @@ titlesize = config['titlesize']
 # Extract paths from configuration
 paths = config['paths'] # get paths from configuration
 home = paths['home']
-rundir = paths['rundir']
 dir_flag = paths['dir_flag']+'/'+domain
 auxdir = paths['auxdir']
 dir_netcdf = paths['dir_netcdf']+'/'+vers #path to outupt netcdf files produced with this script, containing an xarray dataset with all verification results
 mask_dir = paths['mask_dir'] #path to the land-sea masks
 
 ##EXECUTE ##############################################################
-
-#load custom functions of the pySeasonal and pySolar packages (to be merged in the future) and go to run directory
-os.chdir(rundir)
 
 print('INFO: Verfying '+str(models)+' against for '+str(variables)+' from '+str(ref_dataset)+' domain '+domain+' and sub-domain '+sub_domain+', detrending '+str(detrending)+' and outlier correction '+corr_outlier)
 ## check consistency of input parameters

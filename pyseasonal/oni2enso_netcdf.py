@@ -18,11 +18,9 @@ input_filename = 'oni.nc'
 #set basic path structure for observations and gcms
 if file_system == 'myLaptop':
     home = os.getenv('HOME')
-    rundir = home+'/datos/tareas/proyectos/pticlima/pyPTIclima/pySeasonal'
     #dir_netcdf = home+'/datos/tareas/proyectos/pticlima/seasonal/results/validation/'+vers
 elif file_system == 'lustre':
     home = '/lustre/gmeteo/PTICLIMA'
-    rundir = home+'/Scripts/SBrands/pyPTIclima/pySeasonal'
     obsdir = home+'/DATA/OBSERVATIONS/ONI/data/'
     dir_netcdf = home+'/Results/seasonal/indices'
 else:

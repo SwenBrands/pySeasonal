@@ -131,7 +131,6 @@ config = load_config()
 
 # Extract paths from configuration
 paths = config['paths'] # get paths from configuration
-rundir = paths['rundir']
 path_obs_base = paths['path_obs_base']
 path_gcm_base = paths['path_gcm_base']
 dir_netcdf = paths['dir_netcdf']
@@ -214,11 +213,6 @@ print('lead: '+str(lead))
 print('model variables: '+str(variables_gcm))
 print('obs. variables: '+str(variables_obs))
 print('------------------------------------------------')
-
-#go to working directory and load custom functions
-os.chdir(rundir)
-#import functions_seasonal
-print('The script will be run in '+rundir+' !')
 
 #check consistency of some input parameters
 if len(season) != len(season_label):

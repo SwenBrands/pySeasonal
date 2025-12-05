@@ -19,11 +19,9 @@ window = 1 #number of consecutive months during which the 3-month mean SST anoma
 #set basic path structure for observations and gcms
 if file_system == 'myLaptop':
     home = os.getenv('HOME')
-    rundir = home+'/datos/tareas/proyectos/pticlima/pyPTIclima/pySeasonal'
     dir_netcdf = home+'/datos/tareas/proyectos/pticlima/seasonal/results/validation/'
 elif file_system == 'lustre':
     home = '/lustre/gmeteo/PTICLIMA'
-    rundir = home+'/Scripts/SBrands/pyPTIclima/pySeasonal' #the running directory; the script will be run in this directory
     dir_netcdf = home+'/Results/seasonal/indices' #the output file directory
 else:
     raise Exception('ERROR: unknown entry for <file_system> input parameter!')
