@@ -242,10 +242,10 @@ def get_forecast_prob(seas_mean_f,lower_xr_f,upper_xr_f):
     lower_np_f = np.tile(lower_xr_f.values,(seas_mean_f.shape[0],1,1))
     upper_np_f = np.tile(upper_xr_f.values,(seas_mean_f.shape[0],1,1))
 
-    valid_ind_f = ~np.isnan(upper_np_f) & ~np.isnan(lower_np_f)
-    upper_ind_f = (seas_mean_f > upper_np_f) & valid_ind_f
-    center_ind_f = (seas_mean_f > lower_np_f) & (seas_mean_f <= upper_np_f) & valid_ind_f
-    lower_ind_f = (seas_mean_f <= lower_np_f) & valid_ind_f
+    valid_ind_f = ~np.isnan(upper_np_f) and ~np.isnan(lower_np_f)
+    upper_ind_f = (seas_mean_f > upper_np_f) and valid_ind_f
+    center_ind_f = (seas_mean_f > lower_np_f) and (seas_mean_f <= upper_np_f) and valid_ind_f
+    lower_ind_f = (seas_mean_f <= lower_np_f) and valid_ind_f
 
     #sum members in each category and devide by the number of members, thus obtaining the probability
     nr_mem_f = len(seas_mean_f.member)
@@ -321,8 +321,8 @@ def roll_and_cut(xr_dataset, lonlim_f, latlim_f):
     xr_dataset = xr_dataset.roll(longitude=shiftat,roll_coords=True)
 
     #then cut out target region and return new dataset
-    lonind = (xr_dataset.longitude.values >= lonlim_f[0]) & (xr_dataset.longitude.values <= lonlim_f[1])
-    latind = (xr_dataset.latitude.values >= latlim_f[0]) & (xr_dataset.latitude.values <= latlim_f[1])
+    lonind = (xr_dataset.longitude.values >= lonlim_f[0]) and (xr_dataset.longitude.values <= lonlim_f[1])
+    latind = (xr_dataset.latitude.values >= latlim_f[0]) and (xr_dataset.latitude.values <= latlim_f[1])
     xr_dataset = xr_dataset.isel(longitude=lonind,latitude=latind)
     return xr_dataset
 
@@ -395,8 +395,8 @@ def get_spatial_aggregation(score_f,critval_f=None,pval_f=None,mode_f='fraction_
 
     if mode_f in ('fraction_smaller','fraction_larger','fraction_smaller_pos'): #caclulate the areal percentage of significant correlation coefficients
         if mode_f == 'fraction_smaller_pos':
-            sigind_f = (pval_step_f < critval_f) & (score_step_f > 0)
-            spurind_f = (pval_step_f >= critval_f) | (score_step_f <= 0)
+            sigind_f = (pval_step_f < critval_f) and (score_step_f > 0)
+            spurind_f = (pval_step_f >= critval_f) or (score_step_f <= 0)
             pval_step_f[sigind_f] = 1
             pval_step_f[spurind_f] = 0
         elif mode_f == 'fraction_smaller': #caclulate the areal percentage of significant correlation coefficients
@@ -447,16 +447,16 @@ def get_sub_domain(xr_ds_f,domain_f):
     #check whether the requested sub-domain is known; otherwise return an error
     if sub_domain == 'iberia':
         print('Upon user request, verification results for '+domain_f+' will be cut out.')
-        lat_bool = (xr_ds_f.y.values >= 36) & (xr_ds_f.y.values <= 44)
-        lon_bool = (xr_ds_f.x.values >= -10) & (xr_ds_f.x.values <= 3)
+        lat_bool = (xr_ds_f.y.values >= 36) and (xr_ds_f.y.values <= 44)
+        lon_bool = (xr_ds_f.x.values >= -10) and (xr_ds_f.x.values <= 3)
         xr_ds_f = xr_ds_f.isel(y=lat_bool,x=lon_bool)
         # #set grid-boxes in North Africa to nan
         # latind_f = xr_ds_f.y.values <= 37
         # lonind_f = xr_ds_f.x.values >= -1
         # xr_ds_f.loc[dict(y=latind_f, x=lonind_f)] = np.nan
     elif sub_domain == 'medcof2': #this domain is identical to the medcof domain, but does not include the Sahara desert. The SPEI does not cover this area.
-        lat_bool = (xr_ds_f.y.values >= 28) & (xr_ds_f.y.values <= 90)
-        lon_bool = (xr_ds_f.x.values >= -16) & (xr_ds_f.x.values <= 180)
+        lat_bool = (xr_ds_f.y.values >= 28) and (xr_ds_f.y.values <= 90)
+        lon_bool = (xr_ds_f.x.values >= -16) and (xr_ds_f.x.values <= 180)
         xr_ds_f = xr_ds_f.isel(y=lat_bool,x=lon_bool)
     else:
         raise Exception('ERROR: check entry for the <sub_domain> input parameter !')
@@ -541,9 +541,9 @@ def transform_gcm_variable(ds_f,var_in_f,var_out_f,model_f,version_f):
      and version of the modelling system; output: xarray dataset <ds_f> with corrected variable names and units.'''
 
     # go through exceptions depending on the variable, model, version, etc.
-    if (var_in_f == 'tas') & (model_f+version_f in ('ecmwf51','cmcc35','cmcc4','eccc5','dwd22')):
+    if (var_in_f == 'tas') and (model_f+version_f in ('ecmwf51','cmcc35','cmcc4','eccc5','dwd22')):
         #bring temperature data to Kelvin, taking into account Predictia's double transformation error in all forecasts from 201701 to 202311
-        if (ds_f[var_in_f].mean().values <= 100) & (ds_f[var_in_f].mean().values > -100):
+        if (ds_f[var_in_f].mean().values <= 100) and (ds_f[var_in_f].mean().values > -100):
             print('Info: Adding 273.15 to '+var_in_f+' data from '+model_f+version_f+' to transform degress Celsius into Kelvin.')
             ds_f[var_in_f].values = ds_f[var_in_f].values+273.15
             valid_f = 1
@@ -555,7 +555,7 @@ def transform_gcm_variable(ds_f,var_in_f,var_out_f,model_f,version_f):
         else:
             raise Exception('ERROR: Unknown value for <ds_f[var_in_f]> !')
         ds_f[var_in_f].attrs['units'] = 'daily mean '+var_out_f+' in Kelvin'
-    elif (var_in_f in ('pr','rsds')) & (model_f+version_f in ('ecmwf51','cmcc35','cmcc4','eccc5','dwd22')):
+    elif (var_in_f in ('pr','rsds')) and (model_f+version_f in ('ecmwf51','cmcc35','cmcc4','eccc5','dwd22')):
         print('Info: Disaggregate '+var_in_f+' accumulated over the '+str(len(ds_f.time))+' days forecast period from '+model_f+version_f+' to daily sums.')
         vals_disagg = np.diff(ds_f[var_in_f].values,n=1,axis=0)
         vals_disagg[vals_disagg < 0] = 0 #set negative flux values to 0
@@ -603,8 +603,8 @@ def get_reliability_or_roc(obs_f,gcm_f,obs_quantile_f,gcm_quantile_f,dist_part_f
         obs_bin = xr.where(obs_f <= obs_lower_tercile_f, 1, 0).astype('int8') #here the nan values over the sea are lost. They will be brought back below.
         gcm_bin = xr.where(gcm_f <= gcm_lower_tercile_f, 1, 0).astype('int8')
     elif dist_part_f in ('center_tercile','centre_tercile'):
-        obs_bin = xr.where((obs_f > obs_lower_tercile_f) & (obs_f <= obs_upper_tercile_f), 1, 0).astype('int8') #here the nan values over the sea are lost. They will be brought back below.
-        gcm_bin = xr.where((gcm_f > gcm_lower_tercile_f) & (gcm_f <= gcm_upper_tercile_f), 1, 0).astype('int8')
+        obs_bin = xr.where((obs_f > obs_lower_tercile_f) and (obs_f <= obs_upper_tercile_f), 1, 0).astype('int8') #here the nan values over the sea are lost. They will be brought back below.
+        gcm_bin = xr.where((gcm_f > gcm_lower_tercile_f) and (gcm_f <= gcm_upper_tercile_f), 1, 0).astype('int8')
     else:
         raise Exception("ERROR: check entry for dist_part_f !")
 
