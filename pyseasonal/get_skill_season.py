@@ -836,7 +836,7 @@ for mo in np.arange(len(modulators)):
                         elif skillscore_reference == 'clim':
                             print('Calculating Continuous Ranked Probability Skill Score with respect to a climatological forecast.')
                         else:
-                            ValueError('Unknown entry for <skillscore_reference> !')
+                            raise ValueError('Unknown entry for <skillscore_reference> !')
 
                         start_time_crps = time.time()
                         crps_ensemble_clim = xs.crps_ensemble(obs_seas_mn_5d,ref_forecast,member_weights=None,issorted=False,member_dim='member',dim='time',weights=None,keep_attrs=False).rename('crps_ensemble_'+skillscore_reference)

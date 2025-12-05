@@ -49,7 +49,7 @@ def apply_sea_mask(arr_f,mask_file_f,lat_name_f,lon_name_f):
 
     #test for equal latitudes
     if ~np.all(nc_mask_f.lat.values-arr_f[lat_name_f].values == 0):
-        ValueError('<nc_mask_f.lat> and <arr_f.'+lat_name_f+' do not match !')
+        raise ValueError('<nc_mask_f.lat> and <arr_f.'+lat_name_f+' do not match !')
 
     # expand the mask, either for the xr DataArray passed via get_skill_season.py or for the xr Dataset passed via plot_seasonal_validation.results.py
     if isinstance(arr_f,xr.DataArray): #this is the format needed in get_skill_season.py
@@ -57,11 +57,11 @@ def apply_sea_mask(arr_f,mask_file_f,lat_name_f,lon_name_f):
         # test if dimensions in <arr_f> are as expected
         target_dims_f = arr_f.dims
         if target_dims_f != ('detrended', 'variable', 'time', 'season', 'lead', lat_name_f, lon_name_f):
-            ValueError('The dimensions of <arr_f> DataArray are not as expected !')
+            raise ValueError('The dimensions of <arr_f> DataArray are not as expected !')
         elif target_dims_f == ('detrended', 'variable', 'time', 'season', 'lead', lat_name_f, lon_name_f):
             print('The dimensions of <arr_f> DataArray are as expected: '+str(target_dims_f))
         else:
-            ValueError('Unknown values in <target_dims_f> within apply_sea_mask() function !')
+            raise ValueError('Unknown values in <target_dims_f> within apply_sea_mask() function !')
         # extend the mask to match seven dimensions
         mask_appended_f = np.tile(nc_mask_f.mask.values,(arr_f.shape[0],arr_f.shape[1],arr_f.shape[2],arr_f.shape[3],arr_f.shape[4],1,1))
 
@@ -81,7 +81,7 @@ def apply_sea_mask(arr_f,mask_file_f,lat_name_f,lon_name_f):
             print('The dimensions of <first_arr_f> data array in <arr_f> dataset are as expected: '+str(target_dims_f))
             mask_appended_f = np.tile(nc_mask_f.mask.values,(first_arr_f.shape[0],first_arr_f.shape[1],first_arr_f.shape[2],1,1))
         else:
-            ValueError('Unknown values in <target_dims_f> within apply_sea_mask() function !')
+            raise ValueError('Unknown values in <target_dims_f> within apply_sea_mask() function !')
 
         first_arr_f.close()
         del(first_arr_f)
@@ -237,7 +237,7 @@ def get_forecast_prob(seas_mean_f,lower_xr_f,upper_xr_f):
     elif np.sum(np.isnan(upper_xr_f)) - np.sum(np.isnan(lower_xr_f)) != 0:
         raise ValueError(' The nan occurence numbers in <upper_xr_f> and <lower_xr_f> do not match within the get_forecast_prob() function ! ')
     else:
-        ValueError('Check entries for <upper_xr_f> and / or <lower_xr_f> in get_forecast_prob() function ! ')
+        raise ValueError('Check entries for <upper_xr_f> and / or <lower_xr_f> in get_forecast_prob() function ! ')
 
     lower_np_f = np.tile(lower_xr_f.values,(seas_mean_f.shape[0],1,1))
     upper_np_f = np.tile(upper_xr_f.values,(seas_mean_f.shape[0],1,1))
@@ -350,7 +350,7 @@ def lin_detrend(xr_ar,rm_mean_f):
 
     #raise an error if time is not the first dimension in xr_ar
     if  xr_ar.dims.index('time') != 0:
-        ValueError('The first dimension in the xarray data array xr_ar must be "time" !')
+        raise ValueError('The first dimension in the xarray data array xr_ar must be "time" !')
 
     coeff = xr_ar.polyfit(dim='time',deg=1,skipna=True).astype('float32') #deg = 1 for linear detrending
     fit = xr.polyval(xr_ar['time'], coeff.polyfit_coefficients).astype('float32')

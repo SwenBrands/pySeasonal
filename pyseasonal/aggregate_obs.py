@@ -100,7 +100,7 @@ for vv in np.arange(len(variables)):
         path_obs_data = path_obs_base+'/'+obs+'/data_derived_'+resolution+'/'+domain+'/'+agg_src+'/'+variables[vv]+'/'+variables[vv]+'_'+domain_label+'.nc'
         nc = xr.open_dataset(path_obs_data, decode_timedelta=False)
     else:
-        ValueError('Unexpected value for <domain> !')
+        raise ValueError('Unexpected value for <domain> !')
 
     # pdb.set_trace()
     nc = nc.rename({variables_nc[vv]:variables[vv]})
