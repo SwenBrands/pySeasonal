@@ -9,12 +9,19 @@ import numpy as np
 import xarray as xr
 import os
 import pandas as pd
-import dask
 import sys
 import pdb
 import time
 import yaml
 from pathlib import Path
+
+from functions_seasonal import (
+    get_forecast_prob,
+    apply_sea_mask,
+    transform_gcm_variable,
+    assign_season_label,
+    flip_latitudes_and_data
+)
 
 # CREATE LIST CONTAINING ALL DOMAINS TO BE PROCESSED ######################################
 
@@ -91,14 +98,9 @@ for do in np.arange(len(domain_list)):
     path_gcm_base = paths['path_gcm_base']
     path_gcm_base_derived = paths['path_gcm_base_derived']
     path_gcm_base_masked = paths['path_gcm_base_masked']
-    rundir = paths['rundir']
     dir_quantile = paths['dir_quantile']
     dir_forecast = paths['dir_forecast']
     mask_dir = paths['mask_dir']
-
-    #go to rundir and load pySeasonal's functions
-    os.chdir(rundir)
-    exec(open('functions_seasonal.py').read()) #reads the <functions_seasonal.py> script containing a set of custom functions needed here
 
     #load model specific variables to be processed
     model_settings = config['model_settings'] #load all model settings stored in yaml file

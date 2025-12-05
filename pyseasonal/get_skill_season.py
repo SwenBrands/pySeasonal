@@ -8,20 +8,16 @@ import sys
 import numpy as np
 import xarray as xr
 import xskillscore as xs
-import matplotlib.pyplot as plt
-import cartopy.crs as ccrs
-import cartopy.feature as cf
 import os
-import xesmf
 import pandas as pd
-import dask
 import time
-from scipy.signal import detrend
-from scipy.stats import linregress
-import yaml
 from pathlib import Path
 import pdb #then type <pdb.set_trace()> at a given line in the code below
 import psutil
+import yaml
+
+from functions_seasonal import apply_sea_mask, lin_detrend, get_reliability_or_roc
+
 start_time = time.time()
 
 # take input variables from bash
@@ -135,7 +131,6 @@ config = load_config()
 
 # Extract paths from configuration
 paths = config['paths'] # get paths from configuration
-rundir = paths['rundir']
 path_obs_base = paths['path_obs_base']
 path_gcm_base = paths['path_gcm_base']
 dir_netcdf = paths['dir_netcdf']
@@ -174,7 +169,6 @@ else:
     raise ValueError('<domain_from_config> set in '+configuration_file+' does not match '+domain+' passed via bash or set above in get_skill_season.py !!')
 
 #load custom functions and configuraiton files
-exec(open(rundir+'/functions_seasonal.py').read()) #reads the <functions_seasonal.py> script containing a set of custom functions needed here
 
 #load the season configurations depending on the aggregation periods specified in <agg_labels>
 season_label = []
@@ -219,11 +213,6 @@ print('lead: '+str(lead))
 print('model variables: '+str(variables_gcm))
 print('obs. variables: '+str(variables_obs))
 print('------------------------------------------------')
-
-#go to working directory and load custom functions
-os.chdir(rundir)
-#import functions_seasonal
-print('The script will be run in '+rundir+' !')
 
 #check consistency of some input parameters
 if len(season) != len(season_label):

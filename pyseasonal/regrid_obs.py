@@ -6,13 +6,11 @@ The GCM data was obtained from https://cds.climate.copernicus.eu/cdsapp#!/datase
 #load packages
 import numpy as np
 import xarray as xr
-import matplotlib.pyplot as plt
-import cartopy.crs as ccrs
-import cartopy.feature as cf
 import os
 import xesmf
 import pandas as pd
-exec(open('functions_seasonal.py').read()) #reads the <functions_seasonal.py> script containing a set of custom functions needed here
+
+from functions_seasonal import roll_and_cut
 
 #set input parameters for observational datasets to be regridded
 obs = ['era5'] #name of the observational / reanalysis dataset that will be regridded
@@ -62,21 +60,21 @@ for oo in np.arange(len(obs)):
     nc_obs_lsm = roll_and_cut(xr.open_dataset(path_obs_lsm),lonlim_o,latlim_o)
     land_obs = nc_obs_lsm.lsm.values == 1 #value is binary in era5
     sea_obs = nc_obs_lsm.lsm.values == 0
-    nc_obs_lsm.close()    
-   
+    nc_obs_lsm.close()
+
     for mm in np.arange(len(model)):
-        
-        #get land-sea mask from GCM dataset        
+
+        #get land-sea mask from GCM dataset
         # path_gcm_lsm = path_gcm_base+'/lsm/lsm_'+model[mm]+version[mm]+'.nc' #comes with .5 instead of .0 resolution bins in lat an lon which does not agree with the ecmwf51 downloaded to lustre
         # nc_gcm_lsm = roll_and_cut(xr.open_dataset(path_gcm_lsm),lonlim_m,latlim_m)
         # land_gcm = nc_gcm_lsm.lsm.values > lsm_thresh[mm]
         # sea_gcm = nc_gcm_lsm.lsm.values <= lsm_thresh[mm]
         # nc_gcm_lsm.close()
-        
+
         #alternatively load GCM grid from any of the netCDF files containing meteorological varialbes stored on lustre, the land-sea mask is not loaded if this option is followed
         path_gcm_lsm = path_gcm_base+'/'+domain+'/hindcast/tas/'+model[mm]+'/'+version[mm]+'/198101/seasonal-original-single-levels_'+domain+'_hindcast_tas_'+model[mm]+'_'+str(version[mm])+'_198101.nc'
         nc_gcm_lsm = xr.open_dataset(path_gcm_lsm)
-        
+
         #Then load observations, cut out years indicated in <years>, interpolate obs variable to the gcm grid and save as netCDF file
         for vv in np.arange(len(variables)):
             path_obs_data = path_obs_base+'/'+obs[oo].upper()+'/'+agg_src[oo]+'/'+obs[oo]+'_mon_'+variables[vv]+'_'+str(startyear_file[oo])+'_'+str(endyear_file[oo])+'.nc'
@@ -103,7 +101,7 @@ for oo in np.arange(len(obs)):
             else:
                 print('INFO: '+variables[vv]+' from '+obs[oo]+' comes in '+nc_obs_data[variables[vv]].units+' and no transformation is applied.')
                 nc_obs_data[variables[vv]].attrs['units'] = nc_obs_data[variables[vv]].units
-            
+
             #regrid without mask
             print('INFO: Regridding '+variables[vv]+' from '+obs[oo]+' on '+model[mm]+' '+version[mm]+' grid using '+int_method+' method from xesmf...')
             #regridder = xesmf.Regridder(nc_obs_data,nc_gcm_lsm.drop_dims('number'), method=int_method)

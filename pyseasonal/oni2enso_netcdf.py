@@ -7,15 +7,7 @@ is a 3-months running-mean values) is above or below +0.5 or -0.5 during 5 conse
 #load packages
 import numpy as np
 import xarray as xr
-import xskillscore as xs
-import matplotlib.pyplot as plt
-import cartopy.crs as ccrs
-import cartopy.feature as cf
 import os
-import xesmf
-import pandas as pd
-import dask
-exec(open('functions_seasonal.py').read()) #reads the <functions_seasonal.py> script containing a set of custom functions needed here
 
 #set input parameters
 file_system = 'lustre' #lustre or myLaptop; used to create the path structure to the input and output files
@@ -26,11 +18,9 @@ input_filename = 'oni.nc'
 #set basic path structure for observations and gcms
 if file_system == 'myLaptop':
     home = os.getenv('HOME')
-    rundir = home+'/datos/tareas/proyectos/pticlima/pyPTIclima/pySeasonal'
     #dir_netcdf = home+'/datos/tareas/proyectos/pticlima/seasonal/results/validation/'+vers
 elif file_system == 'lustre':
     home = '/lustre/gmeteo/PTICLIMA'
-    rundir = home+'/Scripts/SBrands/pyPTIclima/pySeasonal'
     obsdir = home+'/DATA/OBSERVATIONS/ONI/data/'
     dir_netcdf = home+'/Results/seasonal/indices'
 else:

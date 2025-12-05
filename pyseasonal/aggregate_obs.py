@@ -5,15 +5,12 @@
 #load packages
 import numpy as np
 import xarray as xr
-import matplotlib.pyplot as plt
-import cartopy.crs as ccrs
-import cartopy.feature as cf
 import os
-import xesmf
 import pandas as pd
 import pdb
 import yaml
 from pathlib import Path
+
 
 # INDICATE CONFIGURATION FILE ######################################
 
@@ -63,11 +60,8 @@ paths = config['paths']
 home = paths['home']
 path_obs_base = paths['path_obs_base']
 savepath_base = paths['savepath_base']
-rundir = paths['rundir']
 
 ## EXECUTE #############################################################
-os.chdir(rundir) #go to running directory
-exec(open('functions_seasonal.py').read()) #reads the <functions_seasonal.py> script containing a set of custom functions needed here
 
 #create output directory if it does not exist.
 if os.path.isdir(savepath_base+'/'+obs) != True:
