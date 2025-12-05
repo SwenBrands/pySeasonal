@@ -8,20 +8,13 @@ import sys
 import numpy as np
 import xarray as xr
 import xskillscore as xs
-import matplotlib.pyplot as plt
-import cartopy.crs as ccrs
-import cartopy.feature as cf
 import os
-import xesmf
 import pandas as pd
-import dask
 import time
-from scipy.signal import detrend
-from scipy.stats import linregress
-import yaml
 from pathlib import Path
 import pdb #then type <pdb.set_trace()> at a given line in the code below
 import psutil
+import yaml
 
 from functions_seasonal import apply_sea_mask, lin_detrend, get_reliability_or_roc
 

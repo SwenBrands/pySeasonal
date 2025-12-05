@@ -6,9 +6,6 @@ The GCM data was obtained from https://cds.climate.copernicus.eu/cdsapp#!/datase
 #load packages
 import numpy as np
 import xarray as xr
-import matplotlib.pyplot as plt
-import cartopy.crs as ccrs
-import cartopy.feature as cf
 import os
 import xesmf
 import pandas as pd

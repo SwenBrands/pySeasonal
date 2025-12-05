@@ -7,21 +7,14 @@ is a 3-months running-mean values) is above or below +0.5 or -0.5 during <window
 #load packages
 import numpy as np
 import xarray as xr
-import xskillscore as xs
-import matplotlib.pyplot as plt
-import cartopy.crs as ccrs
-import cartopy.feature as cf
 import os
-import xesmf
 import pandas as pd
-import dask
-import pdb
 
 #set input parameters
 file_system = 'lustre' #lustre or myLaptop; used to create the path structure to the input and output files
 url_index = 'https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/ensostuff/detrend.nino34.ascii.txt' #URL of the online txt file
 enso_threshold = 0.5 #magnitude of the ONI index above which Niño or Niña conditions are declared. Is used symmetrically around 0
-window = 1 #number of consecutive months during which the 3-month mean SST anomaly values provided by NOAA must surpass the magnitude of the <enso_threshold> in order to issue a Niño or Niña event 
+window = 1 #number of consecutive months during which the 3-month mean SST anomaly values provided by NOAA must surpass the magnitude of the <enso_threshold> in order to issue a Niño or Niña event
 
 #set basic path structure for observations and gcms
 if file_system == 'myLaptop':

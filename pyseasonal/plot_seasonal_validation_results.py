@@ -5,18 +5,10 @@ Author: Swen Brands, brandssf@ifca.unican.es
 '''
 
 #load packages
-import math
 import sys
 import numpy as np
 import xarray as xr
-import matplotlib.pyplot as plt
-import cartopy
-import cartopy.crs as ccrs
-import cartopy.feature as cf
 import os
-import pandas as pd
-import xskillscore as xs
-from math import radians, cos, sin, asin, sqrt #needed to calculate haversine distance
 import pdb as pdb #then type <pdb.set_trace()> at a given line in the code below
 import time
 import yaml

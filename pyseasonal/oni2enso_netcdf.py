@@ -7,14 +7,7 @@ is a 3-months running-mean values) is above or below +0.5 or -0.5 during 5 conse
 #load packages
 import numpy as np
 import xarray as xr
-import xskillscore as xs
-import matplotlib.pyplot as plt
-import cartopy.crs as ccrs
-import cartopy.feature as cf
 import os
-import xesmf
-import pandas as pd
-import dask
 
 #set input parameters
 file_system = 'lustre' #lustre or myLaptop; used to create the path structure to the input and output files

@@ -10,14 +10,9 @@ Author: Swen Brands, brandssf@ifca.unican.es'''
 #load packages
 import numpy as np
 import xarray as xr
-import dask
 import os
 import pandas as pd
-import matplotlib.pyplot as plt
-import cartopy.crs as ccrs
-import cartopy.feature as cf
-import pdb as pdb #then type <pdb.set_trace()> at a given line in the code below
-import sys
+import pdb #then type <pdb.set_trace()> at a given line in the code below
 import yaml
 from pathlib import Path
 
