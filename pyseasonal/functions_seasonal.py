@@ -20,7 +20,7 @@ def flip_latitudes_and_data(xr_ds_f,lat_name):
         xr_ds_f= xr_ds_f.reindex(y=list(reversed(xr_ds_f.y)))
     else:
         raise ValueError('Unexpected entry for <lat_name> in flip_latitudes() function !')
-    return(xr_ds_f)
+    return xr_ds_f
 
 def apply_sea_mask(arr_f,mask_file_f,lat_name_f,lon_name_f):
     '''sets the values over the Sea, as provided by the netCDF file locted at <mask_file_f> to nan in <arr_f>;
@@ -49,7 +49,7 @@ def apply_sea_mask(arr_f,mask_file_f,lat_name_f,lon_name_f):
 
     #test for equal latitudes
     if ~np.all(nc_mask_f.lat.values-arr_f[lat_name_f].values == 0):
-        ValueError('<nc_mask_f.lat> and <arr_f.'+lat_name_f+' do not match !')
+        raise ValueError('<nc_mask_f.lat> and <arr_f.'+lat_name_f+' do not match !')
 
     # expand the mask, either for the xr DataArray passed via get_skill_season.py or for the xr Dataset passed via plot_seasonal_validation.results.py
     if isinstance(arr_f,xr.DataArray): #this is the format needed in get_skill_season.py
@@ -57,11 +57,11 @@ def apply_sea_mask(arr_f,mask_file_f,lat_name_f,lon_name_f):
         # test if dimensions in <arr_f> are as expected
         target_dims_f = arr_f.dims
         if target_dims_f != ('detrended', 'variable', 'time', 'season', 'lead', lat_name_f, lon_name_f):
-            ValueError('The dimensions of <arr_f> DataArray are not as expected !')
+            raise ValueError('The dimensions of <arr_f> DataArray are not as expected !')
         elif target_dims_f == ('detrended', 'variable', 'time', 'season', 'lead', lat_name_f, lon_name_f):
             print('The dimensions of <arr_f> DataArray are as expected: '+str(target_dims_f))
         else:
-            ValueError('Unknown values in <target_dims_f> within apply_sea_mask() function !')
+            raise ValueError('Unknown values in <target_dims_f> within apply_sea_mask() function !')
         # extend the mask to match seven dimensions
         mask_appended_f = np.tile(nc_mask_f.mask.values,(arr_f.shape[0],arr_f.shape[1],arr_f.shape[2],arr_f.shape[3],arr_f.shape[4],1,1))
 
@@ -81,7 +81,7 @@ def apply_sea_mask(arr_f,mask_file_f,lat_name_f,lon_name_f):
             print('The dimensions of <first_arr_f> data array in <arr_f> dataset are as expected: '+str(target_dims_f))
             mask_appended_f = np.tile(nc_mask_f.mask.values,(first_arr_f.shape[0],first_arr_f.shape[1],first_arr_f.shape[2],1,1))
         else:
-            ValueError('Unknown values in <target_dims_f> within apply_sea_mask() function !')
+            raise ValueError('Unknown values in <target_dims_f> within apply_sea_mask() function !')
 
         first_arr_f.close()
         del(first_arr_f)
@@ -93,7 +93,7 @@ def apply_sea_mask(arr_f,mask_file_f,lat_name_f,lon_name_f):
     #clean everything except arr_f, which will be returned to the script calling this function
     nc_mask_f.close()
     del(nc_mask_f,mask_appended_f,target_dims_f)
-    return(arr_f) #returns masked xarray data array
+    return arr_f  #returns masked xarray data array
 
 def assign_season_label(season_list_f):
     '''assign the season string for a the input list of 3 consecutive months, each month being an integer.'''
@@ -224,7 +224,7 @@ def assign_season_label(season_list_f):
         season_label_f = 'DJFMA'
     else:
         raise Exception('ERROR: check entry for <season_list_f> !')
-    return(season_label_f)
+    return season_label_f
 
 
 def get_forecast_prob(seas_mean_f,lower_xr_f,upper_xr_f):
@@ -237,22 +237,22 @@ def get_forecast_prob(seas_mean_f,lower_xr_f,upper_xr_f):
     elif np.sum(np.isnan(upper_xr_f)) - np.sum(np.isnan(lower_xr_f)) != 0:
         raise ValueError(' The nan occurence numbers in <upper_xr_f> and <lower_xr_f> do not match within the get_forecast_prob() function ! ')
     else:
-        ValueError('Check entries for <upper_xr_f> and / or <lower_xr_f> in get_forecast_prob() function ! ')
+        raise ValueError('Check entries for <upper_xr_f> and / or <lower_xr_f> in get_forecast_prob() function ! ')
 
     lower_np_f = np.tile(lower_xr_f.values,(seas_mean_f.shape[0],1,1))
     upper_np_f = np.tile(upper_xr_f.values,(seas_mean_f.shape[0],1,1))
 
-    valid_ind_f = ~np.isnan(upper_np_f) & ~np.isnan(lower_np_f)
-    upper_ind_f = (seas_mean_f > upper_np_f) & valid_ind_f
-    center_ind_f = (seas_mean_f > lower_np_f) & (seas_mean_f <= upper_np_f) & valid_ind_f
-    lower_ind_f = (seas_mean_f <= lower_np_f) & valid_ind_f
+    valid_ind_f = ~np.isnan(upper_np_f) and ~np.isnan(lower_np_f)
+    upper_ind_f = (seas_mean_f > upper_np_f) and valid_ind_f
+    center_ind_f = (seas_mean_f > lower_np_f) and (seas_mean_f <= upper_np_f) and valid_ind_f
+    lower_ind_f = (seas_mean_f <= lower_np_f) and valid_ind_f
 
     #sum members in each category and devide by the number of members, thus obtaining the probability
     nr_mem_f = len(seas_mean_f.member)
     upper_prob_f = upper_ind_f.sum(dim='member')/nr_mem_f
     center_prob_f = center_ind_f.sum(dim='member')/nr_mem_f
     lower_prob_f = lower_ind_f.sum(dim='member')/nr_mem_f
-    return(nr_mem_f,upper_prob_f,center_prob_f,lower_prob_f)
+    return nr_mem_f,upper_prob_f,center_prob_f,lower_prob_f
 
 
 def get_years_of_subperiod(subperiod_f):
@@ -289,7 +289,7 @@ def get_years_of_subperiod(subperiod_f):
         print('The full overlapping period between observations and model data is used for verification.')
     else:
         raise Exception('ERROR: unkown entry for the <subperiod> entry parameter !')
-    return(years_val)
+    return years_val
 
 def haversine(lon1, lat1, lon2, lat2):
     """
@@ -321,10 +321,10 @@ def roll_and_cut(xr_dataset, lonlim_f, latlim_f):
     xr_dataset = xr_dataset.roll(longitude=shiftat,roll_coords=True)
 
     #then cut out target region and return new dataset
-    lonind = (xr_dataset.longitude.values >= lonlim_f[0]) & (xr_dataset.longitude.values <= lonlim_f[1])
-    latind = (xr_dataset.latitude.values >= latlim_f[0]) & (xr_dataset.latitude.values <= latlim_f[1])
+    lonind = (xr_dataset.longitude.values >= lonlim_f[0]) and (xr_dataset.longitude.values <= lonlim_f[1])
+    latind = (xr_dataset.latitude.values >= latlim_f[0]) and (xr_dataset.latitude.values <= latlim_f[1])
     xr_dataset = xr_dataset.isel(longitude=lonind,latitude=latind)
-    return(xr_dataset)
+    return xr_dataset
 
 def calc_roll_seasmean(xr_ds):
     """
@@ -340,7 +340,7 @@ def calc_roll_seasmean(xr_ds):
     xr_ds_roll = xr_ds_roll / roll_weights
     id3 = np.arange(0,xr_ds_roll.time.shape[0],3) # index used to retain every third value of the rolling 3-months seasonal mean values to obtain inter-annual time-series.
     xr_ds_roll = xr_ds_roll.isel(time=id3)
-    return(xr_ds_roll)
+    return xr_ds_roll
     xr_ds_roll.close()
     weights.close()
     del(weights,xr_ds_roll)
@@ -350,7 +350,7 @@ def lin_detrend(xr_ar,rm_mean_f):
 
     #raise an error if time is not the first dimension in xr_ar
     if  xr_ar.dims.index('time') != 0:
-        ValueError('The first dimension in the xarray data array xr_ar must be "time" !')
+        raise ValueError('The first dimension in the xarray data array xr_ar must be "time" !')
 
     coeff = xr_ar.polyfit(dim='time',deg=1,skipna=True).astype('float32') #deg = 1 for linear detrending
     fit = xr.polyval(xr_ar['time'], coeff.polyfit_coefficients).astype('float32')
@@ -363,7 +363,7 @@ def lin_detrend(xr_ar,rm_mean_f):
         xr_ar_detrended = (xr_ar - fit + meanvals_f).astype('float32')
     else:
         raise Exception('ERROR: check entry for <rm_mean_f> input parameter!')
-    return(xr_ar_detrended)
+    return xr_ar_detrended
 
 #def get_frac_significance(np_arr_pval_f,np_arr_rho_f,critval_f,mode_f='fraction',lat_f=None):
 #def get_spatial_aggregation(np_arr_pval_f,np_arr_rho_f,critval_f,mode_f='fraction',lat_f=None):
@@ -395,8 +395,8 @@ def get_spatial_aggregation(score_f,critval_f=None,pval_f=None,mode_f='fraction_
 
     if mode_f in ('fraction_smaller','fraction_larger','fraction_smaller_pos'): #caclulate the areal percentage of significant correlation coefficients
         if mode_f == 'fraction_smaller_pos':
-            sigind_f = (pval_step_f < critval_f) & (score_step_f > 0)
-            spurind_f = (pval_step_f >= critval_f) | (score_step_f <= 0)
+            sigind_f = (pval_step_f < critval_f) and (score_step_f > 0)
+            spurind_f = (pval_step_f >= critval_f) or (score_step_f <= 0)
             pval_step_f[sigind_f] = 1
             pval_step_f[spurind_f] = 0
         elif mode_f == 'fraction_smaller': #caclulate the areal percentage of significant correlation coefficients
@@ -428,8 +428,8 @@ def get_spatial_aggregation(score_f,critval_f=None,pval_f=None,mode_f='fraction_
             spatial_agg_f = np.nansum(score_step_f,axis=2)/(score_step_f.shape[2])
     else:
         raise Exception('ERROR: check entry for <mode_f> parameter within the get_frac_significance() function !')
-    return(spatial_agg_f) #the spatially aggregated value is returned
-    #return(spatial_sigfraq_f,pval_step_f) #former versions of this function returned two output variables
+    return spatial_agg_f  #the spatially aggregated value is returned
+    #return spatial_sigfraq_f,pval_step_f  #former versions of this function returned two output variables
 
 def get_frac_above_threshold(np_arr_vals_f,critval_f):
     """get the fraction of grid-boxes where values i values_f exceed the threshold <critval_f>; np_arr_f is a 4d numpy array with the dimensions season x lead x lat x lon"""
@@ -440,27 +440,27 @@ def get_frac_above_threshold(np_arr_vals_f,critval_f):
     np_arr_vals_step_f[sigind_f] = 1
     np_arr_vals_step_f[spurind_f] = 0
     spatial_fraq_f = np.nansum(np_arr_vals_step_f,axis=2)/(shape_f[2]*shape_f[3])*100
-    return(spatial_fraq_f,np_arr_vals_step_f)
+    return spatial_fraq_f,np_arr_vals_step_f
 
 def get_sub_domain(xr_ds_f,domain_f):
     '''cuts out the sub-domain defined in <domain_f> from xarray dataset <xr_ds_f>'''
     #check whether the requested sub-domain is known; otherwise return an error
     if sub_domain == 'iberia':
         print('Upon user request, verification results for '+domain_f+' will be cut out.')
-        lat_bool = (xr_ds_f.y.values >= 36) & (xr_ds_f.y.values <= 44)
-        lon_bool = (xr_ds_f.x.values >= -10) & (xr_ds_f.x.values <= 3)
+        lat_bool = (xr_ds_f.y.values >= 36) and (xr_ds_f.y.values <= 44)
+        lon_bool = (xr_ds_f.x.values >= -10) and (xr_ds_f.x.values <= 3)
         xr_ds_f = xr_ds_f.isel(y=lat_bool,x=lon_bool)
         # #set grid-boxes in North Africa to nan
         # latind_f = xr_ds_f.y.values <= 37
         # lonind_f = xr_ds_f.x.values >= -1
         # xr_ds_f.loc[dict(y=latind_f, x=lonind_f)] = np.nan
     elif sub_domain == 'medcof2': #this domain is identical to the medcof domain, but does not include the Sahara desert. The SPEI does not cover this area.
-        lat_bool = (xr_ds_f.y.values >= 28) & (xr_ds_f.y.values <= 90)
-        lon_bool = (xr_ds_f.x.values >= -16) & (xr_ds_f.x.values <= 180)
+        lat_bool = (xr_ds_f.y.values >= 28) and (xr_ds_f.y.values <= 90)
+        lon_bool = (xr_ds_f.x.values >= -16) and (xr_ds_f.x.values <= 180)
         xr_ds_f = xr_ds_f.isel(y=lat_bool,x=lon_bool)
     else:
         raise Exception('ERROR: check entry for the <sub_domain> input parameter !')
-    return(xr_ds_f)
+    return xr_ds_f
     xr_ds_f.close()
     del(xr_ds_f)
 
@@ -541,9 +541,9 @@ def transform_gcm_variable(ds_f,var_in_f,var_out_f,model_f,version_f):
      and version of the modelling system; output: xarray dataset <ds_f> with corrected variable names and units.'''
 
     # go through exceptions depending on the variable, model, version, etc.
-    if (var_in_f == 'tas') & (model_f+version_f in ('ecmwf51','cmcc35','cmcc4','eccc5','dwd22')):
+    if (var_in_f == 'tas') and (model_f+version_f in ('ecmwf51','cmcc35','cmcc4','eccc5','dwd22')):
         #bring temperature data to Kelvin, taking into account Predictia's double transformation error in all forecasts from 201701 to 202311
-        if (ds_f[var_in_f].mean().values <= 100) & (ds_f[var_in_f].mean().values > -100):
+        if (ds_f[var_in_f].mean().values <= 100) and (ds_f[var_in_f].mean().values > -100):
             print('Info: Adding 273.15 to '+var_in_f+' data from '+model_f+version_f+' to transform degress Celsius into Kelvin.')
             ds_f[var_in_f].values = ds_f[var_in_f].values+273.15
             valid_f = 1
@@ -555,7 +555,7 @@ def transform_gcm_variable(ds_f,var_in_f,var_out_f,model_f,version_f):
         else:
             raise Exception('ERROR: Unknown value for <ds_f[var_in_f]> !')
         ds_f[var_in_f].attrs['units'] = 'daily mean '+var_out_f+' in Kelvin'
-    elif (var_in_f in ('pr','rsds')) & (model_f+version_f in ('ecmwf51','cmcc35','cmcc4','eccc5','dwd22')):
+    elif (var_in_f in ('pr','rsds')) and (model_f+version_f in ('ecmwf51','cmcc35','cmcc4','eccc5','dwd22')):
         print('Info: Disaggregate '+var_in_f+' accumulated over the '+str(len(ds_f.time))+' days forecast period from '+model_f+version_f+' to daily sums.')
         vals_disagg = np.diff(ds_f[var_in_f].values,n=1,axis=0)
         vals_disagg[vals_disagg < 0] = 0 #set negative flux values to 0
@@ -570,7 +570,7 @@ def transform_gcm_variable(ds_f,var_in_f,var_out_f,model_f,version_f):
     else:
         print('Info: No data transformation is applied for '+var_in_f+' data from '+model_f+version_f+'.')
         valid_f = 1
-    return(ds_f, valid_f)
+    return ds_f, valid_f
 
 def get_reliability_or_roc(obs_f,gcm_f,obs_quantile_f,gcm_quantile_f,dist_part_f,score_f='reliability',bin_edges_f=None):
     """ caclulates the mean absolute difference (returned as <reliability>) between the forecast probabilities and corresponding conditional observed probabilities of the reliability plot and the diagonal of the plot
@@ -603,8 +603,8 @@ def get_reliability_or_roc(obs_f,gcm_f,obs_quantile_f,gcm_quantile_f,dist_part_f
         obs_bin = xr.where(obs_f <= obs_lower_tercile_f, 1, 0).astype('int8') #here the nan values over the sea are lost. They will be brought back below.
         gcm_bin = xr.where(gcm_f <= gcm_lower_tercile_f, 1, 0).astype('int8')
     elif dist_part_f in ('center_tercile','centre_tercile'):
-        obs_bin = xr.where((obs_f > obs_lower_tercile_f) & (obs_f <= obs_upper_tercile_f), 1, 0).astype('int8') #here the nan values over the sea are lost. They will be brought back below.
-        gcm_bin = xr.where((gcm_f > gcm_lower_tercile_f) & (gcm_f <= gcm_upper_tercile_f), 1, 0).astype('int8')
+        obs_bin = xr.where((obs_f > obs_lower_tercile_f) and (obs_f <= obs_upper_tercile_f), 1, 0).astype('int8') #here the nan values over the sea are lost. They will be brought back below.
+        gcm_bin = xr.where((gcm_f > gcm_lower_tercile_f) and (gcm_f <= gcm_upper_tercile_f), 1, 0).astype('int8')
     else:
         raise Exception("ERROR: check entry for dist_part_f !")
 
@@ -651,4 +651,4 @@ def get_reliability_or_roc(obs_f,gcm_f,obs_quantile_f,gcm_quantile_f,dist_part_f
     else:
         raise Exception('Error in get_reliability_or_roc(): check the number of dimenions in <obs_f>!')
 
-    return(out_score)
+    return out_score

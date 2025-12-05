@@ -540,7 +540,7 @@ for mo in np.arange(len(modulators)):
 
                         #get binary arrays
                         lower_tercile_obs_step = (obs_seas_mn_5d <= t1_obs).astype(precision)
-                        center_tercile_obs_step = ((obs_seas_mn_5d > t1_obs) & (obs_seas_mn_5d <= t2_obs)).astype(precision)
+                        center_tercile_obs_step = ((obs_seas_mn_5d > t1_obs) and (obs_seas_mn_5d <= t2_obs)).astype(precision)
                         upper_tercile_obs_step = (obs_seas_mn_5d > t2_obs).astype(precision)
 
                         #recover nans lost in the former 3 lines
@@ -601,10 +601,10 @@ for mo in np.arange(len(modulators)):
                             upper_np = np.expand_dims(np.expand_dims(upper_xr.values,axis=0),axis=-3)
                             upper_np = upper_np.repeat(repeats=gcm_seas_mn_6d.shape[time_ind], axis=time_ind).repeat(repeats=gcm_seas_mn_6d.shape[mem_ind], axis=mem_ind)
 
-                            valid_ind = ~np.isnan(lower_np) & ~np.isnan(upper_np)
-                            upper_ind = (gcm_seas_mn_6d > upper_np) & valid_ind
-                            center_ind = (gcm_seas_mn_6d > lower_np) & (gcm_seas_mn_6d <= upper_np) & valid_ind
-                            lower_ind = (gcm_seas_mn_6d <= lower_np) & valid_ind
+                            valid_ind = ~np.isnan(lower_np) and ~np.isnan(upper_np)
+                            upper_ind = (gcm_seas_mn_6d > upper_np) and valid_ind
+                            center_ind = (gcm_seas_mn_6d > lower_np) and (gcm_seas_mn_6d <= upper_np) and valid_ind
+                            lower_ind = (gcm_seas_mn_6d <= lower_np) and valid_ind
 
                             #sum members in each category and devide by the number of members, thus obtaining the probability
                             nr_mem_step = len(gcm_seas_mn_6d.member)
@@ -836,7 +836,7 @@ for mo in np.arange(len(modulators)):
                         elif skillscore_reference == 'clim':
                             print('Calculating Continuous Ranked Probability Skill Score with respect to a climatological forecast.')
                         else:
-                            ValueError('Unknown entry for <skillscore_reference> !')
+                            raise ValueError('Unknown entry for <skillscore_reference> !')
 
                         start_time_crps = time.time()
                         crps_ensemble_clim = xs.crps_ensemble(obs_seas_mn_5d,ref_forecast,member_weights=None,issorted=False,member_dim='member',dim='time',weights=None,keep_attrs=False).rename('crps_ensemble_'+skillscore_reference)

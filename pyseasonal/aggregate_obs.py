@@ -100,14 +100,14 @@ for vv in np.arange(len(variables)):
         path_obs_data = path_obs_base+'/'+obs+'/data_derived_'+resolution+'/'+domain+'/'+agg_src+'/'+variables[vv]+'/'+variables[vv]+'_'+domain_label+'.nc'
         nc = xr.open_dataset(path_obs_data, decode_timedelta=False)
     else:
-        ValueError('Unexpected value for <domain> !')
+        raise ValueError('Unexpected value for <domain> !')
 
     # pdb.set_trace()
     nc = nc.rename({variables_nc[vv]:variables[vv]})
 
     #cut out target period
     dates = pd.DatetimeIndex(nc.time.values)
-    years_ind = np.where((dates.year >= years[0]) & (dates.year <= years[-1]))[0]
+    years_ind = np.where((dates.year >= years[0]) and (dates.year <= years[-1]))[0]
     nc = nc.isel(time=years_ind)
     dates = pd.DatetimeIndex(nc.time.values) #retrieve dates form the time-reduced xr dataset
     #calculate monthly mean values

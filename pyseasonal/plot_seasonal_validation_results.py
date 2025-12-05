@@ -188,7 +188,7 @@ for ag in np.arange(len(agg_label)):
                     elif variables[mm][vv] not in masked_variables:
                         print('As requested by the user, the verification results are not filtered by a land-sea mask for '+variables[mm][vv]+' !')
                     else:
-                        ValueError('check whether <variables[mm][vv]> is in <masked_variables> !')
+                        raise ValueError('check whether <variables[mm][vv]> is in <masked_variables> !')
 
                     #optionally cut out sub domain
                     if domain == 'medcof' and sub_domain in ('iberia','medcof2'):
@@ -345,7 +345,7 @@ for ag in np.arange(len(agg_label)):
                     elif variables[mm][vv] not in masked_variables:
                         print('As requested by the user, the verification results are not filtered by a land-sea mask for '+variables[mm][vv]+' !')
                     else:
-                        ValueError('check whether <variables[mm][vv]> is in <masked_variables> !')
+                        raise ValueError('check whether <variables[mm][vv]> is in <masked_variables> !')
 
                     #optionally cut out sub domain
                     if sub_domain in ('iberia','medcof2'):
@@ -404,7 +404,7 @@ for ag in np.arange(len(agg_label)):
                             elif scores[sc] in ('roc_auc_lower_tercile_skillscore','roc_auc_center_tercile_skillscore','roc_auc_upper_tercile_skillscore'):
                                 score_info[sc] = 'ROC Area Under the Curve skill score with reference to a random forecast exceeding '+str(critval_skillscore)+', yes (1) or no (0)'
                             else:
-                                ValueError('Unexpected entry for <scores[sc] !')
+                                raise ValueError('Unexpected entry for <scores[sc] !')
 
                         elif scores[sc] in ('pearson_r','spearman_r'):
                             if scores[sc] in ('pearson_r'):
@@ -429,8 +429,8 @@ for ag in np.arange(len(agg_label)):
 
                             binmask = np.zeros(mapme.shape)
                             binmask[:] = np.nan
-                            mask1 = (pval < critval_rho) & (rho > 0)
-                            mask0 = (pval >= critval_rho) | (rho <= 0)
+                            mask1 = (pval < critval_rho) and (rho > 0)
+                            mask0 = (pval >= critval_rho) or (rho <= 0)
                             binmask[mask1] = 1
                             binmask[mask0] = 0
                             score_unit[sc] = 'binary'
@@ -587,7 +587,7 @@ for ag in np.arange(len(agg_label)):
                         elif plot_maps == 'no':
                             print('As requested by the user, no verification maps are plotted !')
                         else:
-                            ValueError('Check entry for <plot_maps> !')
+                            raise ValueError('Check entry for <plot_maps> !')
 
                         #fill numpy array with binary mask
                         binary_mask[su,det,vv,sc,:,0:lead_step,:,:] = binmask

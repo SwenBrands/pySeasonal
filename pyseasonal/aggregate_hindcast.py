@@ -257,7 +257,7 @@ for mm in np.arange(len(model)):
                 nc.close() #close the currently open nc file object
 
                 #if the input netCDF file is not valid, as revealed by transform_gcm_variable(), overwrite the original file with the newly created one
-                if (file_valid == 0) & (save_corrected_files == 'yes'):
+                if (file_valid == 0) and (save_corrected_files == 'yes'):
                     del(nc) #delete the previously opened nc file object
                     nc = xr.open_dataset(path_gcm_data, decode_timedelta=False) #and re-open it
                     #get encoding and variable unit of the input netCDF file for all dimensions and variables
@@ -287,7 +287,7 @@ for mm in np.arange(len(model)):
                     print('INFO: Upon user request the erroneous file '+path_gcm_data+' is replaced with the new corrected file '+path_corrected_gcm_data+' !')
                     os.rename(path_corrected_gcm_data,path_gcm_data)
 
-                elif (file_valid == 0) & (save_corrected_files == 'no'):
+                elif (file_valid == 0) and (save_corrected_files == 'no'):
                     print('INFO: The units of the input array were wrong and have been corrected for further processing with the pySeasonal package. However, as requested by the user, the wrong input netCDF file is not overwritten with the corrected file !')
                     nc.close()
                     del(nc)
@@ -318,7 +318,7 @@ for mm in np.arange(len(model)):
         del(data_mon) #delete the loop-wise numpy array <data_mon>
 
         ##cut out the last n_lead[mm]-1 months to harmonize the time dimension with observations, currently not used because this is done afterwards in <get_skill.py>
-        #yearbool = (daterange.year >= years[0]) & (daterange.year <= years[1])
+        #yearbool = (daterange.year >= years[0]) and (daterange.year <= years[1])
         #outnc = outnc.isel(time = yearbool)
 
         ##set netCDF attributes

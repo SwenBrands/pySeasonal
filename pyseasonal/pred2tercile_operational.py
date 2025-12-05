@@ -143,9 +143,9 @@ for do in np.arange(len(domain_list)):
                     lat_quantile = 'descending'
                 elif nc_quantile['y'][0] < nc_quantile['y'][-1]:
                     lat_quantile = 'ascending'
-                    ValueError('The latitudes in <nc_quantile> are ascending, which is not expected !')
+                    raise ValueError('The latitudes in <nc_quantile> are ascending, which is not expected !')
                 else:
-                    valueError('latitudes in <nc_quantile> are neither ascending or descending !')
+                    raise ValueError('latitudes in <nc_quantile> are neither ascending or descending !')
 
                 # #check whether the previously stored model and version thereof match those requested by this script
                 # nc_quantile = xr.open_dataset(filename_quantiles)
@@ -177,7 +177,7 @@ for do in np.arange(len(domain_list)):
                 elif nc_fc[lat_name[mm][vv]][0] < nc_fc[lat_name[mm][vv]][-1]:
                     lat_nc_fc = 'ascending'
                 else:
-                    valueError('latitudes in <nc_fc> are neither ascending or descending !')
+                    raise ValueError('latitudes in <nc_fc> are neither ascending or descending !')
 
                 #check whethter the latitudes in the quantile and forecast files conincide
                 if any(nc_fc[lat_name[mm][vv]].values != nc_quantile['y'].values) and lat_nc_fc == 'ascending' and lat_quantile == 'descending':
