@@ -14,6 +14,31 @@ import yaml
 from pathlib import Path
 
 
+def load_config(config_file):
+    """Load configuration from YAML file"""
+    config_path = Path(__file__).parent.parent / config_file
+    print('The path of the configuration file is '+str(config_path))
+    with open(config_path, 'r') as file:
+        config = yaml.safe_load(file)
+
+    # Setup paths based on GCM_STORE environment variable
+    gcm_store = os.getenv('GCM_STORE', 'lustre')
+    if gcm_store in config['paths']:
+        paths = config['paths'][gcm_store]
+        # Handle special cases for argo environment
+        if gcm_store == 'argo':
+            data_dir = os.getenv("DATA_DIR", "")
+            paths['home'] = data_dir
+            paths['path_gcm_base'] = data_dir + paths['path_gcm_base']
+            paths['path_gcm_base_derived'] = data_dir + paths['path_gcm_base_derived']
+            paths['path_gcm_base_masked'] = data_dir + paths['path_gcm_base_masked']
+            paths['dir_forecast'] = data_dir + paths['dir_forecast']
+        config['paths'] = paths
+    else:
+        raise Exception(f'ERROR: unknown entry for <gcm_store> !')
+
+    return config
+
 
 # CREATE LIST CONTAINING ALL DOMAINS TO BE PROCESSED ######################################
 
@@ -21,55 +46,31 @@ domain_list = ['medcof','Iberia','Canarias']
 
 ####################################################################
 
+#the init of the forecast (year and month) can passed by bash; if nothing is passed these parameters will be set by python
+if len(sys.argv) == 2:
+    print("Reading from input parameters passed via bash")
+    year_init = str(sys.argv[1])[0:4]
+    month_init = str(sys.argv[1])[-2:]
+    if len(year_init) != 4 or len(month_init) != 2:
+        raise Exception('ERROR: check length of <year_month_init> input parameter !')
+else:
+    print("No input parameter have been provided by the user and the script will set the <year_init> and <month_init> variables for the year and month of the current date...")
+    year_init = str(date.today().year)
+    month_init = f"{date.today().month:02d}"
+    print(date.today())
+print(year_init, month_init)
+
 for do in np.arange(len(domain_list)):
 
     ## CONSTRUCT CONFIGURATION FILE ######################################
 
-    configuration_file = 'config_for_seas2ipe_'+domain_list[do]+'.yaml'
+    configuration_file = 'config/config_for_seas2ipe_'+domain_list[do]+'.yaml'
 
     ######################################################################
 
-    def load_config(config_file='config/'+configuration_file):
-        """Load configuration from YAML file"""
-        config_path = Path(__file__).parent.parent / config_file
-        print('The path of the configuration file is '+str(config_path))
-        with open(config_path, 'r') as file:
-            config = yaml.safe_load(file)
-
-        # Setup paths based on GCM_STORE environment variable
-        gcm_store = os.getenv('GCM_STORE', 'lustre')
-        if gcm_store in config['paths']:
-            paths = config['paths'][gcm_store]
-            # Handle special cases for argo environment
-            if gcm_store == 'argo':
-                data_dir = os.getenv("DATA_DIR", "")
-                paths['home'] = data_dir
-                paths['path_gcm_base'] = data_dir + paths['path_gcm_base']
-                paths['path_gcm_base_derived'] = data_dir + paths['path_gcm_base_derived']
-                paths['path_gcm_base_masked'] = data_dir + paths['path_gcm_base_masked']
-                paths['dir_forecast'] = data_dir + paths['dir_forecast']
-            config['paths'] = paths
-        else:
-            raise Exception(f'ERROR: unknown entry for <gcm_store> !')
-
-        return config
 
     # Load configuration
-    config = load_config()
-
-    #the init of the forecast (year and month) can passed by bash; if nothing is passed these parameters will be set by python
-    if len(sys.argv) == 2:
-        print("Reading from input parameters passed via bash")
-        year_init = str(sys.argv[1])[0:4]
-        month_init = str(sys.argv[1])[-2:]
-        if len(year_init) != 4 or len(month_init) != 2:
-            raise Exception('ERROR: check length of <year_month_init> input parameter !')
-    else:
-        print("No input parameter have been provided by the user and the script will set the <year_init> and <month_init> variables for the year and month of the current date...")
-        year_init = str(date.today().year)
-        month_init = f"{date.today().month:02d}"
-        print(date.today())
-    print(year_init, month_init)
+    config = load_config(configuration_file)
 
     # # Example year and run to run without passing any input arguments; comment or delete the next two lines in operative use
     # year_init = 2024 #a list containing the years the forecast are initialized on, will be looped through with yy
