@@ -16,6 +16,14 @@ import time
 import yaml
 from pathlib import Path
 
+from functions_seasonal import (
+    get_forecast_prob,
+    apply_sea_mask,
+    transform_gcm_variable,
+    assign_season_label,
+    flip_latitudes_and_data
+)
+
 # CREATE LIST CONTAINING ALL DOMAINS TO BE PROCESSED ######################################
 
 domain_list = ['Iberia','Canarias','medcof']
@@ -98,7 +106,6 @@ for do in np.arange(len(domain_list)):
 
     #go to rundir and load pySeasonal's functions
     os.chdir(rundir)
-    exec(open('functions_seasonal.py').read()) #reads the <functions_seasonal.py> script containing a set of custom functions needed here
 
     #load model specific variables to be processed
     model_settings = config['model_settings'] #load all model settings stored in yaml file

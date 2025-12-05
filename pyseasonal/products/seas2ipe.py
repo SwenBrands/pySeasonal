@@ -14,6 +14,7 @@ import yaml
 from pathlib import Path
 
 
+
 # CREATE LIST CONTAINING ALL DOMAINS TO BE PROCESSED ######################################
 
 domain_list = ['medcof','Iberia','Canarias']
@@ -34,7 +35,7 @@ for do in np.arange(len(domain_list)):
         print('The path of the configuration file is '+str(config_path))
         with open(config_path, 'r') as file:
             config = yaml.safe_load(file)
-        
+
         # Setup paths based on GCM_STORE environment variable
         gcm_store = os.getenv('GCM_STORE', 'lustre')
         if gcm_store in config['paths']:
@@ -50,7 +51,7 @@ for do in np.arange(len(domain_list)):
             config['paths'] = paths
         else:
             raise Exception(f'ERROR: unknown entry for <gcm_store> !')
-        
+
         return config
 
     # Load configuration
@@ -118,13 +119,12 @@ for do in np.arange(len(domain_list)):
 
     #go to rundir and load custom Python functions
     os.chdir(rundir)
-    exec(open('functions_seasonal.py').read()) #reads the <functions_seasonal.py> script containing a set of custom functions needed here
 
     #create output directory of the forecasts generated here, if it does not exist.
     if os.path.isdir(dir_output) != True:
         os.makedirs(dir_output)
 
-    for ag in np.arange(len(agg_labels)):    
+    for ag in np.arange(len(agg_labels)):
         for mm in np.arange(len(model)):
             #load the skill masks for a given aggregation window; multiple variables are and models located within the same file.
             filename_validation = dir_validation+'/skill_masks/'+domain+'/'+agg_labels[ag]+'/skill_masks_pticlima_'+domain+'_'+agg_labels[ag]+'_'+model[mm]+version[mm]+'_'+vers+'.nc'
@@ -139,17 +139,17 @@ for do in np.arange(len(domain_list)):
                 #load the forecast for a specific variable
                 filename_forecast = dir_forecast+'/'+domain+'/probability_'+agg_labels[ag]+'_'+model[mm]+version[mm]+'_'+variables_std[vv]+'_'+domain+'_init_'+str(year_init)+str(month_init).zfill(2)+'_dtr_'+detrended+'_refyears_'+str(years_quantile[mm][0])+'_'+str(years_quantile[mm][1])+'_'+vers+'.nc'
                 nc_forecast_step = xr.open_dataset(filename_forecast) #get the xr data array containing the tercile probabilities for a specific variable
-                
+
                 #check whether the previously stored model and version thereof match those requested by this script
                 if nc_forecast_step.model == model[mm]+version[mm]:
                     print('The requested model '+model[mm]+' and its version '+version[mm]+' coincide with the entry previously stored in '+filename_forecast+' !')
                 else:
                     raise ValueError('The requested model '+model[mm]+' and its version '+version[mm]+' do NOT coincide with the entry previously stored in '+filename_forecast+' !')
-                    
+
                 tercile_attrs = nc_forecast_step.tercile.attrs
-                
+
                 nc_forecast_step_prob = nc_forecast_step['probability'].sel(aggregation=agg_labels[ag],model=model[mm]+version[mm]).drop_vars(['aggregation','model'])
-                
+
                 #get maximum probability, #note that nc_forecast_step_prob only contains the probability of the most likely tercile ! The other two terciles are set to nan by pred2tercile_operational.py
                 nc_forecast_step_maxprob = nc_forecast_step_prob.max(dim='tercile').astype(datatype)
                 valid_data_bool_4d = ~np.isnan(nc_forecast_step_maxprob) #get valid data for the 4d array
@@ -174,7 +174,7 @@ for do in np.arange(len(domain_list)):
                 nc_forecast_step_maxprob.close()
                 nc_forecast_step.close()
                 del(nc_forecast_step_argmax,nc_forecast_step_maxprob,nc_forecast_step)
-    
+
                 #filter subperiod, detrending option, model and version, season, and variable from skill mask
                 fc_season_length = nc_forecast.season.length_in_months
 
@@ -196,10 +196,10 @@ for do in np.arange(len(domain_list)):
 
                 #cut down the forecast domain to the skill domain indicated in the <domain> input variable
                 nc_forecast = nc_forecast.sel(y=skill_mask.y,x=skill_mask.x)
-                            
+
                 # apply land-sea mask to skill mask
                 if variables_std[vv] in masked_variables_std:
-                    print('Upon user request, values for sea grid-boxes are set to nan in skill mask '+variables_std[vv]+' ! ') 
+                    print('Upon user request, values for sea grid-boxes are set to nan in skill mask '+variables_std[vv]+' ! ')
                     land_sea_3d = np.squeeze(land_sea_4d)
                     skill_mask = skill_mask.where(land_sea_3d == 1, other=np.nan)
                 elif variables_std[vv] not in masked_variables_std:
@@ -216,19 +216,19 @@ for do in np.arange(len(domain_list)):
                 nc_forecast['skill_'+variables_out[vv]] = skill_mask #assign variable-specific skill mask to the newly generated xarray dataset produced by this script
                 skill_mask.close()
                 del(skill_mask)
-            
+
             #add global attributes
             nc_forecast.season.attrs['standard_name'] = 'season'
             nc_forecast.season.attrs['long_name'] = 'season following the forecast initialization date specified in rtime'
-            
+
             # save the mergerd output file
             savename = dir_output+'/seas2ipe_'+model[mm]+version[mm]+'_'+domain+'_init_'+str(year_init)+str(month_init).zfill(2)+'_'+str(fc_season_length)+'mon_dtr_'+detrended+'_refyears_'+str(tercile_attrs['tercile_period'][0])+'_'+str(tercile_attrs['tercile_period'][1])+'.nc'
-            
+
             ## optionally encode the output netcdf file
             # chunks = (1, 1, 1, 1, len(nc_forecast.y), len(nc_forecast.y))
             # encoding = dict(tp=dict(chunksizes=chunks)) #https://docs.xarray.dev/en/stable/user-guide/io.html#writing-encoded-data
             # nc_forecast.to_netcdf(savename,encoding=encoding)
-            
+
             nc_forecast.to_netcdf(savename)
 
             #clean up

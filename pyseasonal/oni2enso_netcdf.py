@@ -15,7 +15,6 @@ import os
 import xesmf
 import pandas as pd
 import dask
-exec(open('functions_seasonal.py').read()) #reads the <functions_seasonal.py> script containing a set of custom functions needed here
 
 #set input parameters
 file_system = 'lustre' #lustre or myLaptop; used to create the path structure to the input and output files

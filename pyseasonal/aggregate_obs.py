@@ -15,6 +15,7 @@ import pdb
 import yaml
 from pathlib import Path
 
+
 # INDICATE CONFIGURATION FILE ######################################
 
 configuration_file = 'config_for_aggregate_obs_Canarias.yaml'
@@ -67,7 +68,6 @@ rundir = paths['rundir']
 
 ## EXECUTE #############################################################
 os.chdir(rundir) #go to running directory
-exec(open('functions_seasonal.py').read()) #reads the <functions_seasonal.py> script containing a set of custom functions needed here
 
 #create output directory if it does not exist.
 if os.path.isdir(savepath_base+'/'+obs) != True:

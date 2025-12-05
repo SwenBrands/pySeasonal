@@ -22,6 +22,9 @@ import yaml
 from pathlib import Path
 import pdb #then type <pdb.set_trace()> at a given line in the code below
 import psutil
+
+from functions_seasonal import apply_sea_mask, lin_detrend, get_reliability_or_roc
+
 start_time = time.time()
 
 # take input variables from bash
@@ -174,7 +177,6 @@ else:
     raise ValueError('<domain_from_config> set in '+configuration_file+' does not match '+domain+' passed via bash or set above in get_skill_season.py !!')
 
 #load custom functions and configuraiton files
-exec(open(rundir+'/functions_seasonal.py').read()) #reads the <functions_seasonal.py> script containing a set of custom functions needed here
 
 #load the season configurations depending on the aggregation periods specified in <agg_labels>
 season_label = []

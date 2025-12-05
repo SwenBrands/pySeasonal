@@ -21,6 +21,15 @@ import pdb as pdb #then type <pdb.set_trace()> at a given line in the code below
 import time
 import yaml
 from pathlib import Path
+
+from functions_seasonal import (
+    apply_sea_mask,
+    get_sub_domain,
+    get_spatial_aggregation,
+    plot_pcolormesh_seasonal,
+    get_map_lowfreq_var,
+)
+
 start_time = time.time()
 
 # optional input parameters passed via bash
@@ -114,8 +123,6 @@ mask_dir = paths['mask_dir'] #path to the land-sea masks
 ##EXECUTE ##############################################################
 
 #load custom functions of the pySeasonal and pySolar packages (to be merged in the future) and go to run directory
-exec(open(rundir+'/functions_seasonal.py').read())
-exec(open(auxdir+'/functions_radiation.py').read())
 os.chdir(rundir)
 
 print('INFO: Verfying '+str(models)+' against for '+str(variables)+' from '+str(ref_dataset)+' domain '+domain+' and sub-domain '+sub_domain+', detrending '+str(detrending)+' and outlier correction '+corr_outlier)

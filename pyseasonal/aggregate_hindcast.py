@@ -21,6 +21,8 @@ import sys
 import yaml
 from pathlib import Path
 
+from functions_seasonal import transform_gcm_variable
+
 # INDICATE CONFIGURATION FILE ######################################
 
 # configuration_file = 'config_for_aggregate_hindcast_Iberia.yaml'
@@ -94,11 +96,6 @@ FLAGDIR = paths['FLAGDIR']
 
 ## EXECUTE #############################################################
 os.chdir(rundir) #go to running directory
-
-#load config file and custom functions
-exec(open('functions_seasonal.py').read()) #reads the <functions_seasonal.py> script containing a set of custom functions needed here
-
-#exec(open(rundir+'/config/config_for_aggregate_hindcast.py').read()) #reads the <functions_seasonal.py> script containing a set of custom functions needed here
 
 # #alternatively, add directories to your system path in oder to import the configuration files and functions; this however requires restarting Pyhton every time the functions and config files are updated, which is why the exec option mentioned above is preferred for script development
 # sys.path.append(rundir) #add the running directory
