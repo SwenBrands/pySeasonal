@@ -23,6 +23,7 @@ def flip_latitudes_and_data(xr_ds_f,lat_name):
 
     return xr_ds_f
 
+
 def apply_sea_mask(arr_f,mask_file_f,lat_name_f,lon_name_f):
     '''sets the values over the Sea, as provided by the netCDF file locted at <mask_file_f> to nan in <arr_f>;
     Input: <arr_f> is an xarray DataArray or Dataset with specific dimensions checked below;
@@ -96,6 +97,7 @@ def apply_sea_mask(arr_f,mask_file_f,lat_name_f,lon_name_f):
     del(nc_mask_f,mask_appended_f,target_dims_f)
 
     return arr_f  #returns masked xarray data array
+
 
 def assign_season_label(season_list_f: list) -> str:
     '''Assign season label string for an input list of consecutive months.
@@ -179,37 +181,90 @@ def get_years_of_subperiod(subperiod_f):
       ENSO years were derived from CPC's ONI index available from https://origin.cpc.ncep.noaa.gov/products/analysis_monitoring/ensostuff/ONI_v5.php
       or from the NOAA list available at https://psl.noaa.gov/enso/past_events.html
       QBO years were derived from CPCs QBO index at 50mb available at https://www.cpc.ncep.noaa.gov/data/indices/qbo.u50.index'''
-    if subperiod_f == 'mod2strong_nino_oni':
-        years_val = [1982,1983,1986,1987,1991,1992,1997,1998,2009,2010,2015,2016] #Swen Brands selection based no NOAA's ONI index
-        print('The model is verified for moderate and strong El Niño years based on ONI index only: '+str(years_val))
-    elif subperiod_f == 'mod2strong_nina_oni':
-        years_val = [1984,1985,1988,1989,1999,2000,2007,2008,2010,2011,2020,2021,2022]
-        print('The model is verified for moderate and strong La Niña years based on ONI index only: '+str(years_val))
-    elif subperiod_f == 'enso_nino_noaa':
-        years_val = [1983,1987,1988,1992,1995,1998,2003,2007,2010,2016]
-        print('The model is verified for the El Niño years declared by NOAA at: https://psl.noaa.gov/enso/past_events.html : '+str(years_val))
-    elif subperiod_f == 'enso_nina_noaa':
-        years_val = [1989,1999,2000,2008,2011,2012,2021,2022]
-        print('The model is verified for the La Niña years declared by NOAA at: https://psl.noaa.gov/enso/past_events.html : '+str(years_val))
-    elif subperiod_f == 'enso_neutral_noaa':
-        years_val = [1981,1982,1984,1985,1986,1990,1991,1993,1994,1996,1997,2001,2002,2004,2005,2006,2009,2013,2014,2015,2017,2018,2019,2020] #Swen Brands selection based no NOAA's ONI index
-        print('The model is verified for the neutral ENSO years declared by NOAA at: https://psl.noaa.gov/enso/past_events.html : '+str(years_val))
-    elif subperiod_f == 'qbo50_pos':
-        years_val = [1981,1983,1985,1986,1988,1991,1993,1995,1997,1999,2000,2002,2004,2009,2011,2014,2017,2019,2021,2023]
-        print('The model is verified for positive QBO-50 years derived from https://www.cpc.ncep.noaa.gov/data/indices/qbo.u50.index only: '+str(years_val))
-    elif subperiod_f == 'qbo50_neg':
-        years_val = [1982,1984,1987,1989,1992,1994,1996,1998,2001,2003,2005,2007,2010,2012,2015,2018,2022]
-        print('The model is verified for negative QBO-50 years derivded from https://www.cpc.ncep.noaa.gov/data/indices/qbo.u50.index only: '+str(years_val))
-    elif subperiod_f == 'qbo50_trans':
-        years_val = [1990,2006,2008,2013,2016,2020]
-        print('The model is verified for transition QBO-50 years derived from https://www.cpc.ncep.noaa.gov/data/indices/qbo.u50.index only: '+str(years_val))
-    elif subperiod_f == 'none':
-        years_val = np.arange(1981,2023,1)
-        print('The full overlapping period between observations and model data is used for verification.')
-    else:
-        raise Exception('ERROR: unkown entry for the <subperiod> entry parameter !')
+    target_years = {
+        "mod2strong_nino_oni": {
+            "years": [1982, 1983, 1986, 1987, 1991, 1992, 1997, 1998, 2009, 2010, 2015, 2016],
+            "msg": (
+                'The model is verified for moderate and strong El Niño years based on '
+                'ONI index only: {years}'
+            )
+        },
+        "mod2strong_nina_oni": {
+            "years": [
+                1984, 1985, 1988, 1989, 1999, 2000, 2007, 2008, 2010, 2011, 2020, 2021, 2022
+            ],
+            "msg": (
+                'The model is verified for moderate and strong La Niña years based on '
+                'ONI index only: {years}'
+            )
+        },
+        "enso_nino_noaa": {
+            "years": [1983, 1987, 1988, 1992, 1995, 1998, 2003, 2007, 2010, 2016],
+            "msg": (
+                'The model is verified for the El Niño years declared by NOAA at '
+                'https://psl.noaa.gov/enso/past_events.html: {years}')
+        },
+        "enso_nina_noaa": {
+            "years": [1989, 1999, 2000, 2008, 2011, 2012, 2021, 2022],
+            "msg": (
+                'The model is verified for the La Niña years declared by NOAA at '
+                'https://psl.noaa.gov/enso/past_events.html : {years}'
+            )
+        },
+        "enso_neutral_noaa": {
+            "years": [
+                1981, 1982, 1984, 1985, 1986, 1990, 1991, 1993, 1994, 1996, 1997, 2001,
+                2002, 2004, 2005, 2006, 2009, 2013, 2014, 2015, 2017, 2018, 2019, 2020
+            ],
+            "msg": (
+                'The model is verified for the neutral ENSO years declared by NOAA at '
+                'https://psl.noaa.gov/enso/past_events.html : {years}'
+            )
+        },
+        "qbo50_pos": {
+            "years": [
+                1981, 1983, 1985, 1986, 1988, 1991, 1993, 1995, 1997, 1999,
+                2000, 2002, 2004, 2009, 2011, 2014, 2017, 2019, 2021, 2023
+            ],
+            "msg": (
+                'The model is verified for positive QBO-50 years derived from '
+                'https://www.cpc.ncep.noaa.gov/data/indices/qbo.u50.index only: {years}'
+            )
+        },
+        "qbo50_neg": {
+            "years": [
+                1982, 1984, 1987, 1989, 1992, 1994, 1996, 1998, 2001,
+                2003, 2005, 2007, 2010, 2012, 2015, 2018, 2022
+            ],
+            "msg": (
+                'The model is verified for negative QBO-50 years derivded from '
+                'https://www.cpc.ncep.noaa.gov/data/indices/qbo.u50.index only: {years}'
+            )
+        },
+        "qbo50_trans": {
+            "years": [1990, 2006, 2008, 2013, 2016, 2020],
+            "msg": (
+                'The model is verified for transition QBO-50 years derived from '
+                'https://www.cpc.ncep.noaa.gov/data/indices/qbo.u50.index only: {years}'
+            )
+        },
+        "none": {
+            "years": np.arange(1981, 2023, 1),
+            "msg": (
+                'The full overlapping period between observations and model data is '
+                'used for verification.'
+            )
+        },
+    }
+
+    if subperiod_f not in target_years:
+        raise KeyError('ERROR: unknown entry for the <subperiod> entry parameter !')
+
+    years_val = target_years[subperiod_f]['years']
+    print(target_years[subperiod_f]['msg'].format(years=years_val))
 
     return years_val
+
 
 def haversine(lon1, lat1, lon2, lat2):
     """
@@ -227,6 +282,7 @@ def haversine(lon1, lat1, lon2, lat2):
     r = 6371 # Radius of earth in kilometers. Use 3956 for miles. Determines return value units.
 
     return c * r
+
 
 def roll_and_cut(xr_dataset, lonlim_f, latlim_f):
     """
@@ -248,6 +304,7 @@ def roll_and_cut(xr_dataset, lonlim_f, latlim_f):
 
     return xr_dataset
 
+
 def calc_roll_seasmean(xr_ds):
     """
     calculates rolling weighted seasonal average values considering DJF, MAM, JJA and SON
@@ -267,6 +324,7 @@ def calc_roll_seasmean(xr_ds):
     del(weights)
 
     return xr_ds_roll
+
 
 def lin_detrend(xr_ar,rm_mean_f):
     """also used in pyLamb package; performs linear detrending of the xarray DataArray xr_ar along the time dimension, rm_mean_f specifies whether the mean is removed yes or no"""
@@ -288,6 +346,7 @@ def lin_detrend(xr_ar,rm_mean_f):
         raise Exception('ERROR: check entry for <rm_mean_f> input parameter!')
 
     return xr_ar_detrended
+
 
 #def get_frac_significance(np_arr_pval_f,np_arr_rho_f,critval_f,mode_f='fraction',lat_f=None):
 #def get_spatial_aggregation(np_arr_pval_f,np_arr_rho_f,critval_f,mode_f='fraction',lat_f=None):
@@ -356,6 +415,7 @@ def get_spatial_aggregation(score_f,critval_f=None,pval_f=None,mode_f='fraction_
     #return spatial_sigfraq_f,pval_step_f  #former versions of this function returned two output variables
     return spatial_agg_f  #the spatially aggregated value is returned
 
+
 def get_frac_above_threshold(np_arr_vals_f,critval_f):
     """get the fraction of grid-boxes where values i values_f exceed the threshold <critval_f>; np_arr_f is a 4d numpy array with the dimensions season x lead x lat x lon"""
     shape_f = np_arr_vals_f.shape
@@ -367,6 +427,7 @@ def get_frac_above_threshold(np_arr_vals_f,critval_f):
     spatial_fraq_f = np.nansum(np_arr_vals_step_f,axis=2)/(shape_f[2]*shape_f[3])*100
 
     return spatial_fraq_f,np_arr_vals_step_f
+
 
 def get_sub_domain(xr_ds_f,domain_f):
     '''cuts out the sub-domain defined in <domain_f> from xarray dataset <xr_ds_f>'''
@@ -389,6 +450,7 @@ def get_sub_domain(xr_ds_f,domain_f):
 
     return xr_ds_f
 
+
 def plot_pcolormesh_seasonal(xr_ar_f,minval_f,maxval_f,savename_f,colormap_f,dpival_f):
     '''Plots matrix of the verfication results contained in xarray data array <xr_ar_f>, seasons are plotted on the x axis, lead months on the y axis.'''
     fig = plt.figure()
@@ -408,6 +470,7 @@ def plot_pcolormesh_seasonal(xr_ar_f,minval_f,maxval_f,savename_f,colormap_f,dpi
     fig.tight_layout()
     plt.savefig(savename_f,dpi=dpival_f)
     plt.close('all')
+
 
 def get_map_lowfreq_var(pattern_f,xx_f,yy_f,agree_ind_f,minval_f,maxval_f,dpival_f,title_f,savename_f,halfres_f,colormap_f,titlesize_f,cbarlabel_f,origpoint=None,orientation_f=None):
     '''Currently used in pyLamb and pySeasonal packages in sligthly differing versions. Plots a pcolormesh contour over a map overlain by dots indicating, e.g. statistical significance'''
@@ -460,6 +523,7 @@ def get_map_lowfreq_var(pattern_f,xx_f,yy_f,agree_ind_f,minval_f,maxval_f,dpival
     plt.savefig(savename_f,dpi=dpival_f,bbox_inches='tight')
     plt.close('all')
 
+
 def transform_gcm_variable(ds_f,var_in_f,var_out_f,model_f,version_f):
     '''transforms GCM variable names and units to be compatible with CDS nomenclature; input: <ds_f> is an xarray dataset, <var_in_f> is the name
     of the input meteorological variable, <var_out_f> is the new name (or output name) of this variable; <model_f> and <version_f> are the name
@@ -497,6 +561,7 @@ def transform_gcm_variable(ds_f,var_in_f,var_out_f,model_f,version_f):
         valid_f = 1
 
     return ds_f, valid_f
+
 
 def get_reliability_or_roc(obs_f,gcm_f,obs_quantile_f,gcm_quantile_f,dist_part_f,score_f='reliability',bin_edges_f=None):
     """ caclulates the mean absolute difference (returned as <reliability>) between the forecast probabilities and corresponding conditional observed probabilities of the reliability plot and the diagonal of the plot
