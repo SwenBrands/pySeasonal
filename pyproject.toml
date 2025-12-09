@@ -25,6 +25,13 @@ dependencies = [
     "xesmf>=0.8.10",
     "xskillscore>=0.0.26",
 ]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-cov>=4.0.0",
+]
+
 [project.urls]
 Homepage = "https://github.com/yourusername/pySeasonal"
 Documentation = "https://github.com/yourusername/pySeasonal/blob/main/README.md"
