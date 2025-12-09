@@ -20,6 +20,7 @@ def flip_latitudes_and_data(xr_ds_f,lat_name):
         xr_ds_f= xr_ds_f.reindex(y=list(reversed(xr_ds_f.y)))
     else:
         raise ValueError('Unexpected entry for <lat_name> in flip_latitudes() function !')
+
     return xr_ds_f
 
 def apply_sea_mask(arr_f,mask_file_f,lat_name_f,lon_name_f):
@@ -93,6 +94,7 @@ def apply_sea_mask(arr_f,mask_file_f,lat_name_f,lon_name_f):
     #clean everything except arr_f, which will be returned to the script calling this function
     nc_mask_f.close()
     del(nc_mask_f,mask_appended_f,target_dims_f)
+
     return arr_f  #returns masked xarray data array
 
 def assign_season_label(season_list_f):
@@ -224,6 +226,7 @@ def assign_season_label(season_list_f):
         season_label_f = 'DJFMA'
     else:
         raise Exception('ERROR: check entry for <season_list_f> !')
+
     return season_label_f
 
 
@@ -252,6 +255,7 @@ def get_forecast_prob(seas_mean_f,lower_xr_f,upper_xr_f):
     upper_prob_f = upper_ind_f.sum(dim='member')/nr_mem_f
     center_prob_f = center_ind_f.sum(dim='member')/nr_mem_f
     lower_prob_f = lower_ind_f.sum(dim='member')/nr_mem_f
+
     return nr_mem_f,upper_prob_f,center_prob_f,lower_prob_f
 
 
@@ -289,6 +293,7 @@ def get_years_of_subperiod(subperiod_f):
         print('The full overlapping period between observations and model data is used for verification.')
     else:
         raise Exception('ERROR: unkown entry for the <subperiod> entry parameter !')
+
     return years_val
 
 def haversine(lon1, lat1, lon2, lat2):
@@ -305,6 +310,7 @@ def haversine(lon1, lat1, lon2, lat2):
     a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
     c = 2 * asin(sqrt(a))
     r = 6371 # Radius of earth in kilometers. Use 3956 for miles. Determines return value units.
+
     return c * r
 
 def roll_and_cut(xr_dataset, lonlim_f, latlim_f):
@@ -324,6 +330,7 @@ def roll_and_cut(xr_dataset, lonlim_f, latlim_f):
     lonind = (xr_dataset.longitude.values >= lonlim_f[0]) and (xr_dataset.longitude.values <= lonlim_f[1])
     latind = (xr_dataset.latitude.values >= latlim_f[0]) and (xr_dataset.latitude.values <= latlim_f[1])
     xr_dataset = xr_dataset.isel(longitude=lonind,latitude=latind)
+
     return xr_dataset
 
 def calc_roll_seasmean(xr_ds):
@@ -340,10 +347,11 @@ def calc_roll_seasmean(xr_ds):
     xr_ds_roll = xr_ds_roll / roll_weights
     id3 = np.arange(0,xr_ds_roll.time.shape[0],3) # index used to retain every third value of the rolling 3-months seasonal mean values to obtain inter-annual time-series.
     xr_ds_roll = xr_ds_roll.isel(time=id3)
-    return xr_ds_roll
-    xr_ds_roll.close()
+
     weights.close()
-    del(weights,xr_ds_roll)
+    del(weights)
+
+    return xr_ds_roll
 
 def lin_detrend(xr_ar,rm_mean_f):
     """also used in pyLamb package; performs linear detrending of the xarray DataArray xr_ar along the time dimension, rm_mean_f specifies whether the mean is removed yes or no"""
@@ -363,6 +371,7 @@ def lin_detrend(xr_ar,rm_mean_f):
         xr_ar_detrended = (xr_ar - fit + meanvals_f).astype('float32')
     else:
         raise Exception('ERROR: check entry for <rm_mean_f> input parameter!')
+
     return xr_ar_detrended
 
 #def get_frac_significance(np_arr_pval_f,np_arr_rho_f,critval_f,mode_f='fraction',lat_f=None):
@@ -428,8 +437,9 @@ def get_spatial_aggregation(score_f,critval_f=None,pval_f=None,mode_f='fraction_
             spatial_agg_f = np.nansum(score_step_f,axis=2)/(score_step_f.shape[2])
     else:
         raise Exception('ERROR: check entry for <mode_f> parameter within the get_frac_significance() function !')
-    return spatial_agg_f  #the spatially aggregated value is returned
+
     #return spatial_sigfraq_f,pval_step_f  #former versions of this function returned two output variables
+    return spatial_agg_f  #the spatially aggregated value is returned
 
 def get_frac_above_threshold(np_arr_vals_f,critval_f):
     """get the fraction of grid-boxes where values i values_f exceed the threshold <critval_f>; np_arr_f is a 4d numpy array with the dimensions season x lead x lat x lon"""
@@ -440,6 +450,7 @@ def get_frac_above_threshold(np_arr_vals_f,critval_f):
     np_arr_vals_step_f[sigind_f] = 1
     np_arr_vals_step_f[spurind_f] = 0
     spatial_fraq_f = np.nansum(np_arr_vals_step_f,axis=2)/(shape_f[2]*shape_f[3])*100
+
     return spatial_fraq_f,np_arr_vals_step_f
 
 def get_sub_domain(xr_ds_f,domain_f):
@@ -460,9 +471,8 @@ def get_sub_domain(xr_ds_f,domain_f):
         xr_ds_f = xr_ds_f.isel(y=lat_bool,x=lon_bool)
     else:
         raise Exception('ERROR: check entry for the <sub_domain> input parameter !')
+
     return xr_ds_f
-    xr_ds_f.close()
-    del(xr_ds_f)
 
 def plot_pcolormesh_seasonal(xr_ar_f,minval_f,maxval_f,savename_f,colormap_f,dpival_f):
     '''Plots matrix of the verfication results contained in xarray data array <xr_ar_f>, seasons are plotted on the x axis, lead months on the y axis.'''
@@ -570,6 +580,7 @@ def transform_gcm_variable(ds_f,var_in_f,var_out_f,model_f,version_f):
     else:
         print('Info: No data transformation is applied for '+var_in_f+' data from '+model_f+version_f+'.')
         valid_f = 1
+
     return ds_f, valid_f
 
 def get_reliability_or_roc(obs_f,gcm_f,obs_quantile_f,gcm_quantile_f,dist_part_f,score_f='reliability',bin_edges_f=None):
