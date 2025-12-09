@@ -97,137 +97,52 @@ def apply_sea_mask(arr_f,mask_file_f,lat_name_f,lon_name_f):
 
     return arr_f  #returns masked xarray data array
 
-def assign_season_label(season_list_f):
-    '''assign the season string for a the input list of 3 consecutive months, each month being an integer.'''
-    # 1-months seasons
-    if season_list_f == [1]:
-        season_label_f = 'JAN'
-    elif season_list_f == [2]:
-        season_label_f = 'FEB'
-    elif season_list_f == [3]:
-        season_label_f = 'MAR'
-    elif season_list_f == [4]:
-        season_label_f = 'APR'
-    elif season_list_f == [5]:
-        season_label_f = 'MAY'
-    elif season_list_f == [6]:
-        season_label_f = 'JUN'
-    elif season_list_f == [7]:
-        season_label_f = 'JUL'
-    elif season_list_f == [8]:
-        season_label_f = 'AUG'
-    elif season_list_f == [9]:
-        season_label_f = 'SEP'
-    elif season_list_f == [10]:
-        season_label_f = 'OCT'
-    elif season_list_f == [11]:
-        season_label_f = 'NOV'
-    elif season_list_f == [12]:
-        season_label_f = 'DEC'
-    # 2-months seasons
-    elif season_list_f == [1,2]:
-        season_label_f = 'JF'
-    elif season_list_f == [2,3]:
-        season_label_f = 'FM'
-    elif season_list_f == [3,4]:
-        season_label_f = 'MA'
-    elif season_list_f == [4,5]:
-        season_label_f = 'AM'
-    elif season_list_f == [5,6]:
-        season_label_f = 'MJ'
-    elif season_list_f == [6,7]:
-        season_label_f = 'JJ'
-    elif season_list_f == [7,8]:
-        season_label_f = 'JA'
-    elif season_list_f == [8,9]:
-        season_label_f = 'AS'
-    elif season_list_f == [9,10]:
-        season_label_f = 'SO'
-    elif season_list_f == [10,11]:
-        season_label_f = 'ON'
-    elif season_list_f == [11,12]:
-        season_label_f = 'ND'
-    elif season_list_f == [12,1,]:
-        season_label_f = 'DJ'
-    # 3-months seasons
-    elif season_list_f == [1,2,3]:
-        season_label_f = 'JFM'
-    elif season_list_f == [2,3,4]:
-        season_label_f = 'FMA'
-    elif season_list_f == [3,4,5]:
-        season_label_f = 'MAM'
-    elif season_list_f == [4,5,6]:
-        season_label_f = 'AMJ'
-    elif season_list_f == [5,6,7]:
-        season_label_f = 'MJJ'
-    elif season_list_f == [6,7,8]:
-        season_label_f = 'JJA'
-    elif season_list_f == [7,8,9]:
-        season_label_f = 'JAS'
-    elif season_list_f == [8,9,10]:
-        season_label_f = 'ASO'
-    elif season_list_f == [9,10,11]:
-        season_label_f = 'SON'
-    elif season_list_f == [10,11,12]:
-        season_label_f = 'OND'
-    elif season_list_f == [11,12,1]:
-        season_label_f = 'NDJ'
-    elif season_list_f == [12,1,2]:
-        season_label_f = 'DJF'
-    # 4-months seasons
-    elif season_list_f == [1,2,3,4]:
-        season_label_f = 'JFMA'
-    elif season_list_f == [2,3,4,5]:
-        season_label_f = 'FMAM'
-    elif season_list_f == [3,4,5,6]:
-        season_label_f = 'MAMJ'
-    elif season_list_f == [4,5,6,7]:
-        season_label_f = 'AMJJ'
-    elif season_list_f == [5,6,7,8]:
-        season_label_f = 'MJJA'
-    elif season_list_f == [6,7,8,9]:
-        season_label_f = 'JJAS'
-    elif season_list_f == [7,8,9,10]:
-        season_label_f = 'JASO'
-    elif season_list_f == [8,9,10,11]:
-        season_label_f = 'ASON'
-    elif season_list_f == [9,10,11,12]:
-        season_label_f = 'SOND'
-    elif season_list_f == [10,11,12,1]:
-        season_label_f = 'ONDJ'
-    elif season_list_f == [11,12,1,2]:
-        season_label_f = 'NDJF'
-    elif season_list_f == [12,1,2,3]:
-        season_label_f = 'DJFM'
-    # 5-months seasons
-    elif season_list_f == [1,2,3,4,5]:
-        season_label_f = 'JFMAM'
-    elif season_list_f == [2,3,4,5,6]:
-        season_label_f = 'FMAMJ'
-    elif season_list_f == [3,4,5,6,7]:
-        season_label_f = 'MAMJJ'
-    elif season_list_f == [4,5,6,7,8]:
-        season_label_f = 'AMJJA'
-    elif season_list_f == [5,6,7,8,9]:
-        season_label_f = 'MJJAS'
-    elif season_list_f == [6,7,8,9,10]:
-        season_label_f = 'JJASO'
-    elif season_list_f == [7,8,9,10,11]:
-        season_label_f = 'JASON'
-    elif season_list_f == [8,9,10,11,12]:
-        season_label_f = 'ASOND'
-    elif season_list_f == [9,10,11,12,1]:
-        season_label_f = 'SONDJ'
-    elif season_list_f == [10,11,12,1,2]:
-        season_label_f = 'ONDJF'
-    elif season_list_f == [11,12,1,2,3]:
-        season_label_f = 'NDJFM'
-    elif season_list_f == [12,1,2,3,4]:
-        season_label_f = 'DJFMA'
-    else:
-        raise Exception('ERROR: check entry for <season_list_f> !')
+def assign_season_label(season_list_f: list) -> str:
+    '''Assign season label string for an input list of consecutive months.
 
-    return season_label_f
+    Generates abbreviated season labels from month numbers. Handles single months
+    (returns full month name like 'JAN') and multi-month seasons (returns initials
+    like 'DJF' for December-January-February). Supports year wrap-around for seasons
+    crossing December to January.
+
+    Input:
+        season_list_f: list of integers (1-12) representing consecutive months
+                      Must contain 1-5 months in sequential order
+                      Example: [12,1,2] for December-January-February
+
+    Output:
+        String label for the season
+        Single month: full name (e.g., 'JAN', 'FEB', 'DEC')
+        Multi-month: initials concatenated (e.g., 'DJF', 'JJA', 'MAMJ')
+
+    Raises:
+        ValueError: if months are not consecutive or list length is invalid
+    '''
+    months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
+    months_initials = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D']
+
+    # Check months validity
+    if any(m not in range(1, 13) for m in season_list_f):
+        raise ValueError(
+            'ERROR: all month values in <season_list_f> must be integers between 1 and 12 !'
+        )
+
+    # Check list length
+    if not (1 <= len(season_list_f) <= 5):
+        raise ValueError(
+            'ERROR: <season_list_f> must contain between 1 and 5 months only !'
+        )
+
+    if len(season_list_f) == 1:
+        return months[season_list_f[0]-1]
+
+    for i, m in enumerate(season_list_f[:-1]):
+        if m == 12 and season_list_f[i+1] != 1:
+            raise ValueError('ERROR: the months in <season_list_f> are not consecutive !')
+        if m != 12 and season_list_f[i+1] - m != 1:
+            raise ValueError('ERROR: the months in <season_list_f> are not consecutive !')
+
+    return ''.join([months_initials[m-1] for m in season_list_f])
 
 
 def get_forecast_prob(seas_mean_f,lower_xr_f,upper_xr_f):
