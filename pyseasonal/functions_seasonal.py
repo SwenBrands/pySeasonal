@@ -5,6 +5,7 @@
 from math import radians, cos, sin, asin, sqrt
 
 import cartopy.crs as ccrs
+import cartopy.feature as cfeature
 import numpy as np
 import matplotlib.pyplot as plt
 import xarray as xr
@@ -416,7 +417,7 @@ def get_map_lowfreq_var(pattern_f,xx_f,yy_f,agree_ind_f,minval_f,maxval_f,dpival
 
     ax = fig.add_subplot(111, projection=map_proj)
     ax.set_extent([xx_f.min()-halfres, xx_f.max()+halfres_f, yy.min()-halfres_f, yy_f.max()+halfres_f], ccrs.PlateCarree())
-    ax.add_feature(cartopy.feature.COASTLINE, zorder=4, color='black')
+    ax.add_feature(cfeature.COASTLINE, zorder=4, color='black')
 
     image = ax.pcolormesh(xx_f, yy_f, pattern_f, vmin=minval_f, vmax=maxval_f, cmap=colormap_f, transform=ccrs.PlateCarree(), shading = 'nearest', zorder=3, rasterized=True)
     #get size of the points indicating significance
