@@ -321,7 +321,7 @@ def get_spatial_aggregation(score_f,critval_f=None,pval_f=None,mode_f='fraction_
             pval_step_f[sigind_f] = 1
             pval_step_f[spurind_f] = 0
         else:
-            raise Excpetion('ERROR: The <mode_f> parameter is unknown !')
+            raise Exception('ERROR: The <mode_f> parameter is unknown !')
         if lat_f is not None:
             print('As requested by the user, the latitude-weighted areal-mean value is calculated...')
             pval_step_f = pval_step_f*lat_weights
