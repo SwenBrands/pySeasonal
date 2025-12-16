@@ -11,12 +11,11 @@ import xskillscore as xs
 import os
 import pandas as pd
 import time
-from pathlib import Path
 import pdb #then type <pdb.set_trace()> at a given line in the code below
 import psutil
-import yaml
 
-from functions_seasonal import apply_sea_mask, lin_detrend, get_reliability_or_roc
+from pyseasonal.utils.config import load_config_argo
+from pyseasonal.utils.functions_seasonal import apply_sea_mask, lin_detrend, get_reliability_or_roc
 
 start_time = time.time()
 
@@ -96,38 +95,12 @@ else:
 
 # CONSTRUCT CONFIGURATION FILE ###############################################
 
-configuration_file = 'config_for_get_skill_season_'+domain+'.yaml'
+configuration_file = 'config/config_for_get_skill_season_'+domain+'.yaml'
 
 ##############################################################################
 
-#this is a function to load the configuration file
-def load_config(config_file='config/'+configuration_file):
-    """Load configuration from YAML file"""
-    config_path = Path(__file__).parent.parent / config_file
-    print('The path of the configuration file is '+str(config_path))
-    with open(config_path, 'r') as file:
-        config = yaml.safe_load(file)
-
-    # Setup paths based on GCM_STORE environment variable
-    gcm_store = os.getenv('GCM_STORE', 'lustre')
-    if gcm_store in config['paths']:
-        paths = config['paths'][gcm_store]
-        # Handle special cases for argo environment
-        if gcm_store == 'argo':
-            data_dir = os.getenv("DATA_DIR", "")
-            paths['home'] = data_dir
-            paths['path_gcm_base'] = data_dir + paths['path_gcm_base']
-            paths['path_gcm_base_derived'] = data_dir + paths['path_gcm_base_derived']
-            paths['path_gcm_base_masked'] = data_dir + paths['path_gcm_base_masked']
-            paths['dir_forecast'] = data_dir + paths['dir_forecast']
-        config['paths'] = paths
-    else:
-        raise ValueError('Unknown entry for <gcm_store> !')
-
-    return config
-
 # Load configuration
-config = load_config()
+config = load_config_argo(configuration_file)
 
 # Extract paths from configuration
 paths = config['paths'] # get paths from configuration

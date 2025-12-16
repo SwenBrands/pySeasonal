@@ -10,7 +10,7 @@ import os
 import xesmf
 import pandas as pd
 
-from functions_seasonal import roll_and_cut
+from pyseasonal.utils.functions_seasonal import roll_and_cut
 
 #set input parameters for observational datasets to be regridded
 obs = ['era5'] #name of the observational / reanalysis dataset that will be regridded

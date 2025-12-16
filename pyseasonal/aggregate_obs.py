@@ -8,9 +8,8 @@ import xarray as xr
 import os
 import pandas as pd
 import pdb
-import yaml
-from pathlib import Path
 
+from pyseasonal.utils.config import load_config
 
 # INDICATE CONFIGURATION FILE ######################################
 
@@ -20,26 +19,8 @@ configuration_file = 'config_for_aggregate_obs_Canarias.yaml'
 
 ####################################################################
 
-#this is a function to load the configuration file
-def load_config(config_file='config/'+configuration_file):
-    """Load configuration from YAML file"""
-    config_path = Path(__file__).parent.parent / config_file
-    print('The path of the configuration file is '+str(config_path))
-    with open(config_path, 'r') as file:
-        config = yaml.safe_load(file)
-
-    # Setup paths based on GCM_STORE environment variable
-    gcm_store = os.getenv('GCM_STORE', 'lustre')
-    if gcm_store in config['paths']:
-        paths = config['paths'][gcm_store]
-        config['paths'] = paths
-    else:
-        raise ValueError('Unknown entry for <gcm_store> !')
-
-    return config
-
 # Load configuration
-config = load_config()
+config = load_config(configuration_file)
 
 #set input parameters for observational datasets to be regridded:
 obs = config['obs'] #name of the observational / reanalysis dataset that will be regridded: 'era5', 'PTI-grid-v2'
