@@ -5,11 +5,13 @@
 from math import radians, cos, sin, asin, sqrt
 
 import cartopy.crs as ccrs
+import cartopy.feature as cfeature
 import numpy as np
 import matplotlib.pyplot as plt
 import xarray as xr
 import xskillscore as xs
 
+from pyseasonal.utils.mapping import subperiod_years
 
 def flip_latitudes_and_data(xr_ds_f,lat_name):
     ''' flips latitudes and data variables in xr_ds_f; input: xr_df_f is an xarray dataseet and lat_name a string containing the placeholder name for the latitude in that dataset;
@@ -20,7 +22,9 @@ def flip_latitudes_and_data(xr_ds_f,lat_name):
         xr_ds_f= xr_ds_f.reindex(y=list(reversed(xr_ds_f.y)))
     else:
         raise ValueError('Unexpected entry for <lat_name> in flip_latitudes() function !')
+
     return xr_ds_f
+
 
 def apply_sea_mask(arr_f,mask_file_f,lat_name_f,lon_name_f):
     '''sets the values over the Sea, as provided by the netCDF file locted at <mask_file_f> to nan in <arr_f>;
@@ -93,138 +97,56 @@ def apply_sea_mask(arr_f,mask_file_f,lat_name_f,lon_name_f):
     #clean everything except arr_f, which will be returned to the script calling this function
     nc_mask_f.close()
     del(nc_mask_f,mask_appended_f,target_dims_f)
+
     return arr_f  #returns masked xarray data array
 
-def assign_season_label(season_list_f):
-    '''assign the season string for a the input list of 3 consecutive months, each month being an integer.'''
-    # 1-months seasons
-    if season_list_f == [1]:
-        season_label_f = 'JAN'
-    elif season_list_f == [2]:
-        season_label_f = 'FEB'
-    elif season_list_f == [3]:
-        season_label_f = 'MAR'
-    elif season_list_f == [4]:
-        season_label_f = 'APR'
-    elif season_list_f == [5]:
-        season_label_f = 'MAY'
-    elif season_list_f == [6]:
-        season_label_f = 'JUN'
-    elif season_list_f == [7]:
-        season_label_f = 'JUL'
-    elif season_list_f == [8]:
-        season_label_f = 'AUG'
-    elif season_list_f == [9]:
-        season_label_f = 'SEP'
-    elif season_list_f == [10]:
-        season_label_f = 'OCT'
-    elif season_list_f == [11]:
-        season_label_f = 'NOV'
-    elif season_list_f == [12]:
-        season_label_f = 'DEC'
-    # 2-months seasons
-    elif season_list_f == [1,2]:
-        season_label_f = 'JF'
-    elif season_list_f == [2,3]:
-        season_label_f = 'FM'
-    elif season_list_f == [3,4]:
-        season_label_f = 'MA'
-    elif season_list_f == [4,5]:
-        season_label_f = 'AM'
-    elif season_list_f == [5,6]:
-        season_label_f = 'MJ'
-    elif season_list_f == [6,7]:
-        season_label_f = 'JJ'
-    elif season_list_f == [7,8]:
-        season_label_f = 'JA'
-    elif season_list_f == [8,9]:
-        season_label_f = 'AS'
-    elif season_list_f == [9,10]:
-        season_label_f = 'SO'
-    elif season_list_f == [10,11]:
-        season_label_f = 'ON'
-    elif season_list_f == [11,12]:
-        season_label_f = 'ND'
-    elif season_list_f == [12,1,]:
-        season_label_f = 'DJ'
-    # 3-months seasons
-    elif season_list_f == [1,2,3]:
-        season_label_f = 'JFM'
-    elif season_list_f == [2,3,4]:
-        season_label_f = 'FMA'
-    elif season_list_f == [3,4,5]:
-        season_label_f = 'MAM'
-    elif season_list_f == [4,5,6]:
-        season_label_f = 'AMJ'
-    elif season_list_f == [5,6,7]:
-        season_label_f = 'MJJ'
-    elif season_list_f == [6,7,8]:
-        season_label_f = 'JJA'
-    elif season_list_f == [7,8,9]:
-        season_label_f = 'JAS'
-    elif season_list_f == [8,9,10]:
-        season_label_f = 'ASO'
-    elif season_list_f == [9,10,11]:
-        season_label_f = 'SON'
-    elif season_list_f == [10,11,12]:
-        season_label_f = 'OND'
-    elif season_list_f == [11,12,1]:
-        season_label_f = 'NDJ'
-    elif season_list_f == [12,1,2]:
-        season_label_f = 'DJF'
-    # 4-months seasons
-    elif season_list_f == [1,2,3,4]:
-        season_label_f = 'JFMA'
-    elif season_list_f == [2,3,4,5]:
-        season_label_f = 'FMAM'
-    elif season_list_f == [3,4,5,6]:
-        season_label_f = 'MAMJ'
-    elif season_list_f == [4,5,6,7]:
-        season_label_f = 'AMJJ'
-    elif season_list_f == [5,6,7,8]:
-        season_label_f = 'MJJA'
-    elif season_list_f == [6,7,8,9]:
-        season_label_f = 'JJAS'
-    elif season_list_f == [7,8,9,10]:
-        season_label_f = 'JASO'
-    elif season_list_f == [8,9,10,11]:
-        season_label_f = 'ASON'
-    elif season_list_f == [9,10,11,12]:
-        season_label_f = 'SOND'
-    elif season_list_f == [10,11,12,1]:
-        season_label_f = 'ONDJ'
-    elif season_list_f == [11,12,1,2]:
-        season_label_f = 'NDJF'
-    elif season_list_f == [12,1,2,3]:
-        season_label_f = 'DJFM'
-    # 5-months seasons
-    elif season_list_f == [1,2,3,4,5]:
-        season_label_f = 'JFMAM'
-    elif season_list_f == [2,3,4,5,6]:
-        season_label_f = 'FMAMJ'
-    elif season_list_f == [3,4,5,6,7]:
-        season_label_f = 'MAMJJ'
-    elif season_list_f == [4,5,6,7,8]:
-        season_label_f = 'AMJJA'
-    elif season_list_f == [5,6,7,8,9]:
-        season_label_f = 'MJJAS'
-    elif season_list_f == [6,7,8,9,10]:
-        season_label_f = 'JJASO'
-    elif season_list_f == [7,8,9,10,11]:
-        season_label_f = 'JASON'
-    elif season_list_f == [8,9,10,11,12]:
-        season_label_f = 'ASOND'
-    elif season_list_f == [9,10,11,12,1]:
-        season_label_f = 'SONDJ'
-    elif season_list_f == [10,11,12,1,2]:
-        season_label_f = 'ONDJF'
-    elif season_list_f == [11,12,1,2,3]:
-        season_label_f = 'NDJFM'
-    elif season_list_f == [12,1,2,3,4]:
-        season_label_f = 'DJFMA'
-    else:
-        raise Exception('ERROR: check entry for <season_list_f> !')
-    return season_label_f
+
+def assign_season_label(season_list_f: list) -> str:
+    '''Assign season label string for an input list of consecutive months.
+
+    Generates abbreviated season labels from month numbers. Handles single months
+    (returns full month name like 'JAN') and multi-month seasons (returns initials
+    like 'DJF' for December-January-February). Supports year wrap-around for seasons
+    crossing December to January.
+
+    Input:
+        season_list_f: list of integers (1-12) representing consecutive months
+                      Must contain 1-5 months in sequential order
+                      Example: [12,1,2] for December-January-February
+
+    Output:
+        String label for the season
+        Single month: full name (e.g., 'JAN', 'FEB', 'DEC')
+        Multi-month: initials concatenated (e.g., 'DJF', 'JJA', 'MAMJ')
+
+    Raises:
+        ValueError: if months are not consecutive or list length is invalid
+    '''
+    months = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC']
+    months_initials = ['J', 'F', 'M', 'A', 'M', 'J', 'J', 'A', 'S', 'O', 'N', 'D']
+
+    # Check months validity
+    if any(m not in range(1, 13) for m in season_list_f):
+        raise ValueError(
+            'ERROR: all month values in <season_list_f> must be integers between 1 and 12 !'
+        )
+
+    # Check list length
+    if not (1 <= len(season_list_f) <= 5):
+        raise ValueError(
+            'ERROR: <season_list_f> must contain between 1 and 5 months only !'
+        )
+
+    if len(season_list_f) == 1:
+        return months[season_list_f[0]-1]
+
+    for i, m in enumerate(season_list_f[:-1]):
+        if m == 12 and season_list_f[i+1] != 1:
+            raise ValueError('ERROR: the months in <season_list_f> are not consecutive !')
+        if m != 12 and season_list_f[i+1] - m != 1:
+            raise ValueError('ERROR: the months in <season_list_f> are not consecutive !')
+
+    return ''.join([months_initials[m-1] for m in season_list_f])
 
 
 def get_forecast_prob(seas_mean_f,lower_xr_f,upper_xr_f):
@@ -242,16 +164,17 @@ def get_forecast_prob(seas_mean_f,lower_xr_f,upper_xr_f):
     lower_np_f = np.tile(lower_xr_f.values,(seas_mean_f.shape[0],1,1))
     upper_np_f = np.tile(upper_xr_f.values,(seas_mean_f.shape[0],1,1))
 
-    valid_ind_f = ~np.isnan(upper_np_f) & ~np.isnan(lower_np_f)
-    upper_ind_f = (seas_mean_f > upper_np_f) & valid_ind_f
-    center_ind_f = (seas_mean_f > lower_np_f) & (seas_mean_f <= upper_np_f) & valid_ind_f
-    lower_ind_f = (seas_mean_f <= lower_np_f) & valid_ind_f
+    valid_ind_f = ~np.isnan(upper_np_f) and ~np.isnan(lower_np_f)
+    upper_ind_f = (seas_mean_f > upper_np_f) and valid_ind_f
+    center_ind_f = (seas_mean_f > lower_np_f) and (seas_mean_f <= upper_np_f) and valid_ind_f
+    lower_ind_f = (seas_mean_f <= lower_np_f) and valid_ind_f
 
     #sum members in each category and devide by the number of members, thus obtaining the probability
     nr_mem_f = len(seas_mean_f.member)
     upper_prob_f = upper_ind_f.sum(dim='member')/nr_mem_f
     center_prob_f = center_ind_f.sum(dim='member')/nr_mem_f
     lower_prob_f = lower_ind_f.sum(dim='member')/nr_mem_f
+
     return nr_mem_f,upper_prob_f,center_prob_f,lower_prob_f
 
 
@@ -260,36 +183,15 @@ def get_years_of_subperiod(subperiod_f):
       ENSO years were derived from CPC's ONI index available from https://origin.cpc.ncep.noaa.gov/products/analysis_monitoring/ensostuff/ONI_v5.php
       or from the NOAA list available at https://psl.noaa.gov/enso/past_events.html
       QBO years were derived from CPCs QBO index at 50mb available at https://www.cpc.ncep.noaa.gov/data/indices/qbo.u50.index'''
-    if subperiod_f == 'mod2strong_nino_oni':
-        years_val = [1982,1983,1986,1987,1991,1992,1997,1998,2009,2010,2015,2016] #Swen Brands selection based no NOAA's ONI index
-        print('The model is verified for moderate and strong El Niño years based on ONI index only: '+str(years_val))
-    elif subperiod_f == 'mod2strong_nina_oni':
-        years_val = [1984,1985,1988,1989,1999,2000,2007,2008,2010,2011,2020,2021,2022]
-        print('The model is verified for moderate and strong La Niña years based on ONI index only: '+str(years_val))
-    elif subperiod_f == 'enso_nino_noaa':
-        years_val = [1983,1987,1988,1992,1995,1998,2003,2007,2010,2016]
-        print('The model is verified for the El Niño years declared by NOAA at: https://psl.noaa.gov/enso/past_events.html : '+str(years_val))
-    elif subperiod_f == 'enso_nina_noaa':
-        years_val = [1989,1999,2000,2008,2011,2012,2021,2022]
-        print('The model is verified for the La Niña years declared by NOAA at: https://psl.noaa.gov/enso/past_events.html : '+str(years_val))
-    elif subperiod_f == 'enso_neutral_noaa':
-        years_val = [1981,1982,1984,1985,1986,1990,1991,1993,1994,1996,1997,2001,2002,2004,2005,2006,2009,2013,2014,2015,2017,2018,2019,2020] #Swen Brands selection based no NOAA's ONI index
-        print('The model is verified for the neutral ENSO years declared by NOAA at: https://psl.noaa.gov/enso/past_events.html : '+str(years_val))
-    elif subperiod_f == 'qbo50_pos':
-        years_val = [1981,1983,1985,1986,1988,1991,1993,1995,1997,1999,2000,2002,2004,2009,2011,2014,2017,2019,2021,2023]
-        print('The model is verified for positive QBO-50 years derived from https://www.cpc.ncep.noaa.gov/data/indices/qbo.u50.index only: '+str(years_val))
-    elif subperiod_f == 'qbo50_neg':
-        years_val = [1982,1984,1987,1989,1992,1994,1996,1998,2001,2003,2005,2007,2010,2012,2015,2018,2022]
-        print('The model is verified for negative QBO-50 years derivded from https://www.cpc.ncep.noaa.gov/data/indices/qbo.u50.index only: '+str(years_val))
-    elif subperiod_f == 'qbo50_trans':
-        years_val = [1990,2006,2008,2013,2016,2020]
-        print('The model is verified for transition QBO-50 years derived from https://www.cpc.ncep.noaa.gov/data/indices/qbo.u50.index only: '+str(years_val))
-    elif subperiod_f == 'none':
-        years_val = np.arange(1981,2023,1)
-        print('The full overlapping period between observations and model data is used for verification.')
-    else:
-        raise Exception('ERROR: unkown entry for the <subperiod> entry parameter !')
+
+    if subperiod_f not in subperiod_years:
+        raise KeyError('ERROR: unknown entry for the <subperiod> entry parameter !')
+
+    years_val = subperiod_years[subperiod_f]['years']
+    print(subperiod_years[subperiod_f]['msg'].format(years=years_val))
+
     return years_val
+
 
 def haversine(lon1, lat1, lon2, lat2):
     """
@@ -305,7 +207,9 @@ def haversine(lon1, lat1, lon2, lat2):
     a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
     c = 2 * asin(sqrt(a))
     r = 6371 # Radius of earth in kilometers. Use 3956 for miles. Determines return value units.
+
     return c * r
+
 
 def roll_and_cut(xr_dataset, lonlim_f, latlim_f):
     """
@@ -321,10 +225,12 @@ def roll_and_cut(xr_dataset, lonlim_f, latlim_f):
     xr_dataset = xr_dataset.roll(longitude=shiftat,roll_coords=True)
 
     #then cut out target region and return new dataset
-    lonind = (xr_dataset.longitude.values >= lonlim_f[0]) & (xr_dataset.longitude.values <= lonlim_f[1])
-    latind = (xr_dataset.latitude.values >= latlim_f[0]) & (xr_dataset.latitude.values <= latlim_f[1])
+    lonind = (xr_dataset.longitude.values >= lonlim_f[0]) and (xr_dataset.longitude.values <= lonlim_f[1])
+    latind = (xr_dataset.latitude.values >= latlim_f[0]) and (xr_dataset.latitude.values <= latlim_f[1])
     xr_dataset = xr_dataset.isel(longitude=lonind,latitude=latind)
+
     return xr_dataset
+
 
 def calc_roll_seasmean(xr_ds):
     """
@@ -340,10 +246,12 @@ def calc_roll_seasmean(xr_ds):
     xr_ds_roll = xr_ds_roll / roll_weights
     id3 = np.arange(0,xr_ds_roll.time.shape[0],3) # index used to retain every third value of the rolling 3-months seasonal mean values to obtain inter-annual time-series.
     xr_ds_roll = xr_ds_roll.isel(time=id3)
-    return xr_ds_roll
-    xr_ds_roll.close()
+
     weights.close()
-    del(weights,xr_ds_roll)
+    del(weights)
+
+    return xr_ds_roll
+
 
 def lin_detrend(xr_ar,rm_mean_f):
     """also used in pyLamb package; performs linear detrending of the xarray DataArray xr_ar along the time dimension, rm_mean_f specifies whether the mean is removed yes or no"""
@@ -363,7 +271,9 @@ def lin_detrend(xr_ar,rm_mean_f):
         xr_ar_detrended = (xr_ar - fit + meanvals_f).astype('float32')
     else:
         raise Exception('ERROR: check entry for <rm_mean_f> input parameter!')
+
     return xr_ar_detrended
+
 
 #def get_frac_significance(np_arr_pval_f,np_arr_rho_f,critval_f,mode_f='fraction',lat_f=None):
 #def get_spatial_aggregation(np_arr_pval_f,np_arr_rho_f,critval_f,mode_f='fraction',lat_f=None):
@@ -395,8 +305,8 @@ def get_spatial_aggregation(score_f,critval_f=None,pval_f=None,mode_f='fraction_
 
     if mode_f in ('fraction_smaller','fraction_larger','fraction_smaller_pos'): #caclulate the areal percentage of significant correlation coefficients
         if mode_f == 'fraction_smaller_pos':
-            sigind_f = (pval_step_f < critval_f) & (score_step_f > 0)
-            spurind_f = (pval_step_f >= critval_f) | (score_step_f <= 0)
+            sigind_f = (pval_step_f < critval_f) and (score_step_f > 0)
+            spurind_f = (pval_step_f >= critval_f) or (score_step_f <= 0)
             pval_step_f[sigind_f] = 1
             pval_step_f[spurind_f] = 0
         elif mode_f == 'fraction_smaller': #caclulate the areal percentage of significant correlation coefficients
@@ -410,7 +320,7 @@ def get_spatial_aggregation(score_f,critval_f=None,pval_f=None,mode_f='fraction_
             pval_step_f[sigind_f] = 1
             pval_step_f[spurind_f] = 0
         else:
-            raise Excpetion('ERROR: The <mode_f> parameter is unknown !')
+            raise Exception('ERROR: The <mode_f> parameter is unknown !')
         if lat_f is not None:
             print('As requested by the user, the latitude-weighted areal-mean value is calculated...')
             pval_step_f = pval_step_f*lat_weights
@@ -428,8 +338,10 @@ def get_spatial_aggregation(score_f,critval_f=None,pval_f=None,mode_f='fraction_
             spatial_agg_f = np.nansum(score_step_f,axis=2)/(score_step_f.shape[2])
     else:
         raise Exception('ERROR: check entry for <mode_f> parameter within the get_frac_significance() function !')
-    return spatial_agg_f  #the spatially aggregated value is returned
+
     #return spatial_sigfraq_f,pval_step_f  #former versions of this function returned two output variables
+    return spatial_agg_f  #the spatially aggregated value is returned
+
 
 def get_frac_above_threshold(np_arr_vals_f,critval_f):
     """get the fraction of grid-boxes where values i values_f exceed the threshold <critval_f>; np_arr_f is a 4d numpy array with the dimensions season x lead x lat x lon"""
@@ -440,15 +352,17 @@ def get_frac_above_threshold(np_arr_vals_f,critval_f):
     np_arr_vals_step_f[sigind_f] = 1
     np_arr_vals_step_f[spurind_f] = 0
     spatial_fraq_f = np.nansum(np_arr_vals_step_f,axis=2)/(shape_f[2]*shape_f[3])*100
+
     return spatial_fraq_f,np_arr_vals_step_f
+
 
 def get_sub_domain(xr_ds_f,domain_f):
     '''cuts out the sub-domain defined in <domain_f> from xarray dataset <xr_ds_f>'''
     #check whether the requested sub-domain is known; otherwise return an error
     if domain_f == 'iberia':
         print('Upon user request, verification results for '+domain_f+' will be cut out.')
-        lat_bool = (xr_ds_f.y.values >= 36) & (xr_ds_f.y.values <= 44)
-        lon_bool = (xr_ds_f.x.values >= -10) & (xr_ds_f.x.values <= 3)
+        lat_bool = (xr_ds_f.y.values >= 36) and (xr_ds_f.y.values <= 44)
+        lon_bool = (xr_ds_f.x.values >= -10) and (xr_ds_f.x.values <= 3)
         xr_ds_f = xr_ds_f.isel(y=lat_bool,x=lon_bool)
         # #set grid-boxes in North Africa to nan
         # latind_f = xr_ds_f.y.values <= 37
@@ -460,9 +374,9 @@ def get_sub_domain(xr_ds_f,domain_f):
         xr_ds_f = xr_ds_f.isel(y=lat_bool,x=lon_bool)
     else:
         raise Exception('ERROR: check entry for the <sub_domain> input parameter !')
+
     return xr_ds_f
-    xr_ds_f.close()
-    del(xr_ds_f)
+
 
 def plot_pcolormesh_seasonal(xr_ar_f,minval_f,maxval_f,savename_f,colormap_f,dpival_f):
     '''Plots matrix of the verfication results contained in xarray data array <xr_ar_f>, seasons are plotted on the x axis, lead months on the y axis.'''
@@ -484,6 +398,7 @@ def plot_pcolormesh_seasonal(xr_ar_f,minval_f,maxval_f,savename_f,colormap_f,dpi
     plt.savefig(savename_f,dpi=dpival_f)
     plt.close('all')
 
+
 def get_map_lowfreq_var(pattern_f,xx_f,yy_f,agree_ind_f,minval_f,maxval_f,dpival_f,title_f,savename_f,halfres_f,colormap_f,titlesize_f,cbarlabel_f,origpoint=None,orientation_f=None):
     '''Currently used in pyLamb and pySeasonal packages in sligthly differing versions. Plots a pcolormesh contour over a map overlain by dots indicating, e.g. statistical significance'''
 
@@ -501,7 +416,7 @@ def get_map_lowfreq_var(pattern_f,xx_f,yy_f,agree_ind_f,minval_f,maxval_f,dpival
 
     ax = fig.add_subplot(111, projection=map_proj)
     ax.set_extent([xx_f.min()-halfres, xx_f.max()+halfres_f, yy.min()-halfres_f, yy_f.max()+halfres_f], ccrs.PlateCarree())
-    ax.add_feature(cartopy.feature.COASTLINE, zorder=4, color='black')
+    ax.add_feature(cfeature.COASTLINE, zorder=4, color='black')
 
     image = ax.pcolormesh(xx_f, yy_f, pattern_f, vmin=minval_f, vmax=maxval_f, cmap=colormap_f, transform=ccrs.PlateCarree(), shading = 'nearest', zorder=3, rasterized=True)
     #get size of the points indicating significance
@@ -535,15 +450,16 @@ def get_map_lowfreq_var(pattern_f,xx_f,yy_f,agree_ind_f,minval_f,maxval_f,dpival
     plt.savefig(savename_f,dpi=dpival_f,bbox_inches='tight')
     plt.close('all')
 
+
 def transform_gcm_variable(ds_f,var_in_f,var_out_f,model_f,version_f):
     '''transforms GCM variable names and units to be compatible with CDS nomenclature; input: <ds_f> is an xarray dataset, <var_in_f> is the name
     of the input meteorological variable, <var_out_f> is the new name (or output name) of this variable; <model_f> and <version_f> are the name
      and version of the modelling system; output: xarray dataset <ds_f> with corrected variable names and units.'''
 
     # go through exceptions depending on the variable, model, version, etc.
-    if (var_in_f == 'tas') & (model_f+version_f in ('ecmwf51','cmcc35','cmcc4','eccc5','dwd22')):
+    if (var_in_f == 'tas') and (model_f+version_f in ('ecmwf51','cmcc35','cmcc4','eccc5','dwd22')):
         #bring temperature data to Kelvin, taking into account Predictia's double transformation error in all forecasts from 201701 to 202311
-        if (ds_f[var_in_f].mean().values <= 100) & (ds_f[var_in_f].mean().values > -100):
+        if (ds_f[var_in_f].mean().values <= 100) and (ds_f[var_in_f].mean().values > -100):
             print('Info: Adding 273.15 to '+var_in_f+' data from '+model_f+version_f+' to transform degress Celsius into Kelvin.')
             ds_f[var_in_f].values = ds_f[var_in_f].values+273.15
             valid_f = 1
@@ -555,7 +471,7 @@ def transform_gcm_variable(ds_f,var_in_f,var_out_f,model_f,version_f):
         else:
             raise Exception('ERROR: Unknown value for <ds_f[var_in_f]> !')
         ds_f[var_in_f].attrs['units'] = 'daily mean '+var_out_f+' in Kelvin'
-    elif (var_in_f in ('pr','rsds')) & (model_f+version_f in ('ecmwf51','cmcc35','cmcc4','eccc5','dwd22')):
+    elif (var_in_f in ('pr','rsds')) and (model_f+version_f in ('ecmwf51','cmcc35','cmcc4','eccc5','dwd22')):
         print('Info: Disaggregate '+var_in_f+' accumulated over the '+str(len(ds_f.time))+' days forecast period from '+model_f+version_f+' to daily sums.')
         vals_disagg = np.diff(ds_f[var_in_f].values,n=1,axis=0)
         vals_disagg[vals_disagg < 0] = 0 #set negative flux values to 0
@@ -570,7 +486,9 @@ def transform_gcm_variable(ds_f,var_in_f,var_out_f,model_f,version_f):
     else:
         print('Info: No data transformation is applied for '+var_in_f+' data from '+model_f+version_f+'.')
         valid_f = 1
+
     return ds_f, valid_f
+
 
 def get_reliability_or_roc(obs_f,gcm_f,obs_quantile_f,gcm_quantile_f,dist_part_f,score_f='reliability',bin_edges_f=None):
     """ caclulates the mean absolute difference (returned as <reliability>) between the forecast probabilities and corresponding conditional observed probabilities of the reliability plot and the diagonal of the plot
@@ -603,8 +521,8 @@ def get_reliability_or_roc(obs_f,gcm_f,obs_quantile_f,gcm_quantile_f,dist_part_f
         obs_bin = xr.where(obs_f <= obs_lower_tercile_f, 1, 0).astype('int8') #here the nan values over the sea are lost. They will be brought back below.
         gcm_bin = xr.where(gcm_f <= gcm_lower_tercile_f, 1, 0).astype('int8')
     elif dist_part_f in ('center_tercile','centre_tercile'):
-        obs_bin = xr.where((obs_f > obs_lower_tercile_f) & (obs_f <= obs_upper_tercile_f), 1, 0).astype('int8') #here the nan values over the sea are lost. They will be brought back below.
-        gcm_bin = xr.where((gcm_f > gcm_lower_tercile_f) & (gcm_f <= gcm_upper_tercile_f), 1, 0).astype('int8')
+        obs_bin = xr.where((obs_f > obs_lower_tercile_f) and (obs_f <= obs_upper_tercile_f), 1, 0).astype('int8') #here the nan values over the sea are lost. They will be brought back below.
+        gcm_bin = xr.where((gcm_f > gcm_lower_tercile_f) and (gcm_f <= gcm_upper_tercile_f), 1, 0).astype('int8')
     else:
         raise Exception("ERROR: check entry for dist_part_f !")
 

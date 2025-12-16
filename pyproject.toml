@@ -14,6 +14,7 @@ maintainers = [
 dependencies = [
     "cartopy>=0.25.0",
     "dask>=2025.11.0",
+    "fire>=0.7.1",
     "matplotlib>=3.7.5",
     "netcdf4>=1.7.3",
     "numpy>=1.24.4",
@@ -25,8 +26,17 @@ dependencies = [
     "xesmf>=0.8.10",
     "xskillscore>=0.0.26",
 ]
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-cov>=4.0.0",
+]
+
 [project.urls]
 Homepage = "https://github.com/yourusername/pySeasonal"
 Documentation = "https://github.com/yourusername/pySeasonal/blob/main/README.md"
 Repository = "https://github.com/yourusername/pySeasonal"
 Issues = "https://github.com/yourusername/pySeasonal/issues"
+
+[tool.setuptools]
+packages = ["pyseasonal"]

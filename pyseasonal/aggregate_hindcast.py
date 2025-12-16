@@ -13,10 +13,9 @@ import xarray as xr
 import os
 import pandas as pd
 import pdb #then type <pdb.set_trace()> at a given line in the code below
-import yaml
-from pathlib import Path
 
-from functions_seasonal import transform_gcm_variable
+from pyseasonal.utils.config import load_config
+from pyseasonal.utils.functions_seasonal import transform_gcm_variable
 
 # INDICATE CONFIGURATION FILE ######################################
 
@@ -26,26 +25,9 @@ configuration_file = 'config_for_aggregate_hindcast_Iberia.yaml'
 
 ####################################################################
 
-#this is a function to load the configuration file
-def load_config(config_file='config/'+configuration_file):
-    """Load configuration from YAML file"""
-    config_path = Path(__file__).parent.parent / config_file
-    print('The path of the configuration file is '+str(config_path))
-    with open(config_path, 'r') as file:
-        config = yaml.safe_load(file)
-
-    # Setup paths based on GCM_STORE environment variable
-    gcm_store = os.getenv('GCM_STORE', 'lustre')
-    if gcm_store in config['paths']:
-        paths = config['paths'][gcm_store]
-        config['paths'] = paths
-    else:
-        raise ValueError('Unknown entry for <gcm_store> !')
-
-    return config
 
 # Load configuration
-config = load_config()
+config = load_config(configuration_file)
 
 # Extract configuration variables
 model = config['model']
@@ -257,7 +239,7 @@ for mm in np.arange(len(model)):
                 nc.close() #close the currently open nc file object
 
                 #if the input netCDF file is not valid, as revealed by transform_gcm_variable(), overwrite the original file with the newly created one
-                if (file_valid == 0) & (save_corrected_files == 'yes'):
+                if (file_valid == 0) and (save_corrected_files == 'yes'):
                     del(nc) #delete the previously opened nc file object
                     nc = xr.open_dataset(path_gcm_data, decode_timedelta=False) #and re-open it
                     #get encoding and variable unit of the input netCDF file for all dimensions and variables
@@ -287,7 +269,7 @@ for mm in np.arange(len(model)):
                     print('INFO: Upon user request the erroneous file '+path_gcm_data+' is replaced with the new corrected file '+path_corrected_gcm_data+' !')
                     os.rename(path_corrected_gcm_data,path_gcm_data)
 
-                elif (file_valid == 0) & (save_corrected_files == 'no'):
+                elif (file_valid == 0) and (save_corrected_files == 'no'):
                     print('INFO: The units of the input array were wrong and have been corrected for further processing with the pySeasonal package. However, as requested by the user, the wrong input netCDF file is not overwritten with the corrected file !')
                     nc.close()
                     del(nc)
@@ -318,7 +300,7 @@ for mm in np.arange(len(model)):
         del(data_mon) #delete the loop-wise numpy array <data_mon>
 
         ##cut out the last n_lead[mm]-1 months to harmonize the time dimension with observations, currently not used because this is done afterwards in <get_skill.py>
-        #yearbool = (daterange.year >= years[0]) & (daterange.year <= years[1])
+        #yearbool = (daterange.year >= years[0]) and (daterange.year <= years[1])
         #outnc = outnc.isel(time = yearbool)
 
         ##set netCDF attributes

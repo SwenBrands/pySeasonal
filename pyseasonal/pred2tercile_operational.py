@@ -4,18 +4,14 @@ The script loads a forecast at a given init passed via the <year_init> and <mont
 The main difference to pred2tercile.py is that only one init is processed, meaning that the yy loop has been deleted here.'''
 
 #load packages
-from datetime import date
 import numpy as np
 import xarray as xr
 import os
 import pandas as pd
-import sys
 import pdb
 import time
-import yaml
-from pathlib import Path
 
-from functions_seasonal import (
+from pyseasonal.utils.functions_seasonal import (
     get_forecast_prob,
     apply_sea_mask,
     transform_gcm_variable,
@@ -23,58 +19,9 @@ from functions_seasonal import (
     flip_latitudes_and_data
 )
 
-# CREATE LIST CONTAINING ALL DOMAINS TO BE PROCESSED ######################################
 
-domain_list = ['Iberia','Canarias','medcof']
-
-####################################################################
-
-for do in np.arange(len(domain_list)):
-
-    ## CONSTRUCT CONFIGURATION FILE ######################################
-
-    configuration_file = 'config_for_pred2tercile_operational_'+domain_list[do]+'.yaml'
-
-    ######################################################################
-
-    def load_config(config_file='config/'+configuration_file):
-        """Load configuration from YAML file"""
-        config_path = Path(__file__).parent.parent / config_file
-        print('The path of the configuration file is '+str(config_path))
-        with open(config_path, 'r') as file:
-            config = yaml.safe_load(file)
-
-        # Setup paths based on GCM_STORE environment variable
-        gcm_store = os.getenv('GCM_STORE', 'lustre')
-        if gcm_store in config['paths']:
-            paths = config['paths'][gcm_store]
-            config['paths'] = paths
-        else:
-            raise Exception(f'ERROR: unknown entry for <gcm_store> !')
-
-        return config
-
-    # Load configuration
-    config = load_config()
-
-    #the init of the forecast (year and month) can passed by bash; if nothing is passed these parameters will be set by python
-    if len(sys.argv) == 2:
-        print("Reading from input parameters passed via bash")
-        year_init = str(sys.argv[1])[0:4]
-        month_init = str(sys.argv[1])[-2:]
-        if len(year_init) != 4 or len(month_init) != 2:
-            raise Exception('ERROR: check length of <year_month_init> input parameter !')
-    else:
-        print("No input parameter have been provided by the user and the script will set the <year_init> and <month_init> variables for the year and month of the current date...")
-        year_init = str(date.today().year)
-        month_init = f"{date.today().month:02d}"
-        print(date.today())
-    print(year_init, month_init)
-
-    # # # overwrite the aformentioned variables for develompment purposes
-    # year_init = 2024 #a list containing the years the forecast are initialized on, will be looped through with yy
-    # month_init = 10 #a list containing the corresponding months the forecast are initialized on, will be called while looping through <year_init> (with yy), i.e. must have the same length
-
+def swen_pred2tercile_operational(config: dict, year_init: str, month_init: str):
+    ''' Main function to generate tercile probability forecasts from raw GCM output for a given initialization date.'''
     # Extract configuration variables
     models = config['models']
     version = config['version']
@@ -386,6 +333,3 @@ for do in np.arange(len(domain_list)):
             del(nc_quantile)
 
         print('INFO: pred2tercile_operational.py has been run successfully ! The netcdf output file containing the tercile probability forecasts has been stored at '+dir_forecast+'/'+domain)
-
-quit()
-#sys.exit(0)

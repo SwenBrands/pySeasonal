@@ -10,7 +10,7 @@ import os
 import xesmf
 import pandas as pd
 
-from functions_seasonal import roll_and_cut
+from pyseasonal.utils.functions_seasonal import roll_and_cut
 
 #set input parameters for observational datasets to be regridded
 obs = ['era5'] #name of the observational / reanalysis dataset that will be regridded
@@ -80,7 +80,7 @@ for oo in np.arange(len(obs)):
             path_obs_data = path_obs_base+'/'+obs[oo].upper()+'/'+agg_src[oo]+'/'+obs[oo]+'_mon_'+variables[vv]+'_'+str(startyear_file[oo])+'_'+str(endyear_file[oo])+'.nc'
             nc_obs_data = roll_and_cut(xr.open_dataset(path_obs_data),lonlim_o,latlim_o)
             obs_dates = pd.DatetimeIndex(nc_obs_data.time.values)
-            yearbool = (obs_dates.year >= years[0]) & (obs_dates.year <= years[1])
+            yearbool = (obs_dates.year >= years[0]) and (obs_dates.year <= years[1])
             nc_obs_data = nc_obs_data.isel(time=yearbool)
             obs_dates = obs_dates[yearbool]
             #transform the data, depending on the input dataset and variable

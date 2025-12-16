@@ -11,10 +11,9 @@ import xarray as xr
 import os
 import pdb as pdb #then type <pdb.set_trace()> at a given line in the code below
 import time
-import yaml
-from pathlib import Path
 
-from functions_seasonal import (
+from pyseasonal.utils.config import load_config
+from pyseasonal.utils.functions_seasonal import (
     apply_sea_mask,
     get_sub_domain,
     get_spatial_aggregation,
@@ -43,26 +42,8 @@ configuration_file = 'config_for_plot_seasonal_validation_results_'+domain+'.yam
 
 ####################################################################
 
-#this is a function to load the configuration file
-def load_config(config_file='config/'+configuration_file):
-    """Load configuration from YAML file"""
-    config_path = Path(__file__).parent.parent / config_file
-    print('The path of the configuration file is '+str(config_path))
-    with open(config_path, 'r') as file:
-        config = yaml.safe_load(file)
-
-    # Setup paths based on GCM_STORE environment variable
-    gcm_store = os.getenv('GCM_STORE', 'lustre')
-    if gcm_store in config['paths']:
-        paths = config['paths'][gcm_store]
-        config['paths'] = paths
-    else:
-        raise ValueError('Unknown entry for <gcm_store> !')
-
-    return config
-
 #load configuration from YAML file
-config = load_config()
+config = load_config(configuration_file)
 
 #set input parameters from configuration file
 models = config['models']
@@ -429,8 +410,8 @@ for ag in np.arange(len(agg_label)):
 
                             binmask = np.zeros(mapme.shape)
                             binmask[:] = np.nan
-                            mask1 = (pval < critval_rho) & (rho > 0)
-                            mask0 = (pval >= critval_rho) | (rho <= 0)
+                            mask1 = (pval < critval_rho) and (rho > 0)
+                            mask0 = (pval >= critval_rho) or (rho <= 0)
                             binmask[mask1] = 1
                             binmask[mask0] = 0
                             score_unit[sc] = 'binary'
