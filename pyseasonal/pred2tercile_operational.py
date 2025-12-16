@@ -73,7 +73,7 @@ for do in np.arange(len(domain_list)):
     # Load configuration
     config = load_config(configuration_file)
 
-    # # overwrite the aformentioned variables for develompment purposes
+    # # # overwrite the aformentioned variables for develompment purposes
     # year_init = 2024 #a list containing the years the forecast are initialized on, will be looped through with yy
     # month_init = 10 #a list containing the corresponding months the forecast are initialized on, will be called while looping through <year_init> (with yy), i.e. must have the same length
 

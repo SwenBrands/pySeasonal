@@ -360,7 +360,7 @@ def get_frac_above_threshold(np_arr_vals_f,critval_f):
 def get_sub_domain(xr_ds_f,domain_f):
     '''cuts out the sub-domain defined in <domain_f> from xarray dataset <xr_ds_f>'''
     #check whether the requested sub-domain is known; otherwise return an error
-    if sub_domain == 'iberia':
+    if domain_f == 'iberia':
         print('Upon user request, verification results for '+domain_f+' will be cut out.')
         lat_bool = (xr_ds_f.y.values >= 36) and (xr_ds_f.y.values <= 44)
         lon_bool = (xr_ds_f.x.values >= -10) and (xr_ds_f.x.values <= 3)
@@ -369,9 +369,9 @@ def get_sub_domain(xr_ds_f,domain_f):
         # latind_f = xr_ds_f.y.values <= 37
         # lonind_f = xr_ds_f.x.values >= -1
         # xr_ds_f.loc[dict(y=latind_f, x=lonind_f)] = np.nan
-    elif sub_domain == 'medcof2': #this domain is identical to the medcof domain, but does not include the Sahara desert. The SPEI does not cover this area.
-        lat_bool = (xr_ds_f.y.values >= 28) and (xr_ds_f.y.values <= 90)
-        lon_bool = (xr_ds_f.x.values >= -16) and (xr_ds_f.x.values <= 180)
+    elif domain_f == 'medcof2': #this domain is identical to the medcof domain, but does not include the Sahara desert. The SPEI does not cover this area.
+        lat_bool = (xr_ds_f.y.values >= 28) & (xr_ds_f.y.values <= 90)
+        lon_bool = (xr_ds_f.x.values >= -16) & (xr_ds_f.x.values <= 180)
         xr_ds_f = xr_ds_f.isel(y=lat_bool,x=lon_bool)
     else:
         raise Exception('ERROR: check entry for the <sub_domain> input parameter !')

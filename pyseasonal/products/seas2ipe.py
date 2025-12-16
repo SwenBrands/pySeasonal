@@ -68,11 +68,10 @@ for do in np.arange(len(domain_list)):
 
     ######################################################################
 
-
     # Load configuration
     config = load_config(configuration_file)
 
-    # # Example year and run to run without passing any input arguments; comment or delete the next two lines in operative use
+    # # # Example year and run to run without passing any input arguments; comment or delete the next two lines in operative use
     # year_init = 2024 #a list containing the years the forecast are initialized on, will be looped through with yy
     # month_init = 10 #a list containing the corresponding months the forecast are initialized on, will be called while looping through <year_init> (with yy), i.e. must have the same length
 
