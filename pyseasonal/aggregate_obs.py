@@ -88,7 +88,7 @@ for vv in np.arange(len(variables)):
 
     #cut out target period
     dates = pd.DatetimeIndex(nc.time.values)
-    years_ind = np.where((dates.year >= years[0]) and (dates.year <= years[-1]))[0]
+    years_ind = np.where((dates.year >= years[0]) & (dates.year <= years[-1]))[0]
     nc = nc.isel(time=years_ind)
     dates = pd.DatetimeIndex(nc.time.values) #retrieve dates form the time-reduced xr dataset
     #calculate monthly mean values
