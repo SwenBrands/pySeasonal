@@ -45,7 +45,7 @@ log_label=get_skill_season_py_${jobname}
 echo "The log_label sent to get_skill_season.py is "${log_label}
 # run the Python script
 
-python ${PYDIR}/pyseasonal/get_skill_season.py ${vers} ${model} ${domain} ${variable} ${agg_label} ${modulator} ${phase} ${FLAGDIR} > ${LOGDIR}/${log_label}.log
+python ${PYDIR}/get_skill_season.py ${vers} ${model} ${domain} ${variable} ${agg_label} ${modulator} ${phase} ${FLAGDIR} > ${LOGDIR}/${log_label}.log
 
 echo "get_skill_season.sh has been sent to queue successfully with the parameters vers: ${vers}, model: ${model}, domain: ${domain}, variable: ${variable}, agg_label: ${agg_label}, modulator: ${modulator}, phase: ${phase}, FLAGDIR: ${FLAGDIR}, LOGDIR: ${LOGDIR}, log_label: ${log_label}."
 echo "Exiting now..."

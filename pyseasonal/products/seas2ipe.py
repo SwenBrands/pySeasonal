@@ -31,7 +31,7 @@ for do in np.arange(len(domain_list)):
 
     def load_config(config_file='config/'+configuration_file):
         """Load configuration from YAML file"""
-        config_path = Path(__file__).parent.parent / config_file
+        config_path = Path(__file__).parent.parent.parent / config_file
         print('The path of the configuration file is '+str(config_path))
         with open(config_path, 'r') as file:
             config = yaml.safe_load(file)
@@ -71,7 +71,7 @@ for do in np.arange(len(domain_list)):
         print(date.today())
     print(year_init, month_init)
 
-    # # Example year and run to run without passing any input arguments; comment or delete the next two lines in operative use
+    # # # Example year and run to run without passing any input arguments; comment or delete the next two lines in operative use
     # year_init = 2024 #a list containing the years the forecast are initialized on, will be looped through with yy
     # month_init = 10 #a list containing the corresponding months the forecast are initialized on, will be called while looping through <year_init> (with yy), i.e. must have the same length
 

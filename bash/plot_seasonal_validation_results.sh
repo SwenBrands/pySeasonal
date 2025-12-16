@@ -38,7 +38,7 @@ cd ${RUNDIR}
 # current_time=$(date "+%Y-%m-%d_%H-%M-%S")
 
 # run the Python script
-python ${PYDIR}/pyseasonal/plot_seasonal_validation_results.py ${agg_label} ${vers} ${domain} > ${LOGDIR}/${log_label}.log
+python ${PYDIR}/plot_seasonal_validation_results.py ${agg_label} ${vers} ${domain} > ${LOGDIR}/${log_label}.log
 
 echo "plot_seasonal_validation_results.sh has been sent to queue successfully, exiting now..."
 sleep 1
