@@ -10,6 +10,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import xarray as xr
 import xskillscore as xs
+import pdb
 
 from pyseasonal.utils.mapping import subperiod_years
 
@@ -164,10 +165,10 @@ def get_forecast_prob(seas_mean_f,lower_xr_f,upper_xr_f):
     lower_np_f = np.tile(lower_xr_f.values,(seas_mean_f.shape[0],1,1))
     upper_np_f = np.tile(upper_xr_f.values,(seas_mean_f.shape[0],1,1))
 
-    valid_ind_f = ~np.isnan(upper_np_f) and ~np.isnan(lower_np_f)
-    upper_ind_f = (seas_mean_f > upper_np_f) and valid_ind_f
-    center_ind_f = (seas_mean_f > lower_np_f) and (seas_mean_f <= upper_np_f) and valid_ind_f
-    lower_ind_f = (seas_mean_f <= lower_np_f) and valid_ind_f
+    valid_ind_f = ~np.isnan(upper_np_f) * ~np.isnan(lower_np_f)
+    upper_ind_f = (seas_mean_f > upper_np_f) * valid_ind_f
+    center_ind_f = (seas_mean_f > lower_np_f) * (seas_mean_f <= upper_np_f) * valid_ind_f
+    lower_ind_f = (seas_mean_f <= lower_np_f) * valid_ind_f
 
     #sum members in each category and devide by the number of members, thus obtaining the probability
     nr_mem_f = len(seas_mean_f.member)
@@ -225,8 +226,9 @@ def roll_and_cut(xr_dataset, lonlim_f, latlim_f):
     xr_dataset = xr_dataset.roll(longitude=shiftat,roll_coords=True)
 
     #then cut out target region and return new dataset
-    lonind = (xr_dataset.longitude.values >= lonlim_f[0]) and (xr_dataset.longitude.values <= lonlim_f[1])
-    latind = (xr_dataset.latitude.values >= latlim_f[0]) and (xr_dataset.latitude.values <= latlim_f[1])
+    pdb.set_trace()
+    lonind = (xr_dataset.longitude.values >= lonlim_f[0]) & (xr_dataset.longitude.values <= lonlim_f[1])
+    latind = (xr_dataset.latitude.values >= latlim_f[0]) & (xr_dataset.latitude.values <= latlim_f[1])
     xr_dataset = xr_dataset.isel(longitude=lonind,latitude=latind)
 
     return xr_dataset
@@ -305,8 +307,9 @@ def get_spatial_aggregation(score_f,critval_f=None,pval_f=None,mode_f='fraction_
 
     if mode_f in ('fraction_smaller','fraction_larger','fraction_smaller_pos'): #caclulate the areal percentage of significant correlation coefficients
         if mode_f == 'fraction_smaller_pos':
-            sigind_f = (pval_step_f < critval_f) and (score_step_f > 0)
-            spurind_f = (pval_step_f >= critval_f) or (score_step_f <= 0)
+            pdb.set_trace()
+            sigind_f = (pval_step_f < critval_f) & (score_step_f > 0)
+            spurind_f = (pval_step_f >= critval_f) | (score_step_f <= 0)
             pval_step_f[sigind_f] = 1
             pval_step_f[spurind_f] = 0
         elif mode_f == 'fraction_smaller': #caclulate the areal percentage of significant correlation coefficients
@@ -361,8 +364,9 @@ def get_sub_domain(xr_ds_f,domain_f):
     #check whether the requested sub-domain is known; otherwise return an error
     if domain_f == 'iberia':
         print('Upon user request, verification results for '+domain_f+' will be cut out.')
-        lat_bool = (xr_ds_f.y.values >= 36) and (xr_ds_f.y.values <= 44)
-        lon_bool = (xr_ds_f.x.values >= -10) and (xr_ds_f.x.values <= 3)
+        pdb.set_trace()
+        lat_bool = (xr_ds_f.y.values >= 36) & (xr_ds_f.y.values <= 44)
+        lon_bool = (xr_ds_f.x.values >= -10) & (xr_ds_f.x.values <= 3)
         xr_ds_f = xr_ds_f.isel(y=lat_bool,x=lon_bool)
         # #set grid-boxes in North Africa to nan
         # latind_f = xr_ds_f.y.values <= 37
@@ -521,8 +525,8 @@ def get_reliability_or_roc(obs_f,gcm_f,obs_quantile_f,gcm_quantile_f,dist_part_f
         obs_bin = xr.where(obs_f <= obs_lower_tercile_f, 1, 0).astype('int8') #here the nan values over the sea are lost. They will be brought back below.
         gcm_bin = xr.where(gcm_f <= gcm_lower_tercile_f, 1, 0).astype('int8')
     elif dist_part_f in ('center_tercile','centre_tercile'):
-        obs_bin = xr.where((obs_f > obs_lower_tercile_f) and (obs_f <= obs_upper_tercile_f), 1, 0).astype('int8') #here the nan values over the sea are lost. They will be brought back below.
-        gcm_bin = xr.where((gcm_f > gcm_lower_tercile_f) and (gcm_f <= gcm_upper_tercile_f), 1, 0).astype('int8')
+        obs_bin = xr.where((obs_f > obs_lower_tercile_f) * (obs_f <= obs_upper_tercile_f), 1, 0).astype('int8') #here the nan values over the sea are lost. They will be brought back below.
+        gcm_bin = xr.where((gcm_f > gcm_lower_tercile_f) * (gcm_f <= gcm_upper_tercile_f), 1, 0).astype('int8')
     else:
         raise Exception("ERROR: check entry for dist_part_f !")
 

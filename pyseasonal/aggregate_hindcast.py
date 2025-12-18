@@ -19,7 +19,7 @@ from pyseasonal.utils.functions_seasonal import transform_gcm_variable
 
 # INDICATE CONFIGURATION FILE ######################################
 
-configuration_file = 'config_for_aggregate_hindcast_Iberia.yaml'
+configuration_file = 'config/config_for_aggregate_hindcast_Iberia.yaml'
 # configuration_file = 'config_for_aggregate_hindcast_Canarias.yaml'
 # configuration_file = 'config_for_aggregate_hindcast_Iberia.yaml'
 
