@@ -226,9 +226,8 @@ def roll_and_cut(xr_dataset, lonlim_f, latlim_f):
     xr_dataset = xr_dataset.roll(longitude=shiftat,roll_coords=True)
 
     #then cut out target region and return new dataset
-    pdb.set_trace()
-    lonind = (xr_dataset.longitude.values >= lonlim_f[0]) & (xr_dataset.longitude.values <= lonlim_f[1])
-    latind = (xr_dataset.latitude.values >= latlim_f[0]) & (xr_dataset.latitude.values <= latlim_f[1])
+    lonind = (xr_dataset.longitude.values >= lonlim_f[0]) * (xr_dataset.longitude.values <= lonlim_f[1])
+    latind = (xr_dataset.latitude.values >= latlim_f[0]) * (xr_dataset.latitude.values <= latlim_f[1])
     xr_dataset = xr_dataset.isel(longitude=lonind,latitude=latind)
 
     return xr_dataset
@@ -307,7 +306,6 @@ def get_spatial_aggregation(score_f,critval_f=None,pval_f=None,mode_f='fraction_
 
     if mode_f in ('fraction_smaller','fraction_larger','fraction_smaller_pos'): #caclulate the areal percentage of significant correlation coefficients
         if mode_f == 'fraction_smaller_pos':
-            pdb.set_trace()
             sigind_f = (pval_step_f < critval_f) & (score_step_f > 0)
             spurind_f = (pval_step_f >= critval_f) | (score_step_f <= 0)
             pval_step_f[sigind_f] = 1

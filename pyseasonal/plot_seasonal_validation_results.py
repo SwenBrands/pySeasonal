@@ -38,7 +38,7 @@ else:
 
 # INDICATE CONFIGURATION FILE ######################################
 
-configuration_file = 'config_for_plot_seasonal_validation_results_'+domain+'.yaml'
+configuration_file = 'config/config_for_plot_seasonal_validation_results_'+domain+'.yaml'
 
 ####################################################################
 
@@ -410,8 +410,8 @@ for ag in np.arange(len(agg_label)):
 
                             binmask = np.zeros(mapme.shape)
                             binmask[:] = np.nan
-                            mask1 = (pval < critval_rho) and (rho > 0)
-                            mask0 = (pval >= critval_rho) or (rho <= 0)
+                            mask1 = (pval < critval_rho) * (rho > 0)
+                            mask0 = (pval >= critval_rho) | (rho <= 0)
                             binmask[mask1] = 1
                             binmask[mask0] = 0
                             score_unit[sc] = 'binary'

@@ -13,7 +13,7 @@ from pyseasonal.utils.config import load_config
 
 # INDICATE CONFIGURATION FILE ######################################
 
-configuration_file = 'config_for_aggregate_obs_Canarias.yaml'
+configuration_file = 'config/config_for_aggregate_obs_Canarias.yaml'
 # configuration_file = 'config_for_aggregate_obs_Iberia.yaml'
 # configuration_file = 'config_for_aggregate_obs_medcof.yaml'
 
@@ -88,7 +88,7 @@ for vv in np.arange(len(variables)):
 
     #cut out target period
     dates = pd.DatetimeIndex(nc.time.values)
-    years_ind = np.where((dates.year >= years[0]) and (dates.year <= years[-1]))[0]
+    years_ind = np.where((dates.year >= years[0]) * (dates.year <= years[-1]))[0]
     nc = nc.isel(time=years_ind)
     dates = pd.DatetimeIndex(nc.time.values) #retrieve dates form the time-reduced xr dataset
     #calculate monthly mean values
