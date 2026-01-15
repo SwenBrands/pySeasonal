@@ -13,9 +13,9 @@ from pyseasonal.utils.config import load_config
 
 # INDICATE CONFIGURATION FILE ######################################
 
-configuration_file = 'config/config_for_aggregate_obs_Canarias.yaml'
-# configuration_file = 'config_for_aggregate_obs_Iberia.yaml'
-# configuration_file = 'config_for_aggregate_obs_medcof.yaml'
+# configuration_file = 'config/config_for_aggregate_obs_Canarias.yaml'
+configuration_file = 'config/config_for_aggregate_obs_Iberia.yaml'
+# configuration_file = 'config/config_for_aggregate_obs_medcof.yaml'
 
 ####################################################################
 

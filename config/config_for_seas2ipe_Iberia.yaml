@@ -16,8 +16,8 @@ agg_labels: ['3mon']  # considered aggregation windows
 nan_placeholder: 0
 
 # Variable mapping to PTI format
-variables_std: ['Rx5day-C4_up010', 'TNm-C4_up010', 'PRtot-C4_up010', 'PRm-C4_up010', 'TXm-C4_up010', 'FD-C4_up010', 'SU-C4_up010', 'TR-C4_up010']  # standardized variable names
-variables_out: ['rx5day', 'gtn', 'PRtot', 'PRm', 'gtx', 'fd', 'su', 'tr']  # output variable names, as defined in PTI-Clima variable table: https://docs.google.com/spreadsheets/d/1K5n3aM0vGgnJEwlghjK1BtqJr0Ug0mQYlzZKQxB2wJU/edit?gid=0#gid=0
+variables_std: ['SPEI-3-M-C4_up010', 'Rx5day-C4_up010', 'TNm-C4_up010', 'PRtot-C4_up010', 'TXm-C4_up010', 'FD-C4_up010', 'SU-C4_up010', 'TR-C4_up010']  # standardized variable names
+variables_out: ['spei3', 'rx5d', 'gtn', 'rti', 'gtx', 'fd', 'su', 'tr']  # output variable names, as defined in PTI-Clima variable table: https://docs.google.com/spreadsheets/d/1K5n3aM0vGgnJEwlghjK1BtqJr0Ug0mQYlzZKQxB2wJU/edit?gid=0#gid=0
 masked_variables_std: ['none']  # list of variables on which land-sea mask will be applied
 
 # Data type and domain configuration

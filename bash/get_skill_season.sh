@@ -17,6 +17,7 @@
 
 #load your envirmonent
 source ${HOME}/.bashrc
+sleep 3
 
 #input variables that will be passed to the python script get_skill_season.py
 vers=${1}

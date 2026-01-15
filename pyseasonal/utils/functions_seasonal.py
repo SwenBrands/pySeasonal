@@ -407,8 +407,8 @@ def get_map_lowfreq_var(pattern_f,xx_f,yy_f,agree_ind_f,minval_f,maxval_f,dpival
     map_proj = ccrs.PlateCarree()
 
     fig = plt.figure()
-    toplayer_x = xx.flatten()[agree_ind_f.flatten()]
-    toplayer_y = yy.flatten()[agree_ind_f.flatten()]
+    toplayer_x = xx_f.flatten()[agree_ind_f.flatten()]
+    toplayer_y = yy_f.flatten()[agree_ind_f.flatten()]
     maxind = np.argsort(pattern_f.flatten())[-1]
     max_x = xx_f.flatten()[maxind]
     max_y = yy_f.flatten()[maxind]
@@ -417,7 +417,7 @@ def get_map_lowfreq_var(pattern_f,xx_f,yy_f,agree_ind_f,minval_f,maxval_f,dpival
     min_y = yy_f.flatten()[minind]
 
     ax = fig.add_subplot(111, projection=map_proj)
-    ax.set_extent([xx_f.min()-halfres, xx_f.max()+halfres_f, yy.min()-halfres_f, yy_f.max()+halfres_f], ccrs.PlateCarree())
+    ax.set_extent([xx_f.min()-halfres_f, xx_f.max()+halfres_f, yy_f.min()-halfres_f, yy_f.max()+halfres_f], ccrs.PlateCarree())
     ax.add_feature(cfeature.COASTLINE, zorder=4, color='black')
 
     image = ax.pcolormesh(xx_f, yy_f, pattern_f, vmin=minval_f, vmax=maxval_f, cmap=colormap_f, transform=ccrs.PlateCarree(), shading = 'nearest', zorder=3, rasterized=True)

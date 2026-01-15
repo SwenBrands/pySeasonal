@@ -4,8 +4,8 @@ obs: 'PTI-grid-v2' #name of the observational / reanalysis dataset that will be 
 agg_src: 'mon' #'day' or 'mon': temporal aggregation of the observational input files, pertains to the <obs> loop indicated with <oo> below
 startyear_file: 1981 #start year of the obs file as indicated in filename
 endyear_file: 2022 #corresponding end year
-variables: ['SU_up010', 'TR_up010', 'Rx1day_up010', 'Rx5day_up010', 'PRtot_up010', 'PRm_up010', 'TNm_up010', 'TXm_up010', 'FD_up010'] #variables to be regridded
-variables_nc: ['SU', 'TR', 'Rx1day', 'Rx5day', 'PRtot', 'PRm', 'TNm', 'TXm', 'FD'] #variable names with the netCDF file
+variables: ['SPEI-3_up010', 'SU_up010', 'TR_up010', 'Rx1day_up010', 'Rx5day_up010', 'PRtot_up010', 'PRm_up010', 'TNm_up010', 'TXm_up010', 'FD_up010'] #variables to be regridded
+variables_nc: ['SPEI-3', 'SU', 'TR', 'Rx1day', 'Rx5day', 'PRtot', 'PRm', 'TNm', 'TXm', 'FD'] #variable names with the netCDF file
 years: [1981,2022] #years to be regridded
 
 domain: 'Iberia' #spatial domain the model data is available on. So far, this is just a label used in the output filename

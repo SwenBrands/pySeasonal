@@ -36,7 +36,7 @@ input_parameters:
   nr_pseudo_mem: 6 # number of times the climatological mean or randomly reshuffled observarions are replicated along the "member" dimension to mimic a model ensemble representing the naiv climatological forecasts used as reference for calculating the CRPS Skill Score. Results are insensitive to variations in this value; the script has been tested for value=2 and 4.
   testlevel: 0.05 # options for methods estimating hindcast skill
   detrending: ['no', 'yes'] # yes or no, linear detrending of the gcm and obs time series prior to validation
-  masked_variables_std: ['Rx5day-C4_up010', 'TNm-C4_up010', 'PRtot-C4_up010', 'PRm-C4_up010', 'TXm-C4_up010', 'FD-C4_up010', 'SU-C4_up010', 'TR-C4_up010'] # list of variables on which a land-sea mask will be applied, setting values over sea to nan
+  masked_variables_std: ['SPEI-3-M-C4_up010', 'Rx5day-C4_up010', 'TNm-C4_up010', 'PRtot-C4_up010', 'PRm-C4_up010', 'TXm-C4_up010', 'FD-C4_up010', 'SU-C4_up010', 'TR-C4_up010'] # list of variables on which a land-sea mask will be applied, setting values over sea to nan
   
 # Set the lead-times for each model and version thereof, as well as for each aggregation window (currently 1 and 3 months)
 

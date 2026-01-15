@@ -20,8 +20,8 @@ from pyseasonal.utils.functions_seasonal import transform_gcm_variable
 # INDICATE CONFIGURATION FILE ######################################
 
 configuration_file = 'config/config_for_aggregate_hindcast_Iberia.yaml'
-# configuration_file = 'config_for_aggregate_hindcast_Canarias.yaml'
-# configuration_file = 'config_for_aggregate_hindcast_Iberia.yaml'
+# configuration_file = 'config/config_for_aggregate_hindcast_Canarias.yaml'
+# configuration_file = 'config/config_for_aggregate_hindcast_medcof.yaml'
 
 ####################################################################
 
@@ -127,7 +127,7 @@ for mm in np.arange(len(model)):
         #construct path to input GCM files as a function of the variable set in variables[mm][vv]
         if variables[mm][vv] in ('fwi','pvpot','Rx1day-C4','Rx5day-C4','TNm-C4','PRtot-C4','PRm-C4','TXm-C4','FD-C4','SU-C4','TR-C4','PRtot-C4_up010','PRm-C4_up010','TNm-C4_up010','TXm-C4_up010','FD-C4_up010','SU-C4_up010','TR-C4_up010','Rx5day-C4_up010'):
             path_gcm_base_var = path_gcm_base_derived
-        elif variables[mm][vv] in ('SPEI-3','SPEI-3-M','SPEI-3-R','SPEI-3-R_eqm_pullLMs-TRUE'):
+        elif variables[mm][vv] in ('SPEI-3-M-C4_up010','SPEI-3-M-C4','SPEI-3','SPEI-3-M','SPEI-3-R','SPEI-3-R_eqm_pullLMs-TRUE'):
             path_gcm_base_var = path_gcm_base_derived
         elif variables[mm][vv] in ('psl','sfcWind','tas','pr','rsds'):
             path_gcm_base_var = path_gcm_base
@@ -151,7 +151,7 @@ for mm in np.arange(len(model)):
                 print('INFO: Loading '+variables[mm][vv]+' from '+model[mm]+version[mm]+' on '+domain+' domain for '+str(imonth[im]).zfill(2)+' '+str(years_vec[yy]))
 
                 #print complete path to the GCM input file
-                if variables[mm][vv] in ('SPEI-3','SPEI-3-M','SPEI-3-R'):
+                if variables[mm][vv] in ('SPEI-3-M-C4_up010','SPEI-3-M-C4','SPEI-3','SPEI-3-M','SPEI-3-R'):
                     #path_gcm_data = path_gcm_base_var+'/'+domain+'/'+product+'/'+variables[mm][vv]+'/'+model[mm]+'/'+version[mm]+'/coefs_all_members/'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'/'+file_start[mm][vv]+'_'+domain+'_'+product+'_'+variables[mm][vv]+'_'+model[mm]+'_'+version[mm]+'_'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'.nc'
                     path_gcm_data = path_gcm_base_var+'/'+domain+'/'+product+'/'+variables[mm][vv]+'/'+model[mm]+'/'+version[mm]+'/coefs_pool_members/'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'/'+file_start[mm][vv]+'_'+domain+'_'+product+'_'+variables[mm][vv]+'_'+model[mm]+'_'+version[mm]+'_'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'.nc'
                 elif variables[mm][vv] in ('SPEI-3-R_eqm_pullLMs-TRUE'):
