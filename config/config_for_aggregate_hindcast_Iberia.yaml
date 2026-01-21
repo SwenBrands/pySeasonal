@@ -32,21 +32,11 @@ paths:
 
 model_settings:
   ecmwf51:
-    # variables: ['Rx1day-C4','Rx5day-C4','TXm-C4','FD-C4','SU-C4','TR-C4']
-    # # variables_nc: ['TNth','Rx1day', 'Rx5day','tasmax','FD','TXth']
-    # variables_nc: ['Rx1day-C4','Rx5day-C4','TXm-C4','FD-C4','SU-C4','TR-C4']
-    # variables_new: ['Rx1day','Rx5day-C4','TXm-C4','FD-C4','SU-C4','TR-C4']
-    # time_name: ['time','time','time','time','time','time']
-    # lon_name: ['lon','lon','lon','lon','lon','lon']
-    # lat_name: ['lat','lat','lat','lat','lat','lat']
-    # file_start: ['seasonal-original-single-levels_derived','seasonal-original-single-levels_derived','seasonal-original-single-levels_derived','seasonal-original-single-levels_derived','seasonal-original-single-levels_derived','seasonal-original-single-levels_derived']
-
-    variables: ['SPEI-3-M-C4_up010', 'Rx5day-C4_up010', 'TNm-C4_up010', 'PRtot-C4_up010', 'PRm-C4_up010', 'TXm-C4_up010', 'FD-C4_up010', 'SU-C4_up010', 'TR-C4_up010']
-    variables_nc: ['SPEI-3-M-C4', 'Rx5day-C4', 'TNm-C4', 'PRtot-C4', 'PRm-C4', 'TXm-C4', 'FD-C4', 'SU-C4', 'TR-C4']
-    variables_new: ['SPEI-3-M-C4_up010', 'Rx5day-C4_up010', 'TNm-C4_up010', 'PRtot-C4_up010', 'PRm-C4_up010', 'TXm-C4_up010', 'FD-C4_up010', 'SU-C4_up010', 'TR-C4_up010']
-    time_name: ['time', 'time', 'time', 'time', 'time', 'time', 'time', 'time', 'time']
-    lon_name: ['lon', 'lon', 'lon', 'lon', 'lon', 'lon', 'lon', 'lon', 'lon']
-    lat_name: ['lat', 'lat', 'lat', 'lat', 'lat', 'lat', 'lat', 'lat', 'lat']
-    file_start: ['seasonal-original-single-levels_derived', 'seasonal-original-single-levels_derived','seasonal-original-single-levels_derived', 'seasonal-original-single-levels_derived', 'seasonal-original-single-levels_derived', 'seasonal-original-single-levels_derived', 'seasonal-original-single-levels_derived' ,'seasonal-original-single-levels_derived', 'seasonal-original-single-levels_derived']
-
+    variables: ['SPEI-3-M-C4_up010', 'Rx1day-C4_up010', 'Rx5day-C4_up010', 'TNm-C4_up010', 'PRtot-C4_up010', 'PRm-C4_up010', 'TXm-C4_up010', 'FD-C4_up010', 'SU-C4_up010', 'TR-C4_up010']
+    variables_nc: ['SPEI-3-M-C4', 'Rx1day-C4', 'Rx5day-C4', 'TNm-C4', 'PRtot-C4', 'PRm-C4', 'TXm-C4', 'FD-C4', 'SU-C4', 'TR-C4']
+    variables_new: ['SPEI-3-M-C4_up010', 'Rx1day-C4_up010', 'Rx5day-C4_up010', 'TNm-C4_up010', 'PRtot-C4_up010', 'PRm-C4_up010', 'TXm-C4_up010', 'FD-C4_up010', 'SU-C4_up010', 'TR-C4_up010']
+    time_name: ['time', 'time', 'time', 'time', 'time', 'time', 'time', 'time', 'time', 'time']
+    lon_name: ['lon', 'lon', 'lon', 'lon', 'lon', 'lon', 'lon', 'lon', 'lon', 'lon']
+    lat_name: ['lat', 'lat', 'lat', 'lat', 'lat', 'lat', 'lat', 'lat', 'lat', 'lat']
+    file_start: ['seasonal-original-single-levels_derived', 'seasonal-original-single-levels_derived', 'seasonal-original-single-levels_derived','seasonal-original-single-levels_derived', 'seasonal-original-single-levels_derived', 'seasonal-original-single-levels_derived', 'seasonal-original-single-levels_derived', 'seasonal-original-single-levels_derived' ,'seasonal-original-single-levels_derived', 'seasonal-original-single-levels_derived']
     years: [1981, 2023]
