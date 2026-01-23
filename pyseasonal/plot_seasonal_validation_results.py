@@ -649,11 +649,16 @@ for ag in np.arange(len(agg_label)):
         #save the binary mask xarray dataset and close
         nc_results.close()
         savename_netcdf = dir_netcdf_skillmasks+'/skill_masks_pticlima_'+sub_domain+'_'+agg_label[ag]+'_'+models[mm]+'_'+vers+'.nc'
-        ds_mask_plus_cont.to_netcdf(savename_netcdf)
+        #define and apply chunks
+        chunks = {"subperiod": len(ds_mask_plus_cont.subperiod),"detrended": len(ds_mask_plus_cont.detrended),"variable": 1,"season": len(ds_mask_plus_cont.season),"lead": len(ds_mask_plus_cont.lead),"y": round(len(ds_mask_plus_cont.y)/2),"x": round(len(ds_mask_plus_cont.x)/2)}
+        ds_mask_plus_cont.chunk(chunks)
+        #compress with zlib and shuffle=True
+        encoding = {var: {"zlib": True,"complevel": 5,"shuffle": True,"dtype": "float32"} for var in ds_mask_plus_cont.data_vars}
+        ds_mask_plus_cont.to_netcdf(savename_netcdf, engine = 'netcdf4', encoding = encoding)
 
         ds_binary_mask.close()
         ds_mask_plus_cont.close()
-        del(nc_results,ds_binary_mask,ds_mask_plus_cont)
+        del(nc_results,ds_binary_mask,ds_mask_plus_cont,chunks,encoding)
 
     print('INFO: saving results at:')
     print(savename_netcdf)
