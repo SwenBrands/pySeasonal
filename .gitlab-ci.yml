@@ -1,0 +1,19 @@
+image: docker:19
+
+stages:
+- releases
+
+include:
+  - project: 'org/it/ci-templates'
+    file:
+      - '/templates/.kaniko-release.yml'
+
+release:
+  stage: releases
+  extends: [.kaniko-release]
+  rules:
+    - if: '$CI_COMMIT_BRANCH == "main"'
+    - when: manual
+      variables:
+        DOCKER_IMAGE_TAG: dev
+
