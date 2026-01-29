@@ -14,8 +14,8 @@ release:
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
       variables:
-        DOCKER_IMAGE_TAG: dev
+        KANIKO_TAG: dev
     - when: manual
       variables:
-        DOCKER_IMAGE_TAG: dev
+        KANIKO_TAG: dev
 
