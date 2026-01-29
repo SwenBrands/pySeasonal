@@ -12,7 +12,11 @@ release:
   stage: releases
   extends: [.kaniko-release]
   variables:
-    KANIKO_TAG: dev
+    KANIKO_IMAGE: pti-clima/pyseasonal
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
+      variables:
+        KANIKO_TAG: dev
     - when: manual
+      variables:
+        KANIKO_TAG: dev
