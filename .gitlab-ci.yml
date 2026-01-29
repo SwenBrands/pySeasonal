@@ -11,11 +11,8 @@ include:
 release:
   stage: releases
   extends: [.kaniko-release]
+  variables:
+    KANIKO_TAG: dev
   rules:
     - if: '$CI_COMMIT_BRANCH == "main"'
-      variables:
-        KANIKO_TAG: dev
     - when: manual
-      variables:
-        KANIKO_TAG: dev
-
