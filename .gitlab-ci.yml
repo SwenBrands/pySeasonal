@@ -14,9 +14,10 @@ release:
   variables:
     KANIKO_IMAGE: pti-clima/pyseasonal
   rules:
-    - if: '$CI_COMMIT_BRANCH == "main"'
+    - if: '$CI_COMMIT_BRANCH == "dev"'
       variables:
         KANIKO_TAG: dev
+    - if: '$CI_COMMIT_BRANCH == "prod"'
+      variables:
+        KANIKO_TAG: prod
     - when: manual
-      variables:
-        KANIKO_TAG: dev
