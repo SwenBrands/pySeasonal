@@ -14,7 +14,7 @@ import time
 import pdb #then type <pdb.set_trace()> at a given line in the code below
 import psutil
 
-from pyseasonal.utils.config import load_config_argo
+from pyseasonal.utils.config import load_config
 from pyseasonal.utils.functions_seasonal import apply_sea_mask, lin_detrend, get_reliability_or_roc
 
 start_time = time.time()
@@ -103,7 +103,7 @@ configuration_file = 'config/config_for_get_skill_season_'+domain+'.yaml'
 ##############################################################################
 
 # Load configuration
-config = load_config_argo(configuration_file)
+config = load_config(configuration_file)
 
 # Extract paths from configuration
 paths = config['paths'] # get paths from configuration
