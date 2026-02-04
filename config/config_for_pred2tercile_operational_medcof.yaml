@@ -27,35 +27,13 @@ quantile_threshold: [0.33,0.67]
 
 #set path to input gcm files
 paths:
-  lustre:
-    home: '/lustre/gmeteo/PTICLIMA'
-    path_gcm_base: '/lustre/gmeteo/PTICLIMA/DATA/SEASONAL/seasonal-original-single-levels' # head directory of the source files
-    path_gcm_base_derived: '/lustre/gmeteo/PTICLIMA/DATA/SEASONAL/seasonal-original-single-levels_derived' # head directory of the source files
-    path_gcm_base_masked: '/lustre/gmeteo/PTICLIMA/DATA/SEASONAL/seasonal-original-single-levels_masked' # head directory of the source files    
-    rundir: '/lustre/gmeteo/PTICLIMA/Scripts/SBrands/pyPTIclima/pySeasonal'
-    dir_quantile: '/lustre/gmeteo/PTICLIMA/Results/seasonal/validation'
-    dir_forecast: '/lustre/gmeteo/PTICLIMA/Results/seasonal/forecast'
-    mask_dir: '/lustre/gmeteo/PTICLIMA/Auxiliary-material/Masks' #path to the land-sea masks
-
-  pticlima:
-    home: '/home/swen/datos/PTICLIMA'
-    path_gcm_base: '/home/swen/datos/PTICLIMA/DATA/SEASONAL/seasonal-original-single-levels' # head directory of the source files
-    path_gcm_base_derived: '/home/swen/datos/PTICLIMA/DATA/SEASONAL/seasonal-original-single-levels_derived' # head directory of the source files
-    path_gcm_base_masked: '/home/swen/datos/PTICLIMA/DATA/SEASONAL/seasonal-original-single-levels_masked' # head directory of the source files    
-    rundir: '/home/swen/datos/PTICLIMA/Scripts/SBrands/pyPTIclima/pySeasonal'
-    dir_quantile: '/home/swen/datos/PTICLIMA/Results/seasonal/validation'
-    dir_forecast: '/home/swen/datos/PTICLIMA/Results/seasonal/forecast'
-    mask_dir: '/home/swen/datos/PTICLIMA/Auxiliary-material/Masks' #path to the land-sea masks
-
-  argo:
-    home: ''  # will be set from DATA_DIR environment variable
-    path_gcm_base: 'seasonal-original-single-levels'
-    path_gcm_base_derived: 'seasonal-original-single-levels_derived'
-    path_gcm_base_masked: 'seasonal-original-single-levels_derived'
-    rundir: '/app/terciles'
-    dir_quantile: '/mnt/vol'
-    dir_forecast: home+'seasonal-original-single-levels_derived/medcof/forecast/terciles/'
-    mask_dir: '/Auxiliary-material/Masks' #path to the land-sea masks
+  home: '/lustre/gmeteo/PTICLIMA'
+  path_gcm_base: 'DATA/SEASONAL/seasonal-original-single-levels' # head directory of the source files
+  path_gcm_base_derived: 'DATA/SEASONAL/seasonal-original-single-levels_derived' # head directory of the source files
+  path_gcm_base_masked: 'DATA/SEASONAL/seasonal-original-single-levels_masked' # head directory of the source files
+  dir_quantile: 'Results/seasonal/validation'
+  dir_forecast: 'Results/seasonal/forecast'
+  mask_dir: 'Auxiliary-material/Masks' #path to the land-sea masks
 
 # Parameters per model
 model_settings:
