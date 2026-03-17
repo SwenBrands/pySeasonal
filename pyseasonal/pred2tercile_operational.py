@@ -204,6 +204,7 @@ def swen_pred2tercile_operational(config: dict, year_init: str, month_init: str)
                 if vv == 0:
                     out_arr = np.zeros((len(variable_fc[mm]),len(quantile_threshold)+1,len(season_start_month),len(nc_fc[lat_name[mm][vv]]),len(nc_fc[lon_name[mm][vv]])),dtype=datatype)
                     out_arr[:] = np.nan
+                    attrs_from_infile = [] #empty list to be filled with the attributes of all varialbes for a given model
                 for mo in season_start_month:
                     season_i = months_fc_uni[mo:mo+season_length].to_list()
                     season_i_label = assign_season_label(season_i)
@@ -266,6 +267,9 @@ def swen_pred2tercile_operational(config: dict, year_init: str, month_init: str)
                     out_arr[vv,:,mo,:,:] = probab_nan
                     season.append(season_i)
                     season_label.append(season_i_label)
+                
+                #append variable attributes list for a given model
+                attrs_from_infile.append(nc_fc[variable_fc_nc[mm][vv]].attrs)
 
             #create xarray data array and save to netCDF format
             date_init = [nc_fc.time[0].values.astype(str)]
@@ -313,7 +317,10 @@ def swen_pred2tercile_operational(config: dict, year_init: str, month_init: str)
             # option to save one variable per file
             for vvv in np.arange(len(variable_std[mm])):
                 out_arr_singlevar = out_arr.sel(variable=variable_std[mm][vvv]).drop_vars("variable")
-                out_arr_singlevar.attrs['variable'] = variable_std[mm][vvv]
+                out_arr_singlevar.attrs = attrs_from_infile[vvv] # pass all attributes from input file containing the forecast
+                out_arr_singlevar.attrs['variable'] = variable_std[mm][vvv] #define new attribute "variable" containing the standard variable names defined in variable_std
+                # out_arr_singlevar.attrs['info'] = 'global attributes are from the input file containing '+variable_std[mm][vvv]
+
                 encoding = dict(probability=dict(chunksizes=(1, 1, 1, 1, 1, len(out_arr[lat_name_out]), len(out_arr[lon_name_out])))) #https://docs.xarray.dev/en/stable/user-guide/io.html#writing-encoded-data
                 savename_out_arr_singlevar = dir_forecast+'/'+domain+'/probability_'+agg_label[ag]+'_'+models[mm]+version[mm]+'_'+variable_std[mm][vvv]+'_'+domain+'_init_'+str(year_init)+str(month_init).zfill(2)+'_dtr_'+detrended+'_refyears_'+str(years_quantile[mm][0])+'_'+str(years_quantile[mm][1])+'_'+quantile_version+'.nc'
                 out_arr_singlevar.to_netcdf(savename_out_arr_singlevar,encoding=encoding)
