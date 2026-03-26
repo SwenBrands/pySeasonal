@@ -124,7 +124,7 @@ for mm in np.arange(len(model)):
         datelist = [] #init date list
 
         #construct path to input GCM files as a function of the variable set in variables[mm][vv]
-        if variables[mm][vv] in ('fwi','pvpot','CGDDS-C4','FWI-C4','Rx1day-C4','Rx5day-C4','TNm-C4','PRtot-C4','PRm-C4','TXm-C4','FD-C4','SU-C4','TR-C4','CGDDS-C4_up010','FWI-C4_up010','PRtot-C4_up010','PRm-C4_up010','TNm-C4_up010','TXm-C4_up010','FD-C4_up010','SU-C4_up010','TR-C4_up010','Rx1day-C4_up010','Rx5day-C4_up010'):
+        if variables[mm][vv] in ('fwi','pvpot','GDD_S','GDD_W','CGDD_S','CGDD_W','CGDDS-C4','FWI-C4','Rx1day-C4','Rx5day-C4','TNm-C4','PRtot-C4','PRm-C4','TXm-C4','TXm-C6','tasmax-C6','FD-C4','SU-C4','TR-C4','CGDDS-C4_up010','FWI-C4_up010','PRtot-C4_up010','PRm-C4_up010','TNm-C4_up010','TXm-C4_up010','FD-C4_up010','SU-C4_up010','TR-C4_up010','Rx1day-C4_up010','Rx5day-C4_up010'):
             path_gcm_base_var = path_gcm_base_derived
         elif variables[mm][vv] in ('SPEI-3-M-C4_up010','SPEI-3-M-C4','SPEI-3','SPEI-3-M','SPEI-3-R','SPEI-3-R_eqm_pullLMs-TRUE'):
             path_gcm_base_var = path_gcm_base_derived
@@ -155,7 +155,7 @@ for mm in np.arange(len(model)):
                     path_gcm_data = path_gcm_base_var+'/'+domain+'/'+product+'/'+variables[mm][vv]+'/'+model[mm]+'/'+version[mm]+'/coefs_pool_members/'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'/'+file_start[mm][vv]+'_'+domain+'_'+product+'_'+variables[mm][vv]+'_'+model[mm]+'_'+version[mm]+'_'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'.nc'
                 elif variables[mm][vv] in ('SPEI-3-R_eqm_pullLMs-TRUE'):
                     path_gcm_data = path_gcm_base_var+'/'+domain+'/'+product+'/'+variables[mm][vv]+'/'+model[mm]+'/'+version[mm]+'/coefs_of_reanalysis/'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'/'+file_start[mm][vv]+'_'+domain+'_'+product+'_SPEI-3-R_'+model[mm]+'_'+version[mm]+'_'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'.nc'
-                elif variables[mm][vv] in ('fwi','pvpot','CGDDS-C4','FWI-C4','Rx1day-C4','Rx5day-C4','TNm-C4','PRtot-C4','PRm-C4','TXm-C4','FD-C4','SU-C4','TR-C4','CGDDS-C4_up010','FWI-C4_up010','PRtot-C4_up010','PRm-C4_up010','TNm-C4_up010','TXm-C4_up010','FD-C4_up010','SU-C4_up010','TR-C4_up010','Rx1day-C4_up010','Rx5day-C4_up010'):
+                elif variables[mm][vv] in ('fwi','pvpot','GDD_S','GDD_W','CGDD_S','CGDD_W','CGDDS-C4','FWI-C4','Rx1day-C4','Rx5day-C4','TNm-C4','PRtot-C4','PRm-C4','TXm-C4','TXm-C6','tasmax-C6','FD-C4','SU-C4','TR-C4','CGDDS-C4_up010','FWI-C4_up010','PRtot-C4_up010','PRm-C4_up010','TNm-C4_up010','TXm-C4_up010','FD-C4_up010','SU-C4_up010','TR-C4_up010','Rx1day-C4_up010','Rx5day-C4_up010'):
                     path_gcm_data = path_gcm_base_var+'/'+domain+'/'+product+'/'+variables[mm][vv]+'/'+model[mm]+'/'+version[mm]+'/'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'/'+file_start[mm][vv]+'_'+domain+'_'+product+'_'+variables[mm][vv]+'_'+model[mm]+'_'+version[mm]+'_'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'.nc'
                 elif variables[mm][vv] in ('psl','sfcWind','tas','pr','rsds'):
                     path_gcm_data = path_gcm_base_var+'/'+domain+'/'+product+'/'+variables[mm][vv]+'/'+model[mm]+'/'+version[mm]+'/'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'/'+file_start[mm][vv]+'_'+domain+'_'+product+'_'+variables[mm][vv]+'_'+model[mm]+'_'+version[mm]+'_'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'.nc'
@@ -217,8 +217,15 @@ for mm in np.arange(len(model)):
 
                 #this overwrites <members> from the template per model file <nc_template_gcm> loaded above
                 del(members)
-                members = np.array([int(str(nc.member[ii].astype(str).values).replace('Member_','')) for ii in np.arange(len(nc.member))]) #this option also works for the first SPEI-3-R version
-                members = np.arange(len(members)) #force the members to start with 0 irrespective of the input format (the first SPEI-3-R version started with 1)
+                
+                #get the members from the netcdf input file and force them to into a numpy arrary starting with 0 irrespective of the input format (the first SPEI-3-R version and tasmax-C6 start with 1)
+                members = np.arange(len(nc.member))
+
+                #check whether the size of the ensemble makes sense
+                if len(members) < 10:
+                    ValueError('The ensemble contains less than 10 members, which is probably not correct. Please check the format of the <member> dimension in the netcdf input file')
+                else:
+                    print('The ensemble for '+model[mm]+version[mm]+', '+variables[mm][vv]+', and '+str(years_vec[yy])+str(imonth[im]).zfill(2)+' has '+str(len(members))+' members !')
 
                 #this overwrites <lons and lats> from the template per model file <nc_template_gcm> loaded above
                 del(lons,lats)

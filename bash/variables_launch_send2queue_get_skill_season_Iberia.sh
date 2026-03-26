@@ -26,5 +26,5 @@ agg_label_list=('1mon' '2mon' '3mon' '4mon' '5mon') #bash array containing the t
 # agg_label_list=('5mon') #bash array containing the temporal aggregation windows to be considered
 modulator_plus_phase_list=('none' 'enso0' 'enso1' 'enso2') #bash array containing all modulators and phases thereof
 # modulator_plus_phase_list=('none') #bash array containing all modulators and phases thereof
-variable_list=('CGDDS-C4_up010') #bash array of variables to be processed; must coincide with <variables_gcm> in aggregate_hindcast.py
+variable_list=('TXm-C6') #bash array of variables to be processed; must coincide with <variables_gcm> in aggregate_hindcast.py
 # variable_list=('CGDDS-C4_up010' 'SPEI-3-M-C4_up010' 'Rx1ay-C4_up010' 'Rx5day-C4_up010' 'TNm-C4_up010' 'PRtot-C4_up010' 'PRm-C4_up010' 'TXm-C4_up010' 'FD-C4_up010' 'SU-C4_up010' 'TR-C4_up010') #bash array of variables to be processed; must coincide with <variables_gcm> in aggregate_hindcast.py

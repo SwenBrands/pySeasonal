@@ -13,8 +13,8 @@ from pyseasonal.utils.config import load_config
 
 # INDICATE CONFIGURATION FILE ######################################
 
-# configuration_file = 'config/config_for_aggregate_obs_Canarias.yaml'
-configuration_file = 'config/config_for_aggregate_obs_Iberia.yaml'
+configuration_file = 'config/config_for_aggregate_obs_Canarias.yaml'
+# configuration_file = 'config/config_for_aggregate_obs_Iberia.yaml'
 # configuration_file = 'config/config_for_aggregate_obs_medcof.yaml'
 
 ####################################################################
@@ -62,7 +62,7 @@ for vv in np.arange(len(variables)):
         elif variables[vv] == 'pvpot':
             path_obs_data = path_obs_base+'/'+obs.upper()+'/data_derived/'+domain+'_'+resolution+'/day/'+variables[vv]+'/'+variables[vv]+'_'+domain_label+'_'+resolution+'_DM.nc'
             nc = xr.open_dataset(path_obs_data, decode_timedelta=False)
-        elif variables[vv] == 'SPEI-3':
+        elif variables[vv] in ('SPEI-3','GDD_S','GDD_W','CGDD_S','CGDD_W'):
             #path_obs_data = path_obs_base+'/'+obs+'/'+agg_src+'/'+domain+'_'+resolution+'/'+variables[vv]+'/'+variables[vv]+'_'+obs.upper()+'_'+agg_src+'_*.nc' #SPEI-3_ERA5_day_2021.nc
             path_obs_data = path_obs_base+'/'+obs.upper()+'/data_derived/'+domain+'_'+resolution+'/mon/'+variables[vv] #SPEI-3_ERA5_day_2021.nc
             #get list of input files
@@ -71,14 +71,18 @@ for vv in np.arange(len(variables)):
                 dir_content = os.listdir(path_obs_data+'/'+str(yy))
                 for fi in np.arange(len(dir_content)):
                     inputfiles_list.append(path_obs_data+'/'+str(yy)+'/'+dir_content[fi])
+            inputfiles_list = sorted(inputfiles_list)
             print('The following input files will be loaded and concatenated:')
             print(inputfiles_list)
-            nc = xr.open_mfdataset(inputfiles_list)
+            nc = xr.open_mfdataset(inputfiles_list, combine="by_coords")
         else:
             raise ValueError('Variable '+variables[vv]+' is not yet supported by this script !')
     elif domain in ('Canarias','Iberia'):
-        # path_obs_data = path_obs_base+'/'+obs[0:3].upper()+obs[3:]+'/data_derived_'+resolution+'/'+domain[0].upper()+domain[1:]+'/'+agg_src+'/'+variables[vv]+'/'+variables[vv]+'_'+domain[0:3]+'.nc'
         path_obs_data = path_obs_base+'/'+obs+'/data_derived_'+resolution+'/'+domain+'/'+agg_src+'/'+variables[vv]+'/'+variables[vv]+'_'+domain_label+'.nc'
+        #special case for Canarias y PTI-grid-v4
+        if domain == 'Canarias' and obs == 'PTI-grid-v4':
+            path_obs_data = path_obs_data.replace('_'+resolution,'')
+            
         nc = xr.open_dataset(path_obs_data, decode_timedelta=False)
     else:
         raise ValueError('Unexpected value for <domain> !')

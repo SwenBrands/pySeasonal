@@ -53,7 +53,7 @@ def apply_sea_mask(arr_f,mask_file_f,lat_name_f,lon_name_f):
         raise ValueError('unknown y coordinate order in <arr_f> !')
 
     #test for equal latitudes
-    if ~np.all(nc_mask_f.lat.values-arr_f[lat_name_f].values == 0):
+    if ~np.all(nc_mask_f.lat.values.round(8)-arr_f[lat_name_f].values.round(8) == 0):
         raise ValueError('<nc_mask_f.lat> and <arr_f.'+lat_name_f+' do not match !')
 
     # expand the mask, either for the xr DataArray passed via get_skill_season.py or for the xr Dataset passed via plot_seasonal_validation.results.py
