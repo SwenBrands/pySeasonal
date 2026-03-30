@@ -36,7 +36,7 @@ domain: 'Iberia'
 sub_domain: 'Iberia'
 
 #plot maps on top of pcolor heat-maps; yes or no
-plot_maps: 'no'
+plot_maps: 'yes'
 
 # List of variables on which a land-sea mask will be applied, setting values over sea to nan
 masked_variables: ['TXm-C6', 'CGDDS-C4_up010', 'FWI-C4_up010', 'SPEI-3-M-C4_up010', 'Rx1day-C4_up010', 'Rx5day-C4_up010', 'TNm-C4_up010', 'PRtot-C4_up010', 'PRm-C4_up010', 'TXm-C4_up010', 'FD-C4_up010', 'SU-C4_up010', 'TR-C4_up010']

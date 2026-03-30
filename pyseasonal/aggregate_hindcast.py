@@ -95,7 +95,7 @@ nc_template.close()
 for mm in np.arange(len(model)):
 
     #get model dimensions from a template modell initialization, needed for entirely missing hindcast months. This init data of this template file and other information is set in <config_for_aggregate_hindcast.yaml>; <members>, <lons> and <lats> from this file will be overwritten if other init files are found during execution of this script
-    if template_var[mm] in ('tas','psl','pr','FD-C4','SU-C4','TR-C4','FD-C4_up010'):
+    if template_var[mm] in ('tas','psl','pr','TXm-C4','FD-C4','SU-C4','TR-C4','FD-C4_up010'):
         path_template_gcm = path_gcm_base+'/'+domain+'/hindcast/'+template_var[mm]+'/'+model[mm]+'/'+version[mm]+'/'+str(template_init[mm][0:4])+str(template_init[mm][-2:]).zfill(2)+'/'+template_file_start[mm]+'_'+domain+'_hindcast_'+template_var[mm]+'_'+model[mm]+'_'+version[mm]+'_'+str(template_init[mm][0:4])+str(template_init[mm][-2:]).zfill(2)+'.nc'
         nc_template_gcm = xr.open_dataset(path_template_gcm, decode_timedelta=False)
         nc_template_gcm = nc_template_gcm.isel(member=np.arange(n_mem[mm])) #select members within the template netCDF file

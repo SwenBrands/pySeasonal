@@ -13,8 +13,8 @@ from pyseasonal.utils.config import load_config
 
 # INDICATE CONFIGURATION FILE ######################################
 
-configuration_file = 'config/config_for_aggregate_obs_Canarias.yaml'
-# configuration_file = 'config/config_for_aggregate_obs_Iberia.yaml'
+# configuration_file = 'config/config_for_aggregate_obs_Canarias.yaml'
+configuration_file = 'config/config_for_aggregate_obs_Iberia.yaml'
 # configuration_file = 'config/config_for_aggregate_obs_medcof.yaml'
 
 ####################################################################
@@ -79,8 +79,8 @@ for vv in np.arange(len(variables)):
             raise ValueError('Variable '+variables[vv]+' is not yet supported by this script !')
     elif domain in ('Canarias','Iberia'):
         path_obs_data = path_obs_base+'/'+obs+'/data_derived_'+resolution+'/'+domain+'/'+agg_src+'/'+variables[vv]+'/'+variables[vv]+'_'+domain_label+'.nc'
-        #special case for Canarias y PTI-grid-v4
-        if domain == 'Canarias' and obs == 'PTI-grid-v4':
+        #remove resolution from the path in case the native PTI grid is to loaded
+        if (domain == 'Canarias' and resolution == '2.5km') or (domain == 'Iberia' and resolution == '2.5km'):
             path_obs_data = path_obs_data.replace('_'+resolution,'')
             
         nc = xr.open_dataset(path_obs_data, decode_timedelta=False)
