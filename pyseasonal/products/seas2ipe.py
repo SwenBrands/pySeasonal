@@ -5,7 +5,8 @@
 import numpy as np
 import xarray as xr
 import os
-
+import pdb
+import warnings
 
 def swen_seas2ipe(config: dict, year_init: str, month_init: str):
     # # Example year and run to run without passing any input arguments; comment or delete the next two lines in operative use
@@ -71,42 +72,47 @@ def swen_seas2ipe(config: dict, year_init: str, month_init: str):
             for vv in np.arange(len(variables_std)):
                 #load the forecast for a specific variable
                 filename_forecast = dir_forecast+'/'+domain+'/probability_'+agg_labels[ag]+'_'+model[mm]+version[mm]+'_'+variables_std[vv]+'_'+domain+'_init_'+str(year_init)+str(month_init).zfill(2)+'_dtr_'+detrended+'_refyears_'+str(years_quantile[mm][0])+'_'+str(years_quantile[mm][1])+'_'+vers+'.nc'
-                nc_forecast_step = xr.open_dataset(filename_forecast) #get the xr data array containing the tercile probabilities for a specific variable
+                nc_forecast_in = xr.open_dataset(filename_forecast) #get the xr data array containing the tercile probabilities for a specific variable
 
                 #check whether the previously stored model and version thereof match those requested by this script
-                if nc_forecast_step.model == model[mm]+version[mm]:
+                if nc_forecast_in.model == model[mm]+version[mm]:
                     print('The requested model '+model[mm]+' and its version '+version[mm]+' coincide with the entry previously stored in '+filename_forecast+' !')
                 else:
                     raise ValueError('The requested model '+model[mm]+' and its version '+version[mm]+' do NOT coincide with the entry previously stored in '+filename_forecast+' !')
 
-                tercile_attrs = nc_forecast_step.tercile.attrs
+                tercile_attrs = nc_forecast_in.tercile.attrs
 
-                nc_forecast_step_prob = nc_forecast_step['probability'].sel(aggregation=agg_labels[ag],model=model[mm]+version[mm]).drop_vars(['aggregation','model'])
+                nc_forecast_in_prob = nc_forecast_in['probability'].sel(aggregation=agg_labels[ag],model=model[mm]+version[mm]).drop_vars(['aggregation','model'])
 
-                #get maximum probability, #note that nc_forecast_step_prob only contains the probability of the most likely tercile ! The other two terciles are set to nan by pred2tercile_operational.py
-                nc_forecast_step_maxprob = nc_forecast_step_prob.max(dim='tercile').astype(datatype)
-                valid_data_bool_4d = ~np.isnan(nc_forecast_step_maxprob) #get valid data for the 4d array
-                valid_data_bool_5d = ~np.isnan(nc_forecast_step_prob) #get valid data for the 5d array
-                nc_forecast_step_argmax = nc_forecast_step_prob.where(valid_data_bool_5d, other=nan_placeholder).argmax(dim='tercile')+1 #set nan values to 0 and calculate tercile position of the maxiumum probability value (1,2 or 3)
-                nc_forecast_step_argmax = nc_forecast_step_argmax.where(valid_data_bool_4d,other=np.nan) #set tercile position to nan where maxima are nan
+                #get maximum probability, #note that nc_forecast_in_prob only contains the probability of the most likely tercile ! The other two terciles are set to nan by pred2tercile_operational.py
+                nc_forecast_in_maxprob = nc_forecast_in_prob.max(dim='tercile').astype(datatype)
+                valid_data_bool_4d = ~np.isnan(nc_forecast_in_maxprob) #get valid data for the 4d array
+                valid_data_bool_5d = ~np.isnan(nc_forecast_in_prob) #get valid data for the 5d array
+                nc_forecast_in_argmax = nc_forecast_in_prob.where(valid_data_bool_5d, other=nan_placeholder).argmax(dim='tercile')+1 #set nan values to 0 and calculate tercile position of the maxiumum probability value (1,2 or 3)
+                nc_forecast_in_argmax = nc_forecast_in_argmax.where(valid_data_bool_4d,other=np.nan) #set tercile position to nan where maxima are nan
 
                 #clean
-                nc_forecast_step_prob.close()
-                del(nc_forecast_step_prob)
+                nc_forecast_in_prob.close()
+                del(nc_forecast_in_prob)
 
-                nc_forecast['mlt_'+variables_out[vv]] = nc_forecast_step_argmax
-                nc_forecast['prob_'+variables_out[vv]] = nc_forecast_step_maxprob
-                #add attributes
-                nc_forecast['mlt_'+variables_out[vv]].attrs['long_name'] = 'Tercile category (1=lower, 2=middle, 3=upper) for '+variables_out[vv]
+                nc_forecast['mlt_'+variables_out[vv]] = nc_forecast_in_argmax
+                nc_forecast['prob_'+variables_out[vv]] = nc_forecast_in_maxprob
+                #add variable attributes
+                nc_forecast['mlt_'+variables_out[vv]].attrs['long_name'] = 'Most likely tercile category (1=lower, 2=middle, 3=upper) for '+variables_out[vv]
+                nc_forecast['mlt_'+variables_out[vv]].attrs['standard_name'] = 'tercile_category'
                 nc_forecast['mlt_'+variables_out[vv]].attrs['units'] = '1'
+                try:
+                    nc_forecast['mlt_'+variables_out[vv]].attrs[variables_out[vv]+'_description'] = nc_forecast_in.description
+                except:
+                    warnings.warn('No variable or index description available for '+variables_out[vv])
+
                 nc_forecast['prob_'+variables_out[vv]].attrs['long_name'] = 'probability_of_most_likely_tercile_for_'+variables_out[vv]
                 nc_forecast['prob_'+variables_out[vv]].attrs['standard_name'] = 'probability_of_event_in_category'
                 nc_forecast['prob_'+variables_out[vv]].attrs['units'] = '1'
-                #clean
-                nc_forecast_step_argmax.close()
-                nc_forecast_step_maxprob.close()
-                nc_forecast_step.close()
-                del(nc_forecast_step_argmax,nc_forecast_step_maxprob,nc_forecast_step)
+                try:
+                    nc_forecast['prob_'+variables_out[vv]].attrs[variables_out[vv]+'_description'] = nc_forecast_in.description
+                except:
+                    warnings.warn('No variable or index description available for '+variables_out[vv])
 
                 #filter subperiod, detrending option, model and version, season, and variable from skill mask
                 fc_season_length = nc_forecast.season.length_in_months
@@ -144,11 +150,20 @@ def swen_seas2ipe(config: dict, year_init: str, month_init: str):
                 skill_mask.attrs['long_name'] = 'binary_skill_mask_based_on_'+score+' for '+variables_out[vv]
                 skill_mask.attrs['standard_name'] = 'binary_skill_mask'
                 skill_mask.attrs['units'] = 'binary'
+                try:
+                    skill_mask.attrs['description'] = nc_forecast_in.description
+                except:
+                    warnings.warn('No variable or index description available for '+variables_out[vv])
 
                 # merge skill mask into the existing xarray dataset containing the most like tercile and its probability
                 nc_forecast['skill_'+variables_out[vv]] = skill_mask #assign variable-specific skill mask to the newly generated xarray dataset produced by this script
+                
+                #clean
+                nc_forecast_in_argmax.close()
+                nc_forecast_in_maxprob.close()
+                nc_forecast_in.close()
                 skill_mask.close()
-                del(skill_mask)
+                del(nc_forecast_in_argmax,nc_forecast_in_maxprob,nc_forecast_in,skill_mask)
 
             #add global attributes
             nc_forecast.season.attrs['standard_name'] = 'season'

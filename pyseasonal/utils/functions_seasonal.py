@@ -53,7 +53,7 @@ def apply_sea_mask(arr_f,mask_file_f,lat_name_f,lon_name_f):
         raise ValueError('unknown y coordinate order in <arr_f> !')
 
     #test for equal latitudes
-    if ~np.all(nc_mask_f.lat.values-arr_f[lat_name_f].values == 0):
+    if ~np.all(nc_mask_f.lat.values.round(8)-arr_f[lat_name_f].values.round(8) == 0):
         raise ValueError('<nc_mask_f.lat> and <arr_f.'+lat_name_f+' do not match !')
 
     # expand the mask, either for the xr DataArray passed via get_skill_season.py or for the xr Dataset passed via plot_seasonal_validation.results.py
@@ -407,8 +407,6 @@ def get_map_lowfreq_var(pattern_f,xx_f,yy_f,agree_ind_f,minval_f,maxval_f,dpival
     map_proj = ccrs.PlateCarree()
 
     fig = plt.figure()
-    toplayer_x = xx_f.flatten()[agree_ind_f.flatten()]
-    toplayer_y = yy_f.flatten()[agree_ind_f.flatten()]
     maxind = np.argsort(pattern_f.flatten())[-1]
     max_x = xx_f.flatten()[maxind]
     max_y = yy_f.flatten()[maxind]
@@ -428,12 +426,17 @@ def get_map_lowfreq_var(pattern_f,xx_f,yy_f,agree_ind_f,minval_f,maxval_f,dpival
     else:
         pointsize_f = 0.5
         marker_f = 'o'
-    #plot the top layer which may indicate any kind of indication, e.g. statistical significance
-    if agree_ind_f.sum() > 0:
-        ax.plot(toplayer_x, toplayer_y, color='black', marker=marker_f, linestyle='none', markersize=pointsize_f, transform=ccrs.PlateCarree(), zorder=4)
+    #if plot the top layer which may indicate any kind of indication, e.g. statistical significance
+    if isinstance(agree_ind_f, np.ndarray): #proceed if agree_ind_f is a numpy array
+        toplayer_x = xx_f.flatten()[agree_ind_f.flatten()]
+        toplayer_y = yy_f.flatten()[agree_ind_f.flatten()]    
+        if agree_ind_f.sum() > 0: #proceed if agree_ind_f contains at least on True boolean
+            ax.plot(toplayer_x, toplayer_y, color='black', marker=marker_f, linestyle='none', markersize=pointsize_f, transform=ccrs.PlateCarree(), zorder=4)
+    
     #plot a single point on the map, e.g. a city location
     if origpoint != None:
         ax.plot(origpoint[0], origpoint[1], color='blue', marker='X', linestyle='none', markersize=2, transform=ccrs.PlateCarree(), zorder=5)
+    
     ##plot parallels and meridians
     #gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=False, linewidth=0.5, color='blue', alpha=0.5, linestyle='dotted', zorder=6)
     #gl.xformatter = LONGITUDE_FORMATTER

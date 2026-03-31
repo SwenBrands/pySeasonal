@@ -16,9 +16,9 @@ from pyseasonal.utils.functions_seasonal import (
     apply_sea_mask,
     transform_gcm_variable,
     assign_season_label,
+    get_map_lowfreq_var,
     flip_latitudes_and_data
 )
-
 
 def swen_pred2tercile_operational(config: dict, year_init: str, month_init: str):
     ''' Main function to generate tercile probability forecasts from raw GCM output for a given initialization date.'''
@@ -36,6 +36,7 @@ def swen_pred2tercile_operational(config: dict, year_init: str, month_init: str)
     quantile_threshold = config['quantile_threshold']
     lon_name_out = config['lon_name_out']
     lat_name_out = config['lat_name_out']
+    plot_figs = config['plot_figs']
 
     ## EXECUTE #############################################################
 
@@ -72,6 +73,8 @@ def swen_pred2tercile_operational(config: dict, year_init: str, month_init: str)
     #create output directory of the forecasts generated here, if it does not exist.
     if os.path.isdir(dir_forecast+'/'+domain) != True:
         os.makedirs(dir_forecast+'/'+domain)
+    if os.path.isdir(dir_forecast+'/'+domain+'/figs') != True:
+        os.makedirs(dir_forecast+'/'+domain+'/figs')
 
     #make forecast for each aggregation window, model and variable
     for ag in np.arange(len(agg_label)):
@@ -109,7 +112,7 @@ def swen_pred2tercile_operational(config: dict, year_init: str, month_init: str)
                 #load forecast file
                 if variable_fc[mm][vv] in ('psl','sfcWind','tas','pr','rsds'): #raw model variables
                     filename_forecast = path_gcm_base+'/'+domain+'/'+product+'/'+variable_fc[mm][vv]+'/'+models[mm]+'/'+version[mm]+'/'+str(year_init)+str(month_init).zfill(2)+'/'+file_start[mm][vv]+'_'+domain+'_'+product+'_'+variable_fc[mm][vv]+'_'+models[mm]+'_'+version[mm]+'_'+str(year_init)+str(month_init).zfill(2)+'.nc'
-                elif variable_fc[mm][vv] in ('fwi','pvpot','Rx1day-C4', 'Rx5day-C4','TNm-C4','PRtot-C4','PRm-C4','TXm-C4','FD-C4','SU-C4','TR-C4','Rx1day-C4_up010','Rx5day-C4_up010','TNm-C4_up010','PRtot-C4_up010','PRm-C4_up010','TXm-C4_up010','FD-C4_up010', 'SU-C4_up010','TR-C4_up010'): # derived model variables
+                elif variable_fc[mm][vv] in ('GDD_S','GDD_W','CGDD_S','CGDD_W','fwi','pvpot','CGDDS-C4','FWI-C4','Rx1day-C4', 'Rx5day-C4','TNm-C4','PRtot-C4','PRm-C4','TXm-C4','TXm-C6','FD-C4','SU-C4','TR-C4','CGDDS-C4_up010','FWI-C4_up010','Rx1day-C4_up010','Rx5day-C4_up010','TNm-C4_up010','PRtot-C4_up010','PRm-C4_up010','TXm-C4_up010','FD-C4_up010', 'SU-C4_up010','TR-C4_up010'): # derived model variables
                     filename_forecast = path_gcm_base_derived+'/'+domain+'/'+product+'/'+variable_fc[mm][vv]+'/'+models[mm]+'/'+version[mm]+'/'+str(year_init)+str(month_init).zfill(2)+'/'+file_start[mm][vv]+'_'+domain+'_'+product+'_'+variable_fc[mm][vv]+'_'+models[mm]+'_'+version[mm]+'_'+str(year_init)+str(month_init).zfill(2)+'.nc'
                 elif variable_fc[mm][vv] in ('SPEI-3','SPEI-3-M','SPEI-3-R','SPEI-3-M-C4_up010','SPEI-3-M-C4'): #derived variables, special case of SPEI
                     filename_forecast = path_gcm_base_derived+'/'+domain+'/'+product+'/'+variable_fc[mm][vv]+'/'+models[mm]+'/'+version[mm]+'/coefs_pool_members/'+str(year_init)+str(month_init).zfill(2)+'/'+file_start[mm][vv]+'_'+domain+'_'+product+'_'+variable_fc[mm][vv]+'_'+models[mm]+'_'+version[mm]+'_'+str(year_init)+str(month_init).zfill(2)+'.nc'
@@ -204,6 +207,7 @@ def swen_pred2tercile_operational(config: dict, year_init: str, month_init: str)
                 if vv == 0:
                     out_arr = np.zeros((len(variable_fc[mm]),len(quantile_threshold)+1,len(season_start_month),len(nc_fc[lat_name[mm][vv]]),len(nc_fc[lon_name[mm][vv]])),dtype=datatype)
                     out_arr[:] = np.nan
+                    attrs_from_infile = [] #empty list to be filled with the attributes of all varialbes for a given model
                 for mo in season_start_month:
                     season_i = months_fc_uni[mo:mo+season_length].to_list()
                     season_i_label = assign_season_label(season_i)
@@ -236,6 +240,16 @@ def swen_pred2tercile_operational(config: dict, year_init: str, month_init: str)
                     # calculate the forecast probabilities with these terciles
                     nr_mem,upper_prob,center_prob,lower_prob = get_forecast_prob(seas_mean,lower_xr,upper_xr)
 
+                    if plot_figs == 'yes':         
+                        halfres = abs(upper_prob.lon[0]-upper_prob.lon[1])/2
+                        xx,yy = np.meshgrid(upper_prob.lon,upper_prob.lat)
+                        savename_lower = dir_forecast+'/'+domain+'/figs/prob_lower_tercile_'+product+'_init'+year_init+month_init+'_valid'+season_i_label+'_'+quantile_version+'_'+domain+'_'+agg_label[ag]+'_'+models[mm]+version[mm]+'_'+variable_fc[mm][vv]+'_dtr'+detrended+'.pdf'
+                        savename_center = dir_forecast+'/'+domain+'/figs/prob_center_tercile_'+product+'_init'+year_init+month_init+'_valid'+season_i_label+'_'+quantile_version+'_'+domain+'_'+agg_label[ag]+'_'+models[mm]+version[mm]+'_'+variable_fc[mm][vv]+'_dtr'+detrended+'.pdf'
+                        savename_upper = dir_forecast+'/'+domain+'/figs/prob_upper_tercile_'+product+'_init'+year_init+month_init+'_valid'+season_i_label+'_'+quantile_version+'_'+domain+'_'+agg_label[ag]+'_'+models[mm]+version[mm]+'_'+variable_fc[mm][vv]+'_dtr'+detrended+'.pdf'
+                        get_map_lowfreq_var(lower_prob.values,xx,yy,[],0.33,1,300,'Probability of the lower tercile',savename_lower,halfres,'Blues',8,'Tercile probability',orientation_f='horizontal')
+                        get_map_lowfreq_var(center_prob.values,xx,yy,[],0.33,1,300, 'Probability of the center tercile',savename_center,halfres,'Greys',8,'Tercile probability',orientation_f='horizontal')
+                        get_map_lowfreq_var(upper_prob.values,xx,yy,[],0.33,1,300, 'Probability of the lower tercile',savename_upper,halfres,'Reds',8,'Tercile probability',orientation_f='horizontal')
+
                     # #set the tercile probabilities of zero-bound variables bound to 0 if the lower tercil equals 0
                     # if variable_fc[mm][vv] in ('FD-C4','SU-C4','TR-C4','Rx1day-C4','Rx5day-C4'):
                     #     print('The tercile probabilities for the zero-bound variable '+variable_fc[mm][vv]+' are set to nan at grid-boxes where the lower tercile equals 0.')
@@ -266,6 +280,9 @@ def swen_pred2tercile_operational(config: dict, year_init: str, month_init: str)
                     out_arr[vv,:,mo,:,:] = probab_nan
                     season.append(season_i)
                     season_label.append(season_i_label)
+                
+                #append variable attributes list for a given model
+                attrs_from_infile.append(nc_fc[variable_fc_nc[mm][vv]].attrs)
 
             #create xarray data array and save to netCDF format
             date_init = [nc_fc.time[0].values.astype(str)]
@@ -313,7 +330,10 @@ def swen_pred2tercile_operational(config: dict, year_init: str, month_init: str)
             # option to save one variable per file
             for vvv in np.arange(len(variable_std[mm])):
                 out_arr_singlevar = out_arr.sel(variable=variable_std[mm][vvv]).drop_vars("variable")
-                out_arr_singlevar.attrs['variable'] = variable_std[mm][vvv]
+                out_arr_singlevar.attrs = attrs_from_infile[vvv] # pass all attributes from input file containing the forecast
+                out_arr_singlevar.attrs['variable'] = variable_std[mm][vvv] #define new attribute "variable" containing the standard variable names defined in variable_std
+                # out_arr_singlevar.attrs['info'] = 'global attributes are from the input file containing '+variable_std[mm][vvv]
+
                 encoding = dict(probability=dict(chunksizes=(1, 1, 1, 1, 1, len(out_arr[lat_name_out]), len(out_arr[lon_name_out])))) #https://docs.xarray.dev/en/stable/user-guide/io.html#writing-encoded-data
                 savename_out_arr_singlevar = dir_forecast+'/'+domain+'/probability_'+agg_label[ag]+'_'+models[mm]+version[mm]+'_'+variable_std[mm][vvv]+'_'+domain+'_init_'+str(year_init)+str(month_init).zfill(2)+'_dtr_'+detrended+'_refyears_'+str(years_quantile[mm][0])+'_'+str(years_quantile[mm][1])+'_'+quantile_version+'.nc'
                 out_arr_singlevar.to_netcdf(savename_out_arr_singlevar,encoding=encoding)
