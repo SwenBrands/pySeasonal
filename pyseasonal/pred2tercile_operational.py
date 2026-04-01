@@ -10,6 +10,7 @@ import os
 import pandas as pd
 import pdb
 import time
+from scipy.ndimage import gaussian_filter
 
 from pyseasonal.utils.functions_seasonal import (
     get_forecast_prob,
@@ -239,6 +240,11 @@ def swen_pred2tercile_operational(config: dict, year_init: str, month_init: str)
 
                     # calculate the forecast probabilities with these terciles
                     nr_mem,upper_prob,center_prob,lower_prob = get_forecast_prob(seas_mean,lower_xr,upper_xr)
+
+                    # Apply Gaussian filter
+                    upper_prob = xr.apply_ufunc(gaussian_filter,upper_prob,kwargs={"sigma": 1.5},input_core_dims=[["lat", "lon"]],output_core_dims=[["lat", "lon"]], vectorize=True).clip(0, 1)
+                    center_prob = xr.apply_ufunc(gaussian_filter,center_prob,kwargs={"sigma": 1.5},input_core_dims=[["lat", "lon"]],output_core_dims=[["lat", "lon"]], vectorize=True).clip(0, 1)
+                    lower_prob = xr.apply_ufunc(gaussian_filter,lower_prob,kwargs={"sigma": 1.5},input_core_dims=[["lat", "lon"]],output_core_dims=[["lat", "lon"]], vectorize=True).clip(0, 1)
 
                     if plot_figs == 'yes':         
                         halfres = abs(upper_prob.lon[0]-upper_prob.lon[1])/2
