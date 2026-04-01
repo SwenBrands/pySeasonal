@@ -30,7 +30,11 @@ def main_pred2tercile(
     swen_pred2tercile_operational(config, str(year), f"{month:02d}")
 
 
-if __name__ == "__main__":
+def main():
     import fire
 
     fire.Fire(main_pred2tercile)
+
+
+if __name__ == "__main__":
+    main()

@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "pyseasonal"
 version = "0.1.0"
@@ -23,20 +27,28 @@ dependencies = [
     "pyyaml>=6.0.3",
     "scipy>=1.10.1",
     "xarray>=2023.1.0",
-    "xesmf>=0.8.10",
     "xskillscore>=0.0.26",
 ]
+
+[project.scripts]
+pyseasonal-tercile = "pyseasonal.cli_tercile:main"
+pyseasonal-product-ipe = "pyseasonal.cli_product_ipe:main"
+
 [project.optional-dependencies]
 dev = [
+    "xesmf>=0.8.10",
+]
+test = [
     "pytest>=8.0.0",
     "pytest-cov>=4.0.0",
 ]
 
 [project.urls]
-Homepage = "https://github.com/yourusername/pySeasonal"
-Documentation = "https://github.com/yourusername/pySeasonal/blob/main/README.md"
-Repository = "https://github.com/yourusername/pySeasonal"
-Issues = "https://github.com/yourusername/pySeasonal/issues"
+Homepage = "https://github.com/SwenBrands/pySeasonal"
+Documentation = "https://github.com/SwenBrands/pySeasonal/blob/main/README.md"
+Repository = "https://github.com/SwenBrands/pySeasonal"
+Issues = "https://github.com/SwenBrands/pySeasonal/issues"
 
-[tool.setuptools]
-packages = ["pyseasonal"]
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["pyseasonal*"]
