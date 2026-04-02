@@ -12,6 +12,7 @@ import pdb
 import time
 from scipy.ndimage import gaussian_filter
 
+
 from pyseasonal.utils.functions_seasonal import (
     get_forecast_prob,
     apply_sea_mask,
@@ -38,6 +39,7 @@ def swen_pred2tercile_operational(config: dict, year_init: str, month_init: str)
     lon_name_out = config['lon_name_out']
     lat_name_out = config['lat_name_out']
     plot_figs = config['plot_figs']
+    smooth_prob = config['smooth_prob']
 
     ## EXECUTE #############################################################
 
@@ -240,18 +242,21 @@ def swen_pred2tercile_operational(config: dict, year_init: str, month_init: str)
 
                     # calculate the forecast probabilities with these terciles
                     nr_mem,upper_prob,center_prob,lower_prob = get_forecast_prob(seas_mean,lower_xr,upper_xr)
-
+                    
                     # Apply Gaussian filter
-                    upper_prob = xr.apply_ufunc(gaussian_filter,upper_prob,kwargs={"sigma": 1.5},input_core_dims=[["lat", "lon"]],output_core_dims=[["lat", "lon"]], vectorize=True).clip(0, 1)
-                    center_prob = xr.apply_ufunc(gaussian_filter,center_prob,kwargs={"sigma": 1.5},input_core_dims=[["lat", "lon"]],output_core_dims=[["lat", "lon"]], vectorize=True).clip(0, 1)
-                    lower_prob = xr.apply_ufunc(gaussian_filter,lower_prob,kwargs={"sigma": 1.5},input_core_dims=[["lat", "lon"]],output_core_dims=[["lat", "lon"]], vectorize=True).clip(0, 1)
+                    if smooth_prob == 'yes':
+                        print('Upon user request, the tercile probabilities are smoothed with a Gaussian filter !')
+                        upper_prob = xr.apply_ufunc(gaussian_filter,upper_prob,kwargs={"sigma": 1.5},input_core_dims=[[lat_name[mm][vv], lon_name[mm][vv]]],output_core_dims=[[lat_name[mm][vv], lon_name[mm][vv]]], vectorize=True).clip(0, 1)
+                        center_prob = xr.apply_ufunc(gaussian_filter,center_prob,kwargs={"sigma": 1.5},input_core_dims=[[lat_name[mm][vv], lon_name[mm][vv]]],output_core_dims=[[lat_name[mm][vv], lon_name[mm][vv]]], vectorize=True).clip(0, 1)
+                        lower_prob = xr.apply_ufunc(gaussian_filter,lower_prob,kwargs={"sigma": 1.5},input_core_dims=[[lat_name[mm][vv], lon_name[mm][vv]]],output_core_dims=[[lat_name[mm][vv], lon_name[mm][vv]]], vectorize=True).clip(0, 1)
 
-                    if plot_figs == 'yes':         
-                        halfres = abs(upper_prob.lon[0]-upper_prob.lon[1])/2
-                        xx,yy = np.meshgrid(upper_prob.lon,upper_prob.lat)
+                    if plot_figs == 'yes':
+                        halfres = abs(upper_prob[lon_name[mm][vv]][1]-upper_prob[lon_name[mm][vv]][0])/2
+                        xx,yy = np.meshgrid(upper_prob[lon_name[mm][vv]],upper_prob[lat_name[mm][vv]])
                         savename_lower = dir_forecast+'/'+domain+'/figs/prob_lower_tercile_'+product+'_init'+year_init+month_init+'_valid'+season_i_label+'_'+quantile_version+'_'+domain+'_'+agg_label[ag]+'_'+models[mm]+version[mm]+'_'+variable_fc[mm][vv]+'_dtr'+detrended+'.pdf'
                         savename_center = dir_forecast+'/'+domain+'/figs/prob_center_tercile_'+product+'_init'+year_init+month_init+'_valid'+season_i_label+'_'+quantile_version+'_'+domain+'_'+agg_label[ag]+'_'+models[mm]+version[mm]+'_'+variable_fc[mm][vv]+'_dtr'+detrended+'.pdf'
                         savename_upper = dir_forecast+'/'+domain+'/figs/prob_upper_tercile_'+product+'_init'+year_init+month_init+'_valid'+season_i_label+'_'+quantile_version+'_'+domain+'_'+agg_label[ag]+'_'+models[mm]+version[mm]+'_'+variable_fc[mm][vv]+'_dtr'+detrended+'.pdf'
+                        
                         get_map_lowfreq_var(lower_prob.values,xx,yy,[],0.33,1,300,'Probability of the lower tercile',savename_lower,halfres,'Blues',8,'Tercile probability',orientation_f='horizontal')
                         get_map_lowfreq_var(center_prob.values,xx,yy,[],0.33,1,300, 'Probability of the center tercile',savename_center,halfres,'Greys',8,'Tercile probability',orientation_f='horizontal')
                         get_map_lowfreq_var(upper_prob.values,xx,yy,[],0.33,1,300, 'Probability of the lower tercile',savename_upper,halfres,'Reds',8,'Tercile probability',orientation_f='horizontal')
