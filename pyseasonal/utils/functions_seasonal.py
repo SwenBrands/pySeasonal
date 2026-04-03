@@ -57,26 +57,32 @@ def apply_sea_mask(arr_f,mask_file_f,lat_name_f,lon_name_f):
         raise ValueError('<nc_mask_f.lat> and <arr_f.'+lat_name_f+' do not match !')
 
     # expand the mask, either for the xr DataArray passed via get_skill_season.py or for the xr Dataset passed via plot_seasonal_validation.results.py
+    # Data Array conditional
     if isinstance(arr_f,xr.DataArray): #this is the format needed in get_skill_season.py
         print('<arr_f> in apply_sea_mask() function is an xarray DataArray !')
         # test if dimensions in <arr_f> are as expected
         target_dims_f = arr_f.dims
-        if target_dims_f != ('detrended', 'variable', 'time', 'season', 'lead', lat_name_f, lon_name_f):
-            raise ValueError('The dimensions of <arr_f> DataArray are not as expected !')
+        if target_dims_f == (lat_name_f, lon_name_f): # for xr Datasets with 2 dimensions
+            print('The dimensions of <arr_f> DataArray are as expected: '+str(target_dims_f))
+            mask_appended_f = nc_mask_f.mask.squeeze('time').values    
         elif target_dims_f == ('detrended', 'variable', 'time', 'season', 'lead', lat_name_f, lon_name_f):
             print('The dimensions of <arr_f> DataArray are as expected: '+str(target_dims_f))
+            # extend the mask to match seven dimensions
+            mask_appended_f = np.tile(nc_mask_f.mask.values,(arr_f.shape[0],arr_f.shape[1],arr_f.shape[2],arr_f.shape[3],arr_f.shape[4],1,1))
         else:
-            raise ValueError('Unknown values in <target_dims_f> within apply_sea_mask() function !')
-        # extend the mask to match seven dimensions
-        mask_appended_f = np.tile(nc_mask_f.mask.values,(arr_f.shape[0],arr_f.shape[1],arr_f.shape[2],arr_f.shape[3],arr_f.shape[4],1,1))
+            raise ValueError('The dimensions of <arr_f> DataArray are not as expected !')
 
+    # Dataset conditional
     elif isinstance(arr_f,xr.Dataset):#this is the format needed in plot_seasonal_validation_results.py
         print('<arr_f> in apply_sea_mask() function is an xarray Dataset !')
         first_arr_f = arr_f[list(arr_f.data_vars)[0]] #get first dataArray in dataset
         target_dims_f = first_arr_f.dims #get dimensions of the first data Variable in arr_f
 
         #check whether the coordinates sequence is as expected
-        if target_dims_f == ('time', lat_name_f, lon_name_f): # for xr Datasets with 3 dimensions
+        if target_dims_f == (lat_name_f, lon_name_f): # for xr Datasets with 2 dimensions
+            print('The dimensions of <first_arr_f> data array in <arr_f> dataset are as expected: '+str(target_dims_f))
+            mask_appended_f = nc_mask_f.mask.squeeze('time').values
+        elif target_dims_f == ('time', lat_name_f, lon_name_f): # for xr Datasets with 3 dimensions
             print('The dimensions of <first_arr_f> data array in <arr_f> dataset are as expected: '+str(target_dims_f))
             mask_appended_f = np.tile(nc_mask_f.mask.values,(first_arr_f.shape[0],1,1))
         elif target_dims_f == ('season', 'lead', lat_name_f, lon_name_f) or target_dims_f == ('time', 'member', lat_name_f, lon_name_f): # for xr Datasets with 4 dimensions

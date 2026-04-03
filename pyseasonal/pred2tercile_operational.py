@@ -32,6 +32,10 @@ def swen_pred2tercile_operational(config: dict, year_init: str, month_init: str)
     precip_threshold_quotient = config['precip_threshold_quotient']
     datatype = config['datatype']
     domain = config['domain']
+    if domain == 'medcof':
+        medcof2hr = config['medcof2hr']
+        interp_method = config['interp_method']
+    
     masked_variables_std = config['masked_variables_std']
     detrended = config['detrended']
     product = config['product']
@@ -40,7 +44,7 @@ def swen_pred2tercile_operational(config: dict, year_init: str, month_init: str)
     lat_name_out = config['lat_name_out']
     plot_figs = config['plot_figs']
     smooth_prob = config['smooth_prob']
-
+    
     ## EXECUTE #############################################################
 
     # Extract paths from configuration
@@ -78,6 +82,9 @@ def swen_pred2tercile_operational(config: dict, year_init: str, month_init: str)
         os.makedirs(dir_forecast+'/'+domain)
     if os.path.isdir(dir_forecast+'/'+domain+'/figs') != True:
         os.makedirs(dir_forecast+'/'+domain+'/figs')
+    if domain == 'medcof' and medcof2hr in ('Iberia','Canarias'):
+        if os.path.isdir(dir_forecast+'/'+domain+'2'+medcof2hr+'/figs') != True:
+            os.makedirs(dir_forecast+'/'+domain+'2'+medcof2hr+'/figs')
 
     #make forecast for each aggregation window, model and variable
     for ag in np.arange(len(agg_label)):
@@ -243,16 +250,46 @@ def swen_pred2tercile_operational(config: dict, year_init: str, month_init: str)
                     # calculate the forecast probabilities with these terciles
                     nr_mem,upper_prob,center_prob,lower_prob = get_forecast_prob(seas_mean,lower_xr,upper_xr)
                     
+                    #rename / harmonize lat and lon names
+                    upper_prob = upper_prob.rename({lat_name[mm][vv] : lat_name_out, lon_name[mm][vv] : lon_name_out})
+                    center_prob = center_prob.rename({lat_name[mm][vv] : lat_name_out, lon_name[mm][vv] : lon_name_out})
+                    lower_prob = lower_prob.rename({lat_name[mm][vv] : lat_name_out, lon_name[mm][vv] : lon_name_out})
+
                     # Apply Gaussian filter
                     if smooth_prob == 'yes':
                         print('Upon user request, the tercile probabilities are smoothed with a Gaussian filter !')
-                        upper_prob = xr.apply_ufunc(gaussian_filter,upper_prob,kwargs={"sigma": 1.5},input_core_dims=[[lat_name[mm][vv], lon_name[mm][vv]]],output_core_dims=[[lat_name[mm][vv], lon_name[mm][vv]]], vectorize=True).clip(0, 1)
-                        center_prob = xr.apply_ufunc(gaussian_filter,center_prob,kwargs={"sigma": 1.5},input_core_dims=[[lat_name[mm][vv], lon_name[mm][vv]]],output_core_dims=[[lat_name[mm][vv], lon_name[mm][vv]]], vectorize=True).clip(0, 1)
-                        lower_prob = xr.apply_ufunc(gaussian_filter,lower_prob,kwargs={"sigma": 1.5},input_core_dims=[[lat_name[mm][vv], lon_name[mm][vv]]],output_core_dims=[[lat_name[mm][vv], lon_name[mm][vv]]], vectorize=True).clip(0, 1)
+                        upper_prob = xr.apply_ufunc(gaussian_filter,upper_prob,kwargs={"sigma": 1.5},input_core_dims=[[lat_name_out, lon_name_out]], output_core_dims=[[lat_name_out, lon_name_out]], vectorize=True).clip(0, 1)
+                        center_prob = xr.apply_ufunc(gaussian_filter,center_prob,kwargs={"sigma": 1.5},input_core_dims=[[lat_name_out, lon_name_out]],output_core_dims=[[lat_name_out, lon_name_out]], vectorize=True).clip(0, 1)
+                        lower_prob = xr.apply_ufunc(gaussian_filter,lower_prob,kwargs={"sigma": 1.5},input_core_dims=[[lat_name_out, lon_name_out]],output_core_dims=[[lat_name_out, lon_name_out]], vectorize=True).clip(0, 1)
+
+                    if domain == 'medcof' and medcof2hr in ('Iberia','Canarias'):
+                        if medcof2hr == 'Iberia':
+                            mask_file_indir = 'PTI-grid_Iberia_010_descending_lat_reformatted.nc'
+                        elif medcof2hr == 'Canarias':
+                            mask_file_indir = 'PTI-grid_Canarias_descending_lat_reformatted.nc'
+                        else:
+                            ValueError('Unexpected entry for <medcof2hr> !')
+                        mask_file_hr = mask_dir+'/'+mask_file_indir
+                        nc_hr = xr.open_dataset(mask_file_hr)
+                        if lat_name_out == 'y' and lon_name_out == 'x':
+                            #Assure that the lat and lon names in the mask files must be "lat" and "lon" for the following 3 lines to work !
+                            upper_prob_hr = upper_prob.interp(y=nc_hr.lat, x=nc_hr.lon, method=interp_method).drop_vars(['lat','lon']).rename({'lat':lat_name_out,'lon':lon_name_out})
+                            center_prob_hr = center_prob.interp(y=nc_hr.lat, x=nc_hr.lon, method=interp_method).drop_vars(['lat','lon']).rename({'lat':lat_name_out,'lon':lon_name_out})
+                            lower_prob_hr = lower_prob.interp(y=nc_hr.lat, x=nc_hr.lon, method=interp_method).drop_vars(['lat','lon']).rename({'lat':lat_name_out,'lon':lon_name_out})
+                        else:
+                            ValueError('Unexpected value(s) for <lat_name_out> and/or <lon_name_out> ! Must be set to y and x !')
+                        
+                        # optionally apply land-sea mask on the interpolated high-res data
+                        if variable_std[mm][vv] in masked_variables_std:
+                            print('Upon user request, values for sea grid-boxes are set to nan for '+variable_std[mm][vv]+' on medcof grid interpolated to '+medcof2hr+' grid !')
+                            upper_prob_hr = apply_sea_mask(upper_prob_hr,mask_file_hr,lat_name_out,lon_name_out)
+                            center_prob_hr = apply_sea_mask(center_prob_hr,mask_file_hr,lat_name_out,lon_name_out)
+                            lower_prob_hr = apply_sea_mask(lower_prob_hr,mask_file_hr,lat_name_out,lon_name_out)
+                              
 
                     if plot_figs == 'yes':
-                        halfres = abs(upper_prob[lon_name[mm][vv]][1]-upper_prob[lon_name[mm][vv]][0])/2
-                        xx,yy = np.meshgrid(upper_prob[lon_name[mm][vv]],upper_prob[lat_name[mm][vv]])
+                        halfres = abs(upper_prob[lon_name_out][1]-upper_prob[lon_name_out][0])/2
+                        xx,yy = np.meshgrid(upper_prob[lon_name_out],upper_prob[lat_name_out])
                         savename_lower = dir_forecast+'/'+domain+'/figs/prob_lower_tercile_'+product+'_init'+year_init+month_init+'_valid'+season_i_label+'_'+quantile_version+'_'+domain+'_'+agg_label[ag]+'_'+models[mm]+version[mm]+'_'+variable_fc[mm][vv]+'_dtr'+detrended+'.pdf'
                         savename_center = dir_forecast+'/'+domain+'/figs/prob_center_tercile_'+product+'_init'+year_init+month_init+'_valid'+season_i_label+'_'+quantile_version+'_'+domain+'_'+agg_label[ag]+'_'+models[mm]+version[mm]+'_'+variable_fc[mm][vv]+'_dtr'+detrended+'.pdf'
                         savename_upper = dir_forecast+'/'+domain+'/figs/prob_upper_tercile_'+product+'_init'+year_init+month_init+'_valid'+season_i_label+'_'+quantile_version+'_'+domain+'_'+agg_label[ag]+'_'+models[mm]+version[mm]+'_'+variable_fc[mm][vv]+'_dtr'+detrended+'.pdf'
@@ -260,6 +297,18 @@ def swen_pred2tercile_operational(config: dict, year_init: str, month_init: str)
                         get_map_lowfreq_var(lower_prob.values,xx,yy,[],0.33,1,300,'Probability of the lower tercile',savename_lower,halfres,'Blues',8,'Tercile probability',orientation_f='horizontal')
                         get_map_lowfreq_var(center_prob.values,xx,yy,[],0.33,1,300, 'Probability of the center tercile',savename_center,halfres,'Greys',8,'Tercile probability',orientation_f='horizontal')
                         get_map_lowfreq_var(upper_prob.values,xx,yy,[],0.33,1,300, 'Probability of the lower tercile',savename_upper,halfres,'Reds',8,'Tercile probability',orientation_f='horizontal')
+
+                        #optionally plot medcof forecasts interpolated to Iberia or Canarias
+                        if domain == 'medcof' and medcof2hr in ('Iberia, Canarias'):
+                            halfres_hr = abs(upper_prob_hr[lon_name_out][1]-upper_prob_hr[lon_name_out][0])/2
+                            xx_hr,yy_hr = np.meshgrid(upper_prob_hr[lon_name_out],upper_prob_hr[lat_name_out])
+                            savename_lower_hr = dir_forecast+'/'+domain+'2'+medcof2hr+'/figs/prob_lower_tercile_'+product+'_init'+year_init+month_init+'_valid'+season_i_label+'_'+quantile_version+'_'+domain+'2'+medcof2hr+'_'+agg_label[ag]+'_'+models[mm]+version[mm]+'_'+variable_fc[mm][vv]+'_dtr'+detrended+'.pdf'
+                            savename_center_hr = dir_forecast+'/'+domain+'2'+medcof2hr+'/figs/prob_center_tercile_'+product+'_init'+year_init+month_init+'_valid'+season_i_label+'_'+quantile_version+'_'+domain+'2'+medcof2hr+'_'+agg_label[ag]+'_'+models[mm]+version[mm]+'_'+variable_fc[mm][vv]+'_dtr'+detrended+'.pdf'
+                            savename_upper_hr = dir_forecast+'/'+domain+'2'+medcof2hr+'/figs/prob_upper_tercile_'+product+'_init'+year_init+month_init+'_valid'+season_i_label+'_'+quantile_version+'_'+domain+'2'+medcof2hr+'_'+agg_label[ag]+'_'+models[mm]+version[mm]+'_'+variable_fc[mm][vv]+'_dtr'+detrended+'.pdf'
+                            
+                            get_map_lowfreq_var(lower_prob_hr.values,xx_hr,yy_hr,[],0.33,1,300,'Probability of the lower tercile',savename_lower_hr,halfres_hr,'Blues',8,'Tercile probability',orientation_f='horizontal')
+                            get_map_lowfreq_var(center_prob_hr.values,xx_hr,yy_hr,[],0.33,1,300, 'Probability of the center tercile',savename_center_hr,halfres_hr,'Greys',8,'Tercile probability',orientation_f='horizontal')
+                            get_map_lowfreq_var(upper_prob_hr.values,xx_hr,yy_hr,[],0.33,1,300, 'Probability of the upper tercile',savename_upper_hr,halfres_hr,'Reds',8,'Tercile probability',orientation_f='horizontal')
 
                     # #set the tercile probabilities of zero-bound variables bound to 0 if the lower tercil equals 0
                     # if variable_fc[mm][vv] in ('FD-C4','SU-C4','TR-C4','Rx1day-C4','Rx5day-C4'):
@@ -279,6 +328,19 @@ def swen_pred2tercile_operational(config: dict, year_init: str, month_init: str)
 
                     #stack and turn to numpy format
                     probab = np.stack((lower_prob.values,center_prob.values,upper_prob.values),axis=0)
+                    
+                    #clean unnecessary xarray variables
+                    upper_prob.close()
+                    center_prob.close()
+                    lower_prob.close()
+                    del(upper_prob,center_prob,lower_prob)
+                    
+                    if domain == 'medcof' and medcof2hr in ('Iberia, Canarias'):
+                        upper_prob_hr.close()
+                        center_prob_hr.close()
+                        lower_prob_hr.close()
+                        del(upper_prob_hr,center_prob_hr,lower_prob_hr)
+
                     probab_nan = np.zeros((probab.shape))
                     probab_nan[:] = np.nan
                     #get index of the tercile having the maximum forecast probability at each grid box; save this probability at the given tercile; at the other terciles the nan value will be kept.
