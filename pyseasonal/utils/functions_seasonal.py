@@ -64,7 +64,8 @@ def apply_sea_mask(arr_f,mask_file_f,lat_name_f,lon_name_f):
         target_dims_f = arr_f.dims
         if target_dims_f == (lat_name_f, lon_name_f): # for xr Datasets with 2 dimensions
             print('The dimensions of <arr_f> DataArray are as expected: '+str(target_dims_f))
-            mask_appended_f = nc_mask_f.mask.squeeze('time').values    
+            # mask_appended_f = nc_mask_f.mask.squeeze('time').values
+            mask_appended_f = nc_mask_f.mask.values    
         elif target_dims_f == ('detrended', 'variable', 'time', 'season', 'lead', lat_name_f, lon_name_f):
             print('The dimensions of <arr_f> DataArray are as expected: '+str(target_dims_f))
             # extend the mask to match seven dimensions
@@ -81,11 +82,12 @@ def apply_sea_mask(arr_f,mask_file_f,lat_name_f,lon_name_f):
         #check whether the coordinates sequence is as expected
         if target_dims_f == (lat_name_f, lon_name_f): # for xr Datasets with 2 dimensions
             print('The dimensions of <first_arr_f> data array in <arr_f> dataset are as expected: '+str(target_dims_f))
-            mask_appended_f = nc_mask_f.mask.squeeze('time').values
+            # mask_appended_f = nc_mask_f.mask.squeeze('time').values
+            mask_appended_f = nc_mask_f.mask.values
         elif target_dims_f == ('time', lat_name_f, lon_name_f): # for xr Datasets with 3 dimensions
             print('The dimensions of <first_arr_f> data array in <arr_f> dataset are as expected: '+str(target_dims_f))
             mask_appended_f = np.tile(nc_mask_f.mask.values,(first_arr_f.shape[0],1,1))
-        elif target_dims_f == ('season', 'lead', lat_name_f, lon_name_f) or target_dims_f == ('time', 'member', lat_name_f, lon_name_f): # for xr Datasets with 4 dimensions
+        elif target_dims_f == ('season', 'lead', lat_name_f, lon_name_f) or target_dims_f == ('time', 'member', lat_name_f, lon_name_f) or target_dims_f == ('forecast_time', 'member', lat_name_f, lon_name_f): # for xr Datasets with 4 dimensions
             print('The dimensions of <first_arr_f> data array in <arr_f> dataset are as expected: '+str(target_dims_f))
             mask_appended_f = np.tile(nc_mask_f.mask.values,(first_arr_f.shape[0],first_arr_f.shape[1],1,1))
         elif target_dims_f == ('time', 'lead', 'member', lat_name_f, lon_name_f): # # for xr Datasets with 5 dimensions

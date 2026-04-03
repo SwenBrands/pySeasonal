@@ -24,7 +24,7 @@ medcof2hr: 'Iberia' #no, Iberia or Canarias. Option to interpolate the forecaste
 interp_method: 'linear' #linear or nearest, interpolation method to be used, this parameter is only loaded in case domain == 'medcof'
 
 # masked_variables_std: ['pvpot','SPEI-3-M','fwi','msl','t2m','tp','si10','ssrd'] #list of variables on which a land-sea mask will be applied, setting values over sea to nan
-masked_variables_std: ['SPEI-3-M','fwi','pvpot'] #list of variables on which a land-sea mask will be applied, setting values over sea to nan
+masked_variables_std: ['pvpot','SPEI-3-M','fwi','t2m','tp','si10','ssrd'] #list of variables on which a land-sea mask will be applied, setting values over sea to nan
 detrended: 'no' #yes or no, linear detrending of the gcm and obs time series prior to validation
 nr_mem: [25] #considered ensemble members, not yet in use !
 product: 'forecast'

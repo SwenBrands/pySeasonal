@@ -40,8 +40,8 @@ def swen_pred2tercile_operational(config: dict, year_init: str, month_init: str)
     detrended = config['detrended']
     product = config['product']
     quantile_threshold = config['quantile_threshold']
-    lon_name_out = config['lon_name_out']
     lat_name_out = config['lat_name_out']
+    lon_name_out = config['lon_name_out']
     plot_figs = config['plot_figs']
     smooth_prob = config['smooth_prob']
     
@@ -56,6 +56,28 @@ def swen_pred2tercile_operational(config: dict, year_init: str, month_init: str)
     dir_quantile = paths['dir_quantile']
     dir_forecast = paths['dir_forecast']
     mask_dir = paths['mask_dir']
+
+    print('------------------------------------------------')
+    print('THE FOLLOWNG CONFIGURATION HAS BEEN LOADED:')
+    print('models: '+str(models))
+    print('version: '+str(version))
+    print('quantile_version: '+str(quantile_version))
+    print('agg_label: '+str(agg_label))
+    print('precip_threshold_quotient: '+str(precip_threshold_quotient))
+    print('datatype: '+str(datatype))
+    print('domain: '+str(domain))
+    if domain == 'medcof':
+        print('medcof2hr: '+str(medcof2hr))
+        print('interp_method: '+str(interp_method))
+    print('masked_variables_std: '+str(masked_variables_std))
+    print('detrended: '+str(detrended))
+    print('product: '+str(product))
+    print('quantile_threshold: '+str(quantile_threshold))
+    print('lat_name_out: '+str(lat_name_out))
+    print('lon_name_out: '+str(lon_name_out))
+    print('plot_figs: '+str(plot_figs))
+    print('smooth_prob: '+str(smooth_prob))
+    print('------------------------------------------------')
 
     #load model specific variables to be processed
     model_settings = config['model_settings'] #load all model settings stored in yaml file
@@ -85,6 +107,17 @@ def swen_pred2tercile_operational(config: dict, year_init: str, month_init: str)
     if domain == 'medcof' and medcof2hr in ('Iberia','Canarias'):
         if os.path.isdir(dir_forecast+'/'+domain+'2'+medcof2hr+'/figs') != True:
             os.makedirs(dir_forecast+'/'+domain+'2'+medcof2hr+'/figs')
+
+    #optionally load the high resultion grid to which the medcof forecasts are to be interpolated
+    if domain == 'medcof' and medcof2hr in ('Iberia','Canarias'):
+        if medcof2hr == 'Iberia':
+            mask_file_indir = 'PTI-grid_Iberia_010_descending_lat_reformatted.nc'
+        elif medcof2hr == 'Canarias':
+            mask_file_indir = 'PTI-grid_Canarias_descending_lat_reformatted.nc'
+        else:
+            ValueError('Unexpected entry for <medcof2hr> !')
+        mask_file_hr = mask_dir+'/'+mask_file_indir
+        nc_hr = xr.open_dataset(mask_file_hr)
 
     #make forecast for each aggregation window, model and variable
     for ag in np.arange(len(agg_label)):
@@ -129,20 +162,20 @@ def swen_pred2tercile_operational(config: dict, year_init: str, month_init: str)
                 else:
                     raise Exception('ERROR: check entry for variables[vv] !')
 
-                #filename_forecast = path_gcm_base+'/'+product+'/'+variable_fc[mm][vv]+'/'+models[mm]+'/'+version[mm]+'/'+str(year_init)+str(month_init).zfill(2)+'/'+file_start[mm][vv]+'_'+domain+'_'+product+'_'+variable_fc[mm][vv]+'_'+models[mm]+'_'+version[mm]+'_'+str(year_init)+str(month_init).zfill(2)+'.nc'
-                nc_fc = xr.open_dataset(filename_forecast,decode_timedelta=False)
+                #load forecast file and harmonize latitude name
+                nc_fc = xr.open_dataset(filename_forecast,decode_timedelta=False).rename({lat_name[mm][vv] : lat_name_out, lon_name[mm][vv] : lon_name_out})
 
-                if nc_fc[lat_name[mm][vv]][0] > nc_fc[lat_name[mm][vv]][-1]:
+                if nc_fc[lat_name_out][0] > nc_fc[lat_name_out][-1]:
                     lat_nc_fc = 'descending'
-                elif nc_fc[lat_name[mm][vv]][0] < nc_fc[lat_name[mm][vv]][-1]:
+                elif nc_fc[lat_name_out][0] < nc_fc[lat_name_out][-1]:
                     lat_nc_fc = 'ascending'
                 else:
                     raise ValueError('latitudes in <nc_fc> are neither ascending or descending !')
 
                 #check whethter the latitudes in the quantile and forecast files conincide
-                if any(nc_fc[lat_name[mm][vv]].values != nc_quantile['y'].values) and lat_nc_fc == 'ascending' and lat_quantile == 'descending':
+                if any(nc_fc[lat_name_out].values != nc_quantile['y'].values) and lat_nc_fc == 'ascending' and lat_quantile == 'descending':
                     print('Warning: The lats in '+filename_forecast+' and '+filename_quantiles+' do not match but the former comes with ascending and the latter with descending latitudes, which is an allowed inconsistency since xarrays stores netcdf file with ascending lats and xarray with descending lats by default ! <nc_fc> will be re-indexed to descending latitudes below...')
-                elif any(nc_fc[lat_name[mm][vv]].values != nc_quantile['y'].values) and lat_nc_fc != 'ascending':
+                elif any(nc_fc[lat_name_out].values != nc_quantile['y'].values) and lat_nc_fc != 'ascending':
                     raise ValueError('The lats in '+filename_forecast+' and '+filename_quantiles+' do not match for an unknown reason !')
                 else:
                     print('The lats in <nc_fc> and <nc_quantile> match !')
@@ -152,9 +185,9 @@ def swen_pred2tercile_operational(config: dict, year_init: str, month_init: str)
                     print('WARNING: the latitudes in '+filename_quantiles+' come in ascending order and are inverted to be consistent with the order of the remaining datasets / variables (descending) !')
                     nc_quantile = flip_latitudes_and_data(nc_quantile,'y')
 
-                if nc_fc[lat_name[mm][vv]][0] < nc_fc[lat_name[mm][vv]][-1]:
+                if nc_fc[lat_name_out][0] < nc_fc[lat_name_out][-1]:
                     print('WARNING: the latitudes in '+filename_forecast+' come in ascending order and are inverted to be consistent with the order of the remaining datasets / variables (descending) !')
-                    nc_fc = flip_latitudes_and_data(nc_fc,lat_name[mm][vv])
+                    nc_fc = flip_latitudes_and_data(nc_fc,lat_name_out)
 
                 #optionally apply land sea mask; set values of sea to nan
                 if variable_std[mm][vv] in masked_variables_std:
@@ -173,7 +206,7 @@ def swen_pred2tercile_operational(config: dict, year_init: str, month_init: str)
                     mask_file = mask_dir+'/'+mask_file_indir #here, descending lats are needed (check why the DataArrays behave distinct concerning ascending or descending lats in pySeasonal)
 
                     #apply land-sea mask
-                    nc_fc = apply_sea_mask(nc_fc,mask_file,lat_name[mm][vv],lon_name[mm][vv])
+                    nc_fc = apply_sea_mask(nc_fc,mask_file,lat_name_out,lon_name_out)
 
                 elif variable_std[mm][vv] not in masked_variables_std:
                     print('As requested by the user, the forecast probabilities are not filtered by a land-sea mask for '+variable_std[mm][vv]+' !')
@@ -190,9 +223,9 @@ def swen_pred2tercile_operational(config: dict, year_init: str, month_init: str)
                     print('No correction is necessary for '+models[mm]+version[mm]+' and '+variable_fc[mm][vv]+'. The forecast data will be processed as it is.')
 
                 #check if the latitudes are in the right order or must be flipped to be consistent with the obserations used for validation
-                if nc_fc[lat_name[mm][vv]][0].values < nc_fc[lat_name[mm][vv]][-1].values:
+                if nc_fc[lat_name_out][0].values < nc_fc[lat_name_out][-1].values:
                     print('WARNING: the latitudes and associated data in '+filename_forecast+' come in descending order and are inverted to be consistent with the order of the remaining datasets / variables (descending) !')
-                    nc_fc = flip_latitudes_and_data(nc_fc,lat_name[mm][vv])
+                    nc_fc = flip_latitudes_and_data(nc_fc,lat_name_out)
 
                 #transform GCM variables and units, if necessary
                 nc_fc, file_valid = transform_gcm_variable(nc_fc,variable_fc[mm][vv],variable_std[mm][vv],models[mm],version[mm])
@@ -215,9 +248,14 @@ def swen_pred2tercile_operational(config: dict, year_init: str, month_init: str)
 
                 #init final output array
                 if vv == 0:
-                    out_arr = np.zeros((len(variable_fc[mm]),len(quantile_threshold)+1,len(season_start_month),len(nc_fc[lat_name[mm][vv]]),len(nc_fc[lon_name[mm][vv]])),dtype=datatype)
+                    out_arr = np.zeros((len(variable_fc[mm]),len(quantile_threshold)+1,len(season_start_month),len(nc_fc[lat_name_out]),len(nc_fc[lon_name_out])),dtype=datatype)
                     out_arr[:] = np.nan
                     attrs_from_infile = [] #empty list to be filled with the attributes of all varialbes for a given model
+
+                    if domain == 'medcof' and medcof2hr in ('Iberia','Canarias'):
+                        out_arr_hr = np.zeros((len(variable_fc[mm]),len(quantile_threshold)+1,len(season_start_month),len(nc_hr['lat']),len(nc_hr['lon'])),dtype=datatype)
+
+
                 for mo in season_start_month:
                     season_i = months_fc_uni[mo:mo+season_length].to_list()
                     season_i_label = assign_season_label(season_i)
@@ -250,11 +288,6 @@ def swen_pred2tercile_operational(config: dict, year_init: str, month_init: str)
                     # calculate the forecast probabilities with these terciles
                     nr_mem,upper_prob,center_prob,lower_prob = get_forecast_prob(seas_mean,lower_xr,upper_xr)
                     
-                    #rename / harmonize lat and lon names
-                    upper_prob = upper_prob.rename({lat_name[mm][vv] : lat_name_out, lon_name[mm][vv] : lon_name_out})
-                    center_prob = center_prob.rename({lat_name[mm][vv] : lat_name_out, lon_name[mm][vv] : lon_name_out})
-                    lower_prob = lower_prob.rename({lat_name[mm][vv] : lat_name_out, lon_name[mm][vv] : lon_name_out})
-
                     # Apply Gaussian filter
                     if smooth_prob == 'yes':
                         print('Upon user request, the tercile probabilities are smoothed with a Gaussian filter !')
@@ -263,14 +296,6 @@ def swen_pred2tercile_operational(config: dict, year_init: str, month_init: str)
                         lower_prob = xr.apply_ufunc(gaussian_filter,lower_prob,kwargs={"sigma": 1.5},input_core_dims=[[lat_name_out, lon_name_out]],output_core_dims=[[lat_name_out, lon_name_out]], vectorize=True).clip(0, 1)
 
                     if domain == 'medcof' and medcof2hr in ('Iberia','Canarias'):
-                        if medcof2hr == 'Iberia':
-                            mask_file_indir = 'PTI-grid_Iberia_010_descending_lat_reformatted.nc'
-                        elif medcof2hr == 'Canarias':
-                            mask_file_indir = 'PTI-grid_Canarias_descending_lat_reformatted.nc'
-                        else:
-                            ValueError('Unexpected entry for <medcof2hr> !')
-                        mask_file_hr = mask_dir+'/'+mask_file_indir
-                        nc_hr = xr.open_dataset(mask_file_hr)
                         if lat_name_out == 'y' and lon_name_out == 'x':
                             #Assure that the lat and lon names in the mask files must be "lat" and "lon" for the following 3 lines to work !
                             upper_prob_hr = upper_prob.interp(y=nc_hr.lat, x=nc_hr.lon, method=interp_method).drop_vars(['lat','lon']).rename({'lat':lat_name_out,'lon':lon_name_out})
@@ -310,37 +335,14 @@ def swen_pred2tercile_operational(config: dict, year_init: str, month_init: str)
                             get_map_lowfreq_var(center_prob_hr.values,xx_hr,yy_hr,[],0.33,1,300, 'Probability of the center tercile',savename_center_hr,halfres_hr,'Greys',8,'Tercile probability',orientation_f='horizontal')
                             get_map_lowfreq_var(upper_prob_hr.values,xx_hr,yy_hr,[],0.33,1,300, 'Probability of the upper tercile',savename_upper_hr,halfres_hr,'Reds',8,'Tercile probability',orientation_f='horizontal')
 
-                    # #set the tercile probabilities of zero-bound variables bound to 0 if the lower tercil equals 0
-                    # if variable_fc[mm][vv] in ('FD-C4','SU-C4','TR-C4','Rx1day-C4','Rx5day-C4'):
-                    #     print('The tercile probabilities for the zero-bound variable '+variable_fc[mm][vv]+' are set to nan at grid-boxes where the lower tercile equals 0.')
-                    #     valid_ind = lower_xr.values > 0
-                    #     lower_prob = lower_prob.where(valid_ind, np.nan)
-                    #     center_prob = center_prob.where(valid_ind, np.nan)
-                    #     upper_prob = upper_prob.where(valid_ind, np.nan)
-                    #     del(valid_ind)
-                    # else:
-                    #     print(variable_fc[mm][vv]+ ' is a variable not bound to zero for which tercile values equalling 0 are allowed.')
-
-                    ##set ocean points to nan
-                    # upper_prob = upper_prob.where(~np.isnan(lower_xr.values))
-                    # center_prob = center_prob.where(~np.isnan(lower_xr.values))
-                    # lower_prob = lower_prob.where(~np.isnan(lower_xr.values))
-
-                    #stack and turn to numpy format
-                    probab = np.stack((lower_prob.values,center_prob.values,upper_prob.values),axis=0)
-                    
+                    #stack proabilities and turn to numpy format
+                    probab = np.stack((lower_prob.values,center_prob.values,upper_prob.values),axis=0)                    
                     #clean unnecessary xarray variables
                     upper_prob.close()
                     center_prob.close()
                     lower_prob.close()
                     del(upper_prob,center_prob,lower_prob)
                     
-                    if domain == 'medcof' and medcof2hr in ('Iberia, Canarias'):
-                        upper_prob_hr.close()
-                        center_prob_hr.close()
-                        lower_prob_hr.close()
-                        del(upper_prob_hr,center_prob_hr,lower_prob_hr)
-
                     probab_nan = np.zeros((probab.shape))
                     probab_nan[:] = np.nan
                     #get index of the tercile having the maximum forecast probability at each grid box; save this probability at the given tercile; at the other terciles the nan value will be kept.
@@ -351,8 +353,30 @@ def swen_pred2tercile_operational(config: dict, year_init: str, month_init: str)
                             probab_nan[probab_nan == 0] = np.nan #set 0 probabilities to nan
                     #probab_nan[maxprob_ind] = probab[maxprob_ind,:,:]
                     out_arr[vv,:,mo,:,:] = probab_nan
+                    
+                    #optionally stack interpolated (high-res) proabilities and turn to numpy format
+                    if domain == 'medcof' and medcof2hr in ('Iberia, Canarias'):
+                        probab_hr = np.stack((lower_prob_hr.values,center_prob_hr.values,upper_prob_hr.values),axis=0)
+                        #clean unnecessary xarray variables
+                        upper_prob_hr.close()
+                        center_prob_hr.close()
+                        lower_prob_hr.close()
+                        del(upper_prob_hr,center_prob_hr,lower_prob_hr)
+
+                        probab_nan_hr = np.zeros((probab_hr.shape))
+                        probab_nan_hr[:] = np.nan
+                        #get index of the tercile having the maximum forecast probability at each grid box; save this probability at the given tercile; at the other terciles the nan value will be kept.
+                        for ii in np.arange(probab_hr.shape[1]):
+                            for jj in np.arange(probab_hr.shape[2]):
+                                maxind = np.argmax(probab_hr[:,ii,jj])
+                                probab_nan_hr[maxind,ii,jj] = probab_hr[maxind,ii,jj]
+                                probab_nan_hr[probab_nan_hr == 0] = np.nan #set 0 probabilities to nan
+                        #probab_nan[maxprob_ind] = probab[maxprob_ind,:,:]
+                        out_arr_hr[vv,:,mo,:,:] = probab_nan_hr
+                    
                     season.append(season_i)
                     season_label.append(season_i_label)
+
                 
                 #append variable attributes list for a given model
                 attrs_from_infile.append(nc_fc[variable_fc_nc[mm][vv]].attrs)
@@ -362,12 +386,11 @@ def swen_pred2tercile_operational(config: dict, year_init: str, month_init: str)
             out_arr = np.expand_dims(out_arr,axis=0) #add "rtime" dimension to add the date of the forecast init
 
             # output file format option without singleton dimensions for aggregation and model
-            # out_arr = xr.DataArray(out_arr, coords=[date_init,variable_std,np.array((1,2,3)),season_label,nc_fc[lat_name[mm][vv]],nc_fc[lon_name[mm][vv]]], dims=['rtime','variable','tercile','season','y','x'], name='probability')
+            # out_arr = xr.DataArray(out_arr, coords=[date_init,variable_std,np.array((1,2,3)),season_label,nc_fc[lat_name_out],nc_fc[lon_name[mm][vv]]], dims=['rtime','variable','tercile','season','y','x'], name='probability')
 
             # output file format option with singleton dimensions for aggregation and model, as requested by Jaime.
-            out_arr = np.expand_dims(out_arr,axis=0)
-            out_arr = np.expand_dims(out_arr,axis=0)
-            out_arr = xr.DataArray(out_arr, coords=[[agg_label[ag]],[models[mm]+version[mm]],date_init,variable_std[mm],np.array((1,2,3)),season_label,nc_fc[lat_name[mm][vv]],nc_fc[lon_name[mm][vv]]], dims=['aggregation','model','rtime','variable','tercile','season',lat_name_out,lon_name_out], name='probability')
+            out_arr = np.expand_dims(out_arr,axis=(0, 1)) #add 2 dimensions
+            out_arr = xr.DataArray(out_arr, coords=[[agg_label[ag]],[models[mm]+version[mm]],date_init,variable_std[mm],np.array((1,2,3)),season_label,nc_fc[lat_name_out],nc_fc[lon_name_out]], dims=['aggregation','model','rtime','variable','tercile','season',lat_name_out,lon_name_out], name='probability')
             out_arr = out_arr.to_dataset()
 
             #set dimension attributes
@@ -389,16 +412,22 @@ def swen_pred2tercile_operational(config: dict, year_init: str, month_init: str)
             out_arr.attrs['file_author'] = nc_quantile.author
 
             ##set chunking and save the file
-            #out_arr = out_arr.chunk({"variable":1, "tercile":1, "season":1, "y":len(nc_fc[lat_name[mm][vv]]), "x":len(nc_fc[lon_name[mm][vv]])})
+            #out_arr = out_arr.chunk({"variable":1, "tercile":1, "season":1, "y":len(nc_fc[lat_name_out]), "x":len(nc_fc[lon_name_out])})
 
             # options to save multiple variables per file
             # encoding for output file format option without singleton dimensions for aggregation and model
-            # encoding = dict(probability=dict(chunksizes=(1, 1, 1, 1, len(nc_fc[lat_name[mm][vv]]), len(nc_fc[lon_name[mm][vv]])))) #https://docs.xarray.dev/en/stable/user-guide/io.html#writing-encoded-data
+            # encoding = dict(probability=dict(chunksizes=(1, 1, 1, 1, len(nc_fc[lat_name_out]), len(nc_fc[lon_name_out])))) #https://docs.xarray.dev/en/stable/user-guide/io.html#writing-encoded-data
 
             # # encoding for output file format option with singleton dimensions for aggregation and model
-            # encoding = dict(probability=dict(chunksizes=(1, 1, 1, 1, 1, 1, len(nc_fc[lat_name[mm][vv]]), len(nc_fc[lon_name[mm][vv]])))) #https://docs.xarray.dev/en/stable/user-guide/io.html#writing-encoded-data
+            # encoding = dict(probability=dict(chunksizes=(1, 1, 1, 1, 1, 1, len(nc_fc[lat_name_out]), len(nc_fc[lon_name_out])))) #https://docs.xarray.dev/en/stable/user-guide/io.html#writing-encoded-data
             # savename = dir_forecast+'/probability_'+agg_label[ag]+'_'+models[mm]+version[mm]+'_init_'+str(year_init)+str(month_init).zfill(2)+'_'+str(season_length)+'mon_dtr_'+detrended+'_refyears_'+str(years_quantile[mm][0])+'_'+str(years_quantile[mm][1])+'_'+quantile_version+'.nc'
             # out_arr.to_netcdf(savename,encoding=encoding)
+
+            if domain == 'medcof' and medcof2hr in ('Iberia, Canarias'):
+                out_arr_hr = np.expand_dims(out_arr_hr,axis=(0, 1, 2)) #add 3 dimensions
+                out_arr_hr = xr.DataArray(out_arr_hr, coords=[[agg_label[ag]],[models[mm]+version[mm]],date_init,variable_std[mm],np.array((1,2,3)),season_label,nc_hr['lat'],nc_hr['lon']], dims=['aggregation','model','rtime','variable','tercile','season',lat_name_out,lon_name_out], name='probability')
+                out_arr_hr = out_arr_hr.to_dataset()
+                out_arr_hr.attrs = out_arr.attrs.copy()
 
             # option to save one variable per file
             for vvv in np.arange(len(variable_std[mm])):
@@ -414,13 +443,27 @@ def swen_pred2tercile_operational(config: dict, year_init: str, month_init: str)
                 del(out_arr_singlevar)
                 time.sleep(1)
 
+                if domain == 'medcof' and medcof2hr in ('Iberia, Canarias'):
+                    out_arr_singlevar_hr = out_arr_hr.sel(variable=variable_std[mm][vvv]).drop_vars("variable")
+                    out_arr_singlevar_hr.attrs = attrs_from_infile[vvv] # pass all attributes from input file containing the forecast
+                    out_arr_singlevar_hr.attrs['variable'] = variable_std[mm][vvv] #define new attribute "variable" containing the standard variable names defined in variable_std
+                    # out_arr_singlevar.attrs['info'] = 'global attributes are from the input file containing '+variable_std[mm][vvv]
+
+                    encoding = dict(probability=dict(chunksizes=(1, 1, 1, 1, 1, len(out_arr_hr[lat_name_out]), len(out_arr_hr[lon_name_out])))) #https://docs.xarray.dev/en/stable/user-guide/io.html#writing-encoded-data
+                    savename_out_arr_singlevar_hr = dir_forecast+'/'+domain+'2'+medcof2hr+'/probability_'+agg_label[ag]+'_'+models[mm]+version[mm]+'_'+variable_std[mm][vvv]+'_'+domain+'2'+medcof2hr+'_init_'+str(year_init)+str(month_init).zfill(2)+'_dtr_'+detrended+'_refyears_'+str(years_quantile[mm][0])+'_'+str(years_quantile[mm][1])+'_'+quantile_version+'.nc'
+                    out_arr_singlevar_hr.to_netcdf(savename_out_arr_singlevar_hr,encoding=encoding)
+                    out_arr_singlevar_hr.close()
+                    del(out_arr_singlevar_hr)
+                    time.sleep(1)
+
             # close all xarray objects
             lower_xr.close()
             upper_xr.close()
             seas_mean.close()
             nc_fc.close()
             out_arr.close()
-            del(lower_xr,upper_xr,seas_mean,nc_fc,out_arr)
+            out_arr_hr.close()
+            del(lower_xr,upper_xr,seas_mean,nc_fc,out_arr,out_arr_hr)
 
             nc_quantile.close()
             del(nc_quantile)

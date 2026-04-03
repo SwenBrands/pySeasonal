@@ -5,19 +5,17 @@
 
 #set path to input gcm files
 paths:
-  lustre:
-    home: '/lustre/gmeteo/PTICLIMA'
-    rundir: '/lustre/gmeteo/PTICLIMA/Scripts/SBrands/pyPTIclima/pySeasonal'
-    path_obs_base: '/lustre/gmeteo/PTICLIMA/Results/seasonal/obs/regridded'
-    path_gcm_base: '/lustre/gmeteo/PTICLIMA/Results/seasonal/gcm/aggregated' 
-    dir_netcdf: '/lustre/gmeteo/PTICLIMA/Results/seasonal/validation/'
-    dir_telcon: '/lustre/gmeteo/PTICLIMA/Results/seasonal/indices' #directory of the netCDF file containing the phases of known teleconnection indices; currently ENSO only, as generated with oni2enso.py
-    filename_telcon: 'oni2enso_195001_202505.nc' #name of the file located in <dir_telcon>
-    mask_dir: '/lustre/gmeteo/PTICLIMA/Auxiliary-material/Masks' # path to the land-sea masks on lustre
+  home: '/lustre/gmeteo/PTICLIMA'
+  rundir: 'Scripts/SBrands/pyPTIclima/pySeasonal'
+  path_obs_base: 'Results/seasonal/obs/regridded'
+  path_gcm_base: 'Results/seasonal/gcm/aggregated' 
+  dir_netcdf: 'Results/seasonal/validation/'
+  dir_telcon: 'Results/seasonal/indices' #directory of the netCDF file containing the phases of known teleconnection indices; currently ENSO only, as generated with oni2enso.py
+  mask_dir: 'Auxiliary-material/Masks' # path to the land-sea masks on lustre
     
 # Input parameters for get_skill_season.py
 input_parameters:
-  obs: ['PTI-grid-v4'] # list of observational datasets used as reference for verification. Currently, only ERA5 is admitted, i.e. the list has a single item.
+  obs: ['PTI-grid-v2'] # list of observational datasets used as reference for verification. Currently, only ERA5 is admitted, i.e. the list has a single item.
   years_obs: [1981, 2022] # years used in label of obs netCDF file; if they differ from <years_model>, then the common intersection of years will be validated.
   modulator_ref: 'init' # init or valid; the time instance the modulation in valid for. If set to 'init', then the time series are modulated with the teleconnection index valid at the initalization month. If set to 'valid', they are modulated with the index valid at the time the forecast is valid.
   min_nr_events: 3 # the minimum number of events that must be reached for each modulator and events to permit the verification; if this threshold is not reached, the script returns a ValueError
@@ -29,7 +27,7 @@ input_parameters:
   corr_outlier: 'no'
   aggreg: 'mon' # temporal aggregation of the input files
   domain: 'Iberia' # spatial domain
-  grid_name: 'PTI-grid-v4'
+  grid_name: 'PTI-grid-v2'
   int_method: 'upscaled' # 'conservative_normed', interpolation method used before in <regrid_obs.py>
   quantiles: [0.3333333333333333, 0.6666666666666666] # quantiles of the year-to-year time series to be calculated and stored
   skillscore_reference: 'rand' # 'clim' or 'rand'; use either the climatological mean or randomly reshuffled observed time series as reference forcast for calculating the CPRSS
@@ -37,7 +35,8 @@ input_parameters:
   testlevel: 0.05 # options for methods estimating hindcast skill
   detrending: ['no', 'yes'] # yes or no, linear detrending of the gcm and obs time series prior to validation
   masked_variables_std: ['CGDDS-C4_up010', 'FWI-C4_up010', 'SPEI-3-M-C4_up010', 'Rx1day-C4_up010', 'Rx5day-C4_up010', 'TNm-C4_up010', 'PRtot-C4_up010', 'PRm-C4_up010', 'TXm-C4_up010', 'TXm-C4', 'TXm-C6', 'FD-C4_up010', 'SU-C4_up010', 'TR-C4_up010'] # list of variables on which a land-sea mask will be applied, setting values over sea to nan
-  
+  filename_telcon: 'oni2enso_195001_202505.nc' #name of the file located in <dir_telcon>
+
 # Set the lead-times for each model and version thereof, as well as for each aggregation window (currently 1 and 3 months)
 
 ######################################################################################################################################
