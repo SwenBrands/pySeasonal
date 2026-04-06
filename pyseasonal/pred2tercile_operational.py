@@ -105,8 +105,10 @@ def swen_pred2tercile_operational(config: dict, year_init: str, month_init: str)
     if os.path.isdir(dir_forecast+'/'+domain+'/figs') != True:
         os.makedirs(dir_forecast+'/'+domain+'/figs')
     if domain == 'medcof' and medcof2hr in ('Iberia','Canarias'):
-        if os.path.isdir(dir_forecast+'/'+domain+'2'+medcof2hr+'/figs') != True:
-            os.makedirs(dir_forecast+'/'+domain+'2'+medcof2hr+'/figs')
+        if os.path.isdir(dir_forecast+'/'+medcof2hr+'/figs') != True:
+            os.makedirs(dir_forecast+'/'+medcof2hr+'/figs')
+    #     if os.path.isdir(dir_forecast+'/'+domain+'2'+medcof2hr+'/figs') != True:
+    #         os.makedirs(dir_forecast+'/'+domain+'2'+medcof2hr+'/figs')
 
     #optionally load the high resultion grid to which the medcof forecasts are to be interpolated
     if domain == 'medcof' and medcof2hr in ('Iberia','Canarias'):
@@ -327,13 +329,16 @@ def swen_pred2tercile_operational(config: dict, year_init: str, month_init: str)
                         if domain == 'medcof' and medcof2hr in ('Iberia, Canarias'):
                             halfres_hr = abs(upper_prob_hr[lon_name_out][1]-upper_prob_hr[lon_name_out][0])/2
                             xx_hr,yy_hr = np.meshgrid(upper_prob_hr[lon_name_out],upper_prob_hr[lat_name_out])
-                            savename_lower_hr = dir_forecast+'/'+domain+'2'+medcof2hr+'/figs/prob_lower_tercile_'+product+'_init'+year_init+month_init+'_valid'+season_i_label+'_'+quantile_version+'_'+domain+'2'+medcof2hr+'_'+agg_label[ag]+'_'+models[mm]+version[mm]+'_'+variable_fc[mm][vv]+'_dtr'+detrended+'.pdf'
-                            savename_center_hr = dir_forecast+'/'+domain+'2'+medcof2hr+'/figs/prob_center_tercile_'+product+'_init'+year_init+month_init+'_valid'+season_i_label+'_'+quantile_version+'_'+domain+'2'+medcof2hr+'_'+agg_label[ag]+'_'+models[mm]+version[mm]+'_'+variable_fc[mm][vv]+'_dtr'+detrended+'.pdf'
-                            savename_upper_hr = dir_forecast+'/'+domain+'2'+medcof2hr+'/figs/prob_upper_tercile_'+product+'_init'+year_init+month_init+'_valid'+season_i_label+'_'+quantile_version+'_'+domain+'2'+medcof2hr+'_'+agg_label[ag]+'_'+models[mm]+version[mm]+'_'+variable_fc[mm][vv]+'_dtr'+detrended+'.pdf'
-                            
-                            get_map_lowfreq_var(lower_prob_hr.values,xx_hr,yy_hr,[],0.33,1,300,'Probability of the lower tercile',savename_lower_hr,halfres_hr,'Blues',8,'Tercile probability',orientation_f='horizontal')
-                            get_map_lowfreq_var(center_prob_hr.values,xx_hr,yy_hr,[],0.33,1,300, 'Probability of the center tercile',savename_center_hr,halfres_hr,'Greys',8,'Tercile probability',orientation_f='horizontal')
-                            get_map_lowfreq_var(upper_prob_hr.values,xx_hr,yy_hr,[],0.33,1,300, 'Probability of the upper tercile',savename_upper_hr,halfres_hr,'Reds',8,'Tercile probability',orientation_f='horizontal')
+                            # savename_lower_hr = dir_forecast+'/'+domain+'2'+medcof2hr+'/figs/prob_lower_tercile_'+product+'_init'+year_init+month_init+'_valid'+season_i_label+'_'+quantile_version+'_'+domain+'2'+medcof2hr+'_'+agg_label[ag]+'_'+models[mm]+version[mm]+'_'+variable_fc[mm][vv]+'_dtr'+detrended+'.pdf'
+                            # savename_center_hr = dir_forecast+'/'+domain+'2'+medcof2hr+'/figs/prob_center_tercile_'+product+'_init'+year_init+month_init+'_valid'+season_i_label+'_'+quantile_version+'_'+domain+'2'+medcof2hr+'_'+agg_label[ag]+'_'+models[mm]+version[mm]+'_'+variable_fc[mm][vv]+'_dtr'+detrended+'.pdf'
+                            # savename_upper_hr = dir_forecast+'/'+domain+'2'+medcof2hr+'/figs/prob_upper_tercile_'+product+'_init'+year_init+month_init+'_valid'+season_i_label+'_'+quantile_version+'_'+domain+'2'+medcof2hr+'_'+agg_label[ag]+'_'+models[mm]+version[mm]+'_'+variable_fc[mm][vv]+'_dtr'+detrended+'.pdf'
+                            savename_lower_hr = dir_forecast+'/'+medcof2hr+'/figs/prob_ex_medcof_lower_tercile_'+product+'_init'+year_init+month_init+'_valid'+season_i_label+'_'+quantile_version+'_'+medcof2hr+'_'+agg_label[ag]+'_'+models[mm]+version[mm]+'_'+variable_fc[mm][vv]+'_dtr'+detrended+'.pdf'
+                            savename_center_hr = dir_forecast+'/'+medcof2hr+'/figs/prob_ex_medcof_center_tercile_'+product+'_init'+year_init+month_init+'_valid'+season_i_label+'_'+quantile_version+'_'+medcof2hr+'_'+agg_label[ag]+'_'+models[mm]+version[mm]+'_'+variable_fc[mm][vv]+'_dtr'+detrended+'.pdf'
+                            savename_upper_hr = dir_forecast+'/'+medcof2hr+'/figs/prob_ex_medcof_upper_tercile_'+product+'_init'+year_init+month_init+'_valid'+season_i_label+'_'+quantile_version+'_'+medcof2hr+'_'+agg_label[ag]+'_'+models[mm]+version[mm]+'_'+variable_fc[mm][vv]+'_dtr'+detrended+'.pdf'
+
+                            get_map_lowfreq_var(lower_prob_hr.values,xx_hr,yy_hr,[],0.33,1,300,'Probability of the lower tercile from Medcof',savename_lower_hr,halfres_hr,'Blues',8,'Tercile probability',orientation_f='horizontal')
+                            get_map_lowfreq_var(center_prob_hr.values,xx_hr,yy_hr,[],0.33,1,300, 'Probability of the center tercile from Medcof ',savename_center_hr,halfres_hr,'Greys',8,'Tercile probability',orientation_f='horizontal')
+                            get_map_lowfreq_var(upper_prob_hr.values,xx_hr,yy_hr,[],0.33,1,300, 'Probability of the upper tercile from Medcof', savename_upper_hr,halfres_hr,'Reds',8,'Tercile probability',orientation_f='horizontal')
 
                     #stack proabilities and turn to numpy format
                     probab = np.stack((lower_prob.values,center_prob.values,upper_prob.values),axis=0)                    
@@ -428,6 +433,8 @@ def swen_pred2tercile_operational(config: dict, year_init: str, month_init: str)
                 out_arr_hr = xr.DataArray(out_arr_hr, coords=[[agg_label[ag]],[models[mm]+version[mm]],date_init,variable_std[mm],np.array((1,2,3)),season_label,nc_hr['lat'],nc_hr['lon']], dims=['aggregation','model','rtime','variable','tercile','season',lat_name_out,lon_name_out], name='probability')
                 out_arr_hr = out_arr_hr.to_dataset()
                 out_arr_hr.attrs = out_arr.attrs.copy()
+                #overwrite some specific global attributes
+                out_arr_hr['probability'].attrs['units'] = 'forecast probability from medcof domain interpolated to '+domain+' grid ('+str(np.round(out_arr['probability'].min().values,3))+' - '+str(np.round(out_arr['probability'].max().values,3))+') for the most probable tercile, otherwise nan'
 
             # option to save one variable per file
             for vvv in np.arange(len(variable_std[mm])):
@@ -450,7 +457,8 @@ def swen_pred2tercile_operational(config: dict, year_init: str, month_init: str)
                     # out_arr_singlevar.attrs['info'] = 'global attributes are from the input file containing '+variable_std[mm][vvv]
 
                     encoding = dict(probability=dict(chunksizes=(1, 1, 1, 1, 1, len(out_arr_hr[lat_name_out]), len(out_arr_hr[lon_name_out])))) #https://docs.xarray.dev/en/stable/user-guide/io.html#writing-encoded-data
-                    savename_out_arr_singlevar_hr = dir_forecast+'/'+domain+'2'+medcof2hr+'/probability_'+agg_label[ag]+'_'+models[mm]+version[mm]+'_'+variable_std[mm][vvv]+'_'+domain+'2'+medcof2hr+'_init_'+str(year_init)+str(month_init).zfill(2)+'_dtr_'+detrended+'_refyears_'+str(years_quantile[mm][0])+'_'+str(years_quantile[mm][1])+'_'+quantile_version+'.nc'
+                    # savename_out_arr_singlevar_hr = dir_forecast+'/'+domain+'2'+medcof2hr+'/probability_'+agg_label[ag]+'_'+models[mm]+version[mm]+'_'+variable_std[mm][vvv]+'_'+domain+'2'+medcof2hr+'_init_'+str(year_init)+str(month_init).zfill(2)+'_dtr_'+detrended+'_refyears_'+str(years_quantile[mm][0])+'_'+str(years_quantile[mm][1])+'_'+quantile_version+'.nc'
+                    savename_out_arr_singlevar_hr = dir_forecast+'/'+medcof2hr+'/probability_ex_medcof_'+agg_label[ag]+'_'+models[mm]+version[mm]+'_'+variable_std[mm][vvv]+'_'+medcof2hr+'_init_'+str(year_init)+str(month_init).zfill(2)+'_dtr_'+detrended+'_refyears_'+str(years_quantile[mm][0])+'_'+str(years_quantile[mm][1])+'_'+quantile_version+'.nc'
                     out_arr_singlevar_hr.to_netcdf(savename_out_arr_singlevar_hr,encoding=encoding)
                     out_arr_singlevar_hr.close()
                     del(out_arr_singlevar_hr)
