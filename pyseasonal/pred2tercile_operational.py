@@ -202,30 +202,6 @@ def swen_pred2tercile_operational(config: dict, year_init: str, month_init: str)
                     print('WARNING: the latitudes in '+filename_forecast+' come in ascending order and are inverted to be consistent with the order of the remaining datasets / variables (descending) !')
                     nc_fc = flip_latitudes_and_data(nc_fc,lat_name_out)
 
-                # #optionally apply land sea mask; set values of sea to nan
-                # if variable_std[mm][vv] in masked_variables_std:
-                #     print('Upon user request, values for sea grid-boxes are set to nan for '+variable_std[mm][vv]+' ! ')
-
-                #     #get path to mask file as a function of the requested sub-domain
-                #     if domain == 'medcof':
-                #         mask_file_indir = 'ECMWF_Land_Medcof_descending_lat_reformatted.nc' # mask file as it appears in its directory
-                #     elif domain == 'Iberia':
-                #         mask_file_indir = 'PTI-grid_Iberia_010_descending_lat_reformatted.nc'
-                #     elif domain == 'Canarias':
-                #         mask_file_indir = 'PTI-grid_Canarias_descending_lat_reformatted.nc'
-                #     else:
-                #         raise ValueError('Check entry for <domain> input parameter !')
-
-                #     mask_file = mask_dir+'/'+mask_file_indir #here, descending lats are needed (check why the DataArrays behave distinct concerning ascending or descending lats in pySeasonal)
-
-                #     #apply land-sea mask
-                #     nc_fc = apply_sea_mask(nc_fc,mask_file,lat_name_out,lon_name_out)
-
-                # elif variable_std[mm][vv] not in masked_variables_std:
-                #     print('As requested by the user, the forecast probabilities are not filtered by a land-sea mask for '+variable_std[mm][vv]+' !')
-                # else:
-                #     raise ValueError('check whether <variable_std[mm][vv]> is in <masked_variables_std> !')
-
                 #a seventh forecast months was erroneously added to the SPEI-3-M from cmcc35. This is corrected here
                 if models[mm] == 'cmcc' and version[mm] == '35' and variable_fc[mm][vv] == 'SPEI-3-M':
                     print('Removing 7th forecast months from '+models[mm]+version[mm]+' and '+variable_fc[mm][vv])
