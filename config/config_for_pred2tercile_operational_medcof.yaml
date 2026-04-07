@@ -27,7 +27,7 @@ precip_threshold_quotient: 30 #quotient to calculate seasonal mean daily precipi
 datatype: 'float32' #data type of the variables in the output netcdf files
 domain: 'medcof' #spatial domain
 medcof2hr: 'Canarias' #no, Iberia or Canarias. Option to interpolate the forecasted values on the medcof grid to the high resoulution (hr) observational grids developed in the PTI Clima project; in pred2tercile.py, this parameter is only loaded in case domain == 'medcof'
-interp_method: 'linear' #linear or nearest, interpolation method to be used, this parameter is only loaded in case domain == 'medcof'
+interp_method: 'linear' #linear, nearest, cubic and more; interpolation method to be used, this parameter is only loaded in case domain == 'medcof'; see https://docs.xarray.dev/en/latest/generated/xarray.DataArray.interp.html
 
 # masked_variables_std: ['pvpot','SPEI-3-M','fwi','msl','t2m','tp','si10','ssrd'] #list of variables on which a land-sea mask will be applied, setting values over sea to nan
 masked_variables_std: ['pvpot','SPEI-3-M','fwi','t2m','tp','si10','ssrd'] #list of variables on which a land-sea mask will be applied, setting values over sea to nan

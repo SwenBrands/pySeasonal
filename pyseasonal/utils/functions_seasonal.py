@@ -93,6 +93,9 @@ def apply_sea_mask(arr_f,mask_file_f,lat_name_f,lon_name_f):
         elif target_dims_f == ('time', 'lead', 'member', lat_name_f, lon_name_f): # # for xr Datasets with 5 dimensions
             print('The dimensions of <first_arr_f> data array in <arr_f> dataset are as expected: '+str(target_dims_f))
             mask_appended_f = np.tile(nc_mask_f.mask.values,(first_arr_f.shape[0],first_arr_f.shape[1],first_arr_f.shape[2],1,1))
+        elif target_dims_f == ('detrended', 'time', 'season', 'lead', lat_name_f, lon_name_f): # # for xr Datasets with 6 dimensions
+            print('The dimensions of <first_arr_f> data array in <arr_f> dataset are as expected: '+str(target_dims_f))
+            mask_appended_f = np.tile(nc_mask_f.mask.values,(first_arr_f.shape[0],first_arr_f.shape[1],first_arr_f.shape[2],first_arr_f.shape[3],1,1))
         else:
             raise ValueError('Unknown values in <target_dims_f> within apply_sea_mask() function !')
 

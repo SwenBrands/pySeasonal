@@ -110,15 +110,26 @@ def swen_pred2tercile_operational(config: dict, year_init: str, month_init: str)
     #     if os.path.isdir(dir_forecast+'/'+domain+'2'+medcof2hr+'/figs') != True:
     #         os.makedirs(dir_forecast+'/'+domain+'2'+medcof2hr+'/figs')
 
-    #optionally load the high resultion grid to which the medcof forecasts are to be interpolated
+    #get path to mask file as a function of the requested domain
+    if domain == 'medcof':
+        mask_file_indir = 'ECMWF_Land_Medcof_descending_lat_reformatted.nc' # mask file as it appears in its directory
+    elif domain == 'Iberia':
+        mask_file_indir = 'PTI-grid_Iberia_010_descending_lat_reformatted.nc'
+    elif domain == 'Canarias':
+        mask_file_indir = 'PTI-grid_Canarias_descending_lat_reformatted.nc'
+    else:
+        raise ValueError('Check entry for <domain> input parameter !')
+    mask_file = mask_dir+'/'+mask_file_indir #here, descending lats are needed (check why the DataArrays behave distinct concerning ascending or descending lats in pySeasonal)
+
+    #optionally load the high resultion grid to which the medcof forecasts are to be interpolated; this grid is also used to mask the interpolated high-resolution data, if requested by the user
     if domain == 'medcof' and medcof2hr in ('Iberia','Canarias'):
         if medcof2hr == 'Iberia':
-            mask_file_indir = 'PTI-grid_Iberia_010_descending_lat_reformatted.nc'
+            mask_file_hr_indir = 'PTI-grid_Iberia_010_descending_lat_reformatted.nc'
         elif medcof2hr == 'Canarias':
-            mask_file_indir = 'PTI-grid_Canarias_descending_lat_reformatted.nc'
+            mask_file_hr_indir = 'PTI-grid_Canarias_descending_lat_reformatted.nc'
         else:
             ValueError('Unexpected entry for <medcof2hr> !')
-        mask_file_hr = mask_dir+'/'+mask_file_indir
+        mask_file_hr = mask_dir+'/'+mask_file_hr_indir
         nc_hr = xr.open_dataset(mask_file_hr)
 
     #make forecast for each aggregation window, model and variable
@@ -191,29 +202,29 @@ def swen_pred2tercile_operational(config: dict, year_init: str, month_init: str)
                     print('WARNING: the latitudes in '+filename_forecast+' come in ascending order and are inverted to be consistent with the order of the remaining datasets / variables (descending) !')
                     nc_fc = flip_latitudes_and_data(nc_fc,lat_name_out)
 
-                #optionally apply land sea mask; set values of sea to nan
-                if variable_std[mm][vv] in masked_variables_std:
-                    print('Upon user request, values for sea grid-boxes are set to nan for '+variable_std[mm][vv]+' ! ')
+                # #optionally apply land sea mask; set values of sea to nan
+                # if variable_std[mm][vv] in masked_variables_std:
+                #     print('Upon user request, values for sea grid-boxes are set to nan for '+variable_std[mm][vv]+' ! ')
 
-                    #get path to mask file as a function of the requested sub-domain
-                    if domain == 'medcof':
-                        mask_file_indir = 'ECMWF_Land_Medcof_descending_lat_reformatted.nc' # mask file as it appears in its directory
-                    elif domain == 'Iberia':
-                        mask_file_indir = 'PTI-grid_Iberia_010_descending_lat_reformatted.nc'
-                    elif domain == 'Canarias':
-                        mask_file_indir = 'PTI-grid_Canarias_descending_lat_reformatted.nc'
-                    else:
-                        raise ValueError('Check entry for <domain> input parameter !')
+                #     #get path to mask file as a function of the requested sub-domain
+                #     if domain == 'medcof':
+                #         mask_file_indir = 'ECMWF_Land_Medcof_descending_lat_reformatted.nc' # mask file as it appears in its directory
+                #     elif domain == 'Iberia':
+                #         mask_file_indir = 'PTI-grid_Iberia_010_descending_lat_reformatted.nc'
+                #     elif domain == 'Canarias':
+                #         mask_file_indir = 'PTI-grid_Canarias_descending_lat_reformatted.nc'
+                #     else:
+                #         raise ValueError('Check entry for <domain> input parameter !')
 
-                    mask_file = mask_dir+'/'+mask_file_indir #here, descending lats are needed (check why the DataArrays behave distinct concerning ascending or descending lats in pySeasonal)
+                #     mask_file = mask_dir+'/'+mask_file_indir #here, descending lats are needed (check why the DataArrays behave distinct concerning ascending or descending lats in pySeasonal)
 
-                    #apply land-sea mask
-                    nc_fc = apply_sea_mask(nc_fc,mask_file,lat_name_out,lon_name_out)
+                #     #apply land-sea mask
+                #     nc_fc = apply_sea_mask(nc_fc,mask_file,lat_name_out,lon_name_out)
 
-                elif variable_std[mm][vv] not in masked_variables_std:
-                    print('As requested by the user, the forecast probabilities are not filtered by a land-sea mask for '+variable_std[mm][vv]+' !')
-                else:
-                    raise ValueError('check whether <variable_std[mm][vv]> is in <masked_variables_std> !')
+                # elif variable_std[mm][vv] not in masked_variables_std:
+                #     print('As requested by the user, the forecast probabilities are not filtered by a land-sea mask for '+variable_std[mm][vv]+' !')
+                # else:
+                #     raise ValueError('check whether <variable_std[mm][vv]> is in <masked_variables_std> !')
 
                 #a seventh forecast months was erroneously added to the SPEI-3-M from cmcc35. This is corrected here
                 if models[mm] == 'cmcc' and version[mm] == '35' and variable_fc[mm][vv] == 'SPEI-3-M':
@@ -223,11 +234,6 @@ def swen_pred2tercile_operational(config: dict, year_init: str, month_init: str)
                     nc_fc = nc_fc.isel(time=time_ind)
                 else:
                     print('No correction is necessary for '+models[mm]+version[mm]+' and '+variable_fc[mm][vv]+'. The forecast data will be processed as it is.')
-
-                #check if the latitudes are in the right order or must be flipped to be consistent with the obserations used for validation
-                if nc_fc[lat_name_out][0].values < nc_fc[lat_name_out][-1].values:
-                    print('WARNING: the latitudes and associated data in '+filename_forecast+' come in descending order and are inverted to be consistent with the order of the remaining datasets / variables (descending) !')
-                    nc_fc = flip_latitudes_and_data(nc_fc,lat_name_out)
 
                 #transform GCM variables and units, if necessary
                 nc_fc, file_valid = transform_gcm_variable(nc_fc,variable_fc[mm][vv],variable_std[mm][vv],models[mm],version[mm])
@@ -257,7 +263,7 @@ def swen_pred2tercile_operational(config: dict, year_init: str, month_init: str)
                     if domain == 'medcof' and medcof2hr in ('Iberia','Canarias'):
                         out_arr_hr = np.zeros((len(variable_fc[mm]),len(quantile_threshold)+1,len(season_start_month),len(nc_hr['lat']),len(nc_hr['lon'])),dtype=datatype)
 
-
+                # transform absolute values to forecast probabilities for each forecast month
                 for mo in season_start_month:
                     season_i = months_fc_uni[mo:mo+season_length].to_list()
                     season_i_label = assign_season_label(season_i)
@@ -306,13 +312,23 @@ def swen_pred2tercile_operational(config: dict, year_init: str, month_init: str)
                         else:
                             ValueError('Unexpected value(s) for <lat_name_out> and/or <lon_name_out> ! Must be set to y and x !')
                         
-                        # optionally apply land-sea mask on the interpolated high-res data
-                        if variable_std[mm][vv] in masked_variables_std:
-                            print('Upon user request, values for sea grid-boxes are set to nan for '+variable_std[mm][vv]+' on medcof grid interpolated to '+medcof2hr+' grid !')
+                    # optionally apply land-sea masks on the original and interpolated data
+                    # for original grid
+                    if variable_std[mm][vv] in masked_variables_std:
+                        print('Upon user request, values for sea grid-boxes are set to nan for '+variable_std[mm][vv]+' on '+domain+' grid !')
+                        upper_prob = apply_sea_mask(upper_prob,mask_file,lat_name_out,lon_name_out)
+                        center_prob = apply_sea_mask(center_prob,mask_file,lat_name_out,lon_name_out)
+                        lower_prob = apply_sea_mask(lower_prob,mask_file,lat_name_out,lon_name_out)
+                        #for medcof grid interpolated to Iberia and Canarias, if requested by the user
+                        if domain == 'medcof' and medcof2hr in ('Iberia','Canarias'):
+                            print('Upon user request, values for sea grid-boxes are also set to nan for '+variable_std[mm][vv]+' on medcof grid interpolated to '+medcof2hr+' grid !')
                             upper_prob_hr = apply_sea_mask(upper_prob_hr,mask_file_hr,lat_name_out,lon_name_out)
                             center_prob_hr = apply_sea_mask(center_prob_hr,mask_file_hr,lat_name_out,lon_name_out)
                             lower_prob_hr = apply_sea_mask(lower_prob_hr,mask_file_hr,lat_name_out,lon_name_out)
-                              
+                    elif variable_std[mm][vv] not in masked_variables_std:
+                        print('As requested by the user, the forecast probabilities are not filtered by a land-sea mask for '+variable_std[mm][vv]+' !')
+                    else:
+                        raise ValueError('check whether <variable_std[mm][vv]> is in <masked_variables_std> !')                         
 
                     if plot_figs == 'yes':
                         halfres = abs(upper_prob[lon_name_out][1]-upper_prob[lon_name_out][0])/2
@@ -332,9 +348,9 @@ def swen_pred2tercile_operational(config: dict, year_init: str, month_init: str)
                             # savename_lower_hr = dir_forecast+'/'+domain+'2'+medcof2hr+'/figs/prob_lower_tercile_'+product+'_init'+year_init+month_init+'_valid'+season_i_label+'_'+quantile_version+'_'+domain+'2'+medcof2hr+'_'+agg_label[ag]+'_'+models[mm]+version[mm]+'_'+variable_fc[mm][vv]+'_dtr'+detrended+'.pdf'
                             # savename_center_hr = dir_forecast+'/'+domain+'2'+medcof2hr+'/figs/prob_center_tercile_'+product+'_init'+year_init+month_init+'_valid'+season_i_label+'_'+quantile_version+'_'+domain+'2'+medcof2hr+'_'+agg_label[ag]+'_'+models[mm]+version[mm]+'_'+variable_fc[mm][vv]+'_dtr'+detrended+'.pdf'
                             # savename_upper_hr = dir_forecast+'/'+domain+'2'+medcof2hr+'/figs/prob_upper_tercile_'+product+'_init'+year_init+month_init+'_valid'+season_i_label+'_'+quantile_version+'_'+domain+'2'+medcof2hr+'_'+agg_label[ag]+'_'+models[mm]+version[mm]+'_'+variable_fc[mm][vv]+'_dtr'+detrended+'.pdf'
-                            savename_lower_hr = dir_forecast+'/'+medcof2hr+'/figs/prob_ex_medcof_lower_tercile_'+product+'_init'+year_init+month_init+'_valid'+season_i_label+'_'+quantile_version+'_'+medcof2hr+'_'+agg_label[ag]+'_'+models[mm]+version[mm]+'_'+variable_fc[mm][vv]+'_dtr'+detrended+'.pdf'
-                            savename_center_hr = dir_forecast+'/'+medcof2hr+'/figs/prob_ex_medcof_center_tercile_'+product+'_init'+year_init+month_init+'_valid'+season_i_label+'_'+quantile_version+'_'+medcof2hr+'_'+agg_label[ag]+'_'+models[mm]+version[mm]+'_'+variable_fc[mm][vv]+'_dtr'+detrended+'.pdf'
-                            savename_upper_hr = dir_forecast+'/'+medcof2hr+'/figs/prob_ex_medcof_upper_tercile_'+product+'_init'+year_init+month_init+'_valid'+season_i_label+'_'+quantile_version+'_'+medcof2hr+'_'+agg_label[ag]+'_'+models[mm]+version[mm]+'_'+variable_fc[mm][vv]+'_dtr'+detrended+'.pdf'
+                            savename_lower_hr = dir_forecast+'/'+medcof2hr+'/figs/prob_lower_tercile_'+product+'_init'+year_init+month_init+'_valid'+season_i_label+'_'+quantile_version+'_'+medcof2hr+'_'+agg_label[ag]+'_'+models[mm]+version[mm]+'_'+variable_fc[mm][vv]+'-int-'+interp_method+'_dtr'+detrended+'.pdf'
+                            savename_center_hr = dir_forecast+'/'+medcof2hr+'/figs/prob_center_tercile_'+product+'_init'+year_init+month_init+'_valid'+season_i_label+'_'+quantile_version+'_'+medcof2hr+'_'+agg_label[ag]+'_'+models[mm]+version[mm]+'_'+variable_fc[mm][vv]+'-int-'+interp_method+'_dtr'+detrended+'.pdf'
+                            savename_upper_hr = dir_forecast+'/'+medcof2hr+'/figs/prob_upper_tercile_'+product+'_init'+year_init+month_init+'_valid'+season_i_label+'_'+quantile_version+'_'+medcof2hr+'_'+agg_label[ag]+'_'+models[mm]+version[mm]+'_'+variable_fc[mm][vv]+'-int-'+interp_method+'_dtr'+detrended+'.pdf'
 
                             get_map_lowfreq_var(lower_prob_hr.values,xx_hr,yy_hr,[],0.33,1,300,'Probability of the lower tercile from Medcof',savename_lower_hr,halfres_hr,'Blues',8,'Tercile probability',orientation_f='horizontal')
                             get_map_lowfreq_var(center_prob_hr.values,xx_hr,yy_hr,[],0.33,1,300, 'Probability of the center tercile from Medcof ',savename_center_hr,halfres_hr,'Greys',8,'Tercile probability',orientation_f='horizontal')
@@ -453,12 +469,15 @@ def swen_pred2tercile_operational(config: dict, year_init: str, month_init: str)
                 if domain == 'medcof' and medcof2hr in ('Iberia, Canarias'):
                     out_arr_singlevar_hr = out_arr_hr.sel(variable=variable_std[mm][vvv]).drop_vars("variable")
                     out_arr_singlevar_hr.attrs = attrs_from_infile[vvv] # pass all attributes from input file containing the forecast
-                    out_arr_singlevar_hr.attrs['variable'] = variable_std[mm][vvv] #define new attribute "variable" containing the standard variable names defined in variable_std
+                    out_arr_singlevar_hr.attrs['variable'] = variable_std[mm][vvv]+'-int-'+interp_method #define new attribute "variable" containing the standard variable names defined in variable_std
+                    out_arr_singlevar_hr.attrs['method'] = 'interpolated from medcof grid with xarray.interp(method='+interp_method+')'
+
                     # out_arr_singlevar.attrs['info'] = 'global attributes are from the input file containing '+variable_std[mm][vvv]
 
                     encoding = dict(probability=dict(chunksizes=(1, 1, 1, 1, 1, len(out_arr_hr[lat_name_out]), len(out_arr_hr[lon_name_out])))) #https://docs.xarray.dev/en/stable/user-guide/io.html#writing-encoded-data
                     # savename_out_arr_singlevar_hr = dir_forecast+'/'+domain+'2'+medcof2hr+'/probability_'+agg_label[ag]+'_'+models[mm]+version[mm]+'_'+variable_std[mm][vvv]+'_'+domain+'2'+medcof2hr+'_init_'+str(year_init)+str(month_init).zfill(2)+'_dtr_'+detrended+'_refyears_'+str(years_quantile[mm][0])+'_'+str(years_quantile[mm][1])+'_'+quantile_version+'.nc'
-                    savename_out_arr_singlevar_hr = dir_forecast+'/'+medcof2hr+'/probability_ex_medcof_'+agg_label[ag]+'_'+models[mm]+version[mm]+'_'+variable_std[mm][vvv]+'_'+medcof2hr+'_init_'+str(year_init)+str(month_init).zfill(2)+'_dtr_'+detrended+'_refyears_'+str(years_quantile[mm][0])+'_'+str(years_quantile[mm][1])+'_'+quantile_version+'.nc'
+                    # savename_out_arr_singlevar_hr = dir_forecast+'/'+medcof2hr+'/probability_ex_medcof_'+agg_label[ag]+'_'+models[mm]+version[mm]+'_'+variable_std[mm][vvv]+'_'+medcof2hr+'_init_'+str(year_init)+str(month_init).zfill(2)+'_dtr_'+detrended+'_refyears_'+str(years_quantile[mm][0])+'_'+str(years_quantile[mm][1])+'_'+quantile_version+'.nc'
+                    savename_out_arr_singlevar_hr = dir_forecast+'/'+medcof2hr+'/probability_'+agg_label[ag]+'_'+models[mm]+version[mm]+'_'+variable_std[mm][vvv]+'-int-'+interp_method+'_'+medcof2hr+'_init_'+str(year_init)+str(month_init).zfill(2)+'_dtr_'+detrended+'_refyears_'+str(years_quantile[mm][0])+'_'+str(years_quantile[mm][1])+'_'+quantile_version+'.nc'
                     out_arr_singlevar_hr.to_netcdf(savename_out_arr_singlevar_hr,encoding=encoding)
                     out_arr_singlevar_hr.close()
                     del(out_arr_singlevar_hr)
@@ -475,5 +494,10 @@ def swen_pred2tercile_operational(config: dict, year_init: str, month_init: str)
 
             nc_quantile.close()
             del(nc_quantile)
-
-        print('INFO: pred2tercile_operational.py has been run successfully ! The netcdf output file containing the tercile probability forecasts has been stored at '+dir_forecast+'/'+domain)
+    
+    #close conditional xarray objects
+    if domain == 'medcof' and medcof2hr in ('Iberia','Canarias'):
+        nc_hr.close()
+        del(nc_hr)
+    
+    print('INFO: pred2tercile_operational.py has been run successfully ! The netcdf output file containing the tercile probability forecasts has been stored at '+dir_forecast+'/'+domain)
