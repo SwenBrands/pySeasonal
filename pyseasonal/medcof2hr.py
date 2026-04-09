@@ -50,6 +50,7 @@ in_params = config['input_parameters']
 vers = in_params['vers']
 models = in_params['models']
 obs = in_params['obs']
+variable_out_label = in_params['variable_out_label']
 domain = in_params['domain']
 precision = in_params['precision']
 compression_level = in_params['compression_level']
@@ -89,8 +90,8 @@ lead = [] #init list containing the lead-time configuration for each model and a
 for mm in np.arange(len(models)):
     years_mod_step = config['model_settings'][models[mm]]['years_mod']
     years_obs_step = config['model_settings'][models[mm]]['years_obs']
-    variables_obs_step = config['model_settings'][models[mm]]['variables_obs']
-    variables_mod_step = config['model_settings'][models[mm]]['variables_mod']
+    variables_obs_step = config['model_settings'][models[mm]]['variables_obs'] #standardized variables names created by aggregate_obs.py
+    variables_mod_step = config['model_settings'][models[mm]]['variables_mod'] #standardized variables names created by aggregate_hindcast.py
     years_mod.append(years_mod_step)
     years_obs.append(years_obs_step)
     variables_mod.append(variables_mod_step)
@@ -107,6 +108,8 @@ print('------------------------------------------------')
 print('THE FOLLOWNG CONFIGURATION HAS BEEN LOADED AND WILL BE PROCESSED:')
 print('vers: '+str(vers))
 print('models: '+str(models))
+print('obs: '+str(obs))
+print('variable_out_label: '+str(variable_out_label))
 print('target_domain: ' +str(target_domain))
 print('interp_method: ' +str(interp_method))
 print('models: '+str(models))
@@ -147,10 +150,14 @@ for ag in np.arange(len(agg_labels)):
     #create output final output directory if it does not exist.
     dir_netcdf_scores = dir_netcdf+'/scores/'+domain+'/'+agg_labels[ag]
     dir_netcdf_tercilprobs = dir_netcdf+'/tercile_probabilities/'+domain+'/'+agg_labels[ag]
+    dir_netcdf_skillmasks = dir_netcdf+'/skill_masks/'+target_domain+'/'+agg_labels[ag] #set path to the directory containing the validation results
+
     if os.path.isdir(dir_netcdf_scores) != True:
         os.makedirs(dir_netcdf_scores)
     if os.path.isdir(dir_netcdf_tercilprobs) != True:
         os.makedirs(dir_netcdf_tercilprobs)
+    if os.path.isdir(dir_netcdf_skillmasks) != True:
+        os.makedirs(dir_netcdf_skillmasks)
 
     for mm in np.arange(len(models)):
         #create a numpy array containing all lead-months for models[mm]
@@ -176,27 +183,42 @@ for ag in np.arange(len(agg_labels)):
 
             #and interpolate them to the high resolution grid defined in <target_domain>
             nc_mod_hr = nc_mod.interp(y=nc_hr.y, x=nc_hr.x, method=interp_method).astype(precision).clip(min=0, max=1)
-            nc_obs_hr = nc_obs.interp(y=nc_hr.y, x=nc_hr.x, method=interp_method)
+            nc_obs_hr = nc_obs.interp(y=nc_hr.y, x=nc_hr.x, method=interp_method).astype(precision)
             
             # tranform continuous observed probabilities obtained from interpolation into binary values
             # nc_obs_hr = (nc_obs_hr >= 0.5).astype(precision)
-            nc_obs_hr = (nc_obs_hr >= 0.5)
-            
-            # #apply land-sea masks to the just interpolated high resolution files
-            # nc_obs_hr = apply_sea_mask(nc_obs_hr,mask_file,'y','x')
-            # nc_mod_hr = apply_sea_mask(nc_mod_hr,mask_file,'y','x')
+            nc_obs_hr = (nc_obs_hr >= 0.5).astype(precision)
 
+            #clean
+            nc_mod.close(); nc_obs.close()
+            del(nc_mod,nc_obs)
+            
+            #apply land-sea masks to the just interpolated high resolution files
+            nc_obs_hr = apply_sea_mask(nc_obs_hr,mask_file,'y','x')
+            nc_mod_hr = apply_sea_mask(nc_mod_hr,mask_file,'y','x')
+            
+            #add attributes the the high resolution files
+            nc_mod_hr.attrs['variable'] = variables_mod[mm][vv]+'-'+variable_out_label
+            nc_obs_hr.attrs['variable'] = variables_obs[mm][vv]+'-'+variable_out_label
             nc_mod_hr.attrs['domain'] = target_domain+' interpolated from '+domain
             nc_obs_hr.attrs['domain'] = target_domain+' interpolated from '+domain
             nc_mod_hr.attrs['interpolation_method'] = interp_method
             nc_obs_hr.attrs['interpolation_method'] = interp_method
 
-            #calculate ROC-AUC skill score
+            #save interpolated hr files to netcdf format
+            # for the model
+            savename_nc_mod_hr = dir_netcdf_tercilprobs+'/tercile_prob_pticlima_'+agg_labels[ag]+'_'+models[mm]+'_'+variables_mod[mm][vv]+'-'+variable_out_label+'_'+target_domain+'_'+str(years_obs[mm][0])+'_'+str(years_obs[-1])+'_'+vers+'.nc'
+            encoding = {'upper_tercile_probability': {'zlib': True, 'complevel': compression_level}, 'center_tercile_probability': {'zlib': True, 'complevel': compression_level}, 'lower_tercile_probability': {'zlib': True, 'complevel': compression_level}}
+            nc_mod_hr.to_netcdf(savename_nc_mod_hr,encoding=encoding)
+            # of the observations
+            savename_nc_obs_hr = dir_netcdf_tercilprobs+'/tercile_bin_pticlima_'+agg_labels[ag]+'_'+obs+'_'+variables_obs[mm][vv]+'-'+variable_out_label+'_'+target_domain+'_'+str(years_obs[mm][0])+'_'+str(years_obs[-1])+'_'+vers+'.nc'
+            encoding = {'upper_tercile_binary': {'zlib': True, 'complevel': compression_level}, 'center_tercile_binary': {'zlib': True, 'complevel': compression_level}, 'lower_tercile_binary': {'zlib': True, 'complevel': compression_level}}
+            nc_obs_hr.to_netcdf(savename_nc_obs_hr,encoding=encoding)
             
             #create empty numpy array to be filled with ROC-AUC skill score values (dims = subperiod, detrended, variable, season, lead, y, x)
-
             if vv == 0:
-                roc_lower_np = np.zeros((len(modulators),len(detrending),len(variables_mod[mm]),len(nc_mod_hr.season),len(nc_mod_hr.lead),len(nc_hr.y),len(nc_hr.x)))
+                # roc_lower_np = np.zeros((len(modulators),len(detrending),len(variables_mod[mm]),len(nc_mod_hr.season),len(nc_mod_hr.lead),len(nc_hr.y),len(nc_hr.x)))
+                roc_lower_np = np.zeros((len(modulators),len(detrending),len(nc_mod_hr.season),len(nc_mod_hr.lead),len(nc_hr.y),len(nc_hr.x)))
                 roc_center_np = np.copy(roc_lower_np)
                 roc_upper_np = np.copy(roc_lower_np)           
 
@@ -232,70 +254,86 @@ for ag in np.arange(len(agg_labels)):
                     start_time_roc = time.time()
 
                     #ROC-AUC
-                    roc_lower_np[mo,:,vv,:,ll,:,:] = xs.roc(nc_obs_hr.lower_tercile_binary.isel(time=phase_ind).sel(lead=lead_label[ll]), nc_mod_hr.lower_tercile_probability.isel(time=phase_ind).sel(lead=lead_label[ll]), bin_edges=prob_thresholds, dim='time', drop_intermediate=False, return_results='area').values
-                    roc_center_np[mo,:,vv,:,ll,:,:] = xs.roc(nc_obs_hr.center_tercile_binary.isel(time=phase_ind).sel(lead=lead_label[ll]), nc_mod_hr.center_tercile_probability.isel(time=phase_ind).sel(lead=lead_label[ll]), bin_edges=prob_thresholds, dim='time', drop_intermediate=False, return_results='area').values
-                    roc_upper_np[mo,:,vv,:,ll,:,:] = xs.roc(nc_obs_hr.upper_tercile_binary.isel(time=phase_ind).sel(lead=lead_label[ll]), nc_mod_hr.upper_tercile_probability.isel(time=phase_ind).sel(lead=lead_label[ll]), bin_edges=prob_thresholds, dim='time', drop_intermediate=False, return_results='area').values
+                    roc_lower_np[mo,:,:,ll,:,:] = xs.roc(nc_obs_hr.lower_tercile_binary.isel(time=phase_ind).sel(lead=lead_label[ll]), nc_mod_hr.lower_tercile_probability.isel(time=phase_ind).sel(lead=lead_label[ll]), bin_edges=prob_thresholds, dim='time', drop_intermediate=False, return_results='area').values
+                    roc_center_np[mo,:,:,ll,:,:] = xs.roc(nc_obs_hr.center_tercile_binary.isel(time=phase_ind).sel(lead=lead_label[ll]), nc_mod_hr.center_tercile_probability.isel(time=phase_ind).sel(lead=lead_label[ll]), bin_edges=prob_thresholds, dim='time', drop_intermediate=False, return_results='area').values
+                    roc_upper_np[mo,:,:,ll,:,:] = xs.roc(nc_obs_hr.upper_tercile_binary.isel(time=phase_ind).sel(lead=lead_label[ll]), nc_mod_hr.upper_tercile_probability.isel(time=phase_ind).sel(lead=lead_label[ll]), bin_edges=prob_thresholds, dim='time', drop_intermediate=False, return_results='area').values
 
-                    # roc_lower_step = xs.roc(nc_obs_hr.lower_tercile_binary.isel(time=phase_ind), nc_mod_hr.lower_tercile_probability.isel(time=phase_ind), bin_edges=prob_thresholds, dim='time', drop_intermediate=False, return_results='area')
-                    # roc_center_step = xs.roc(nc_obs_hr.center_tercile_binary.isel(time=phase_ind), nc_mod_hr.center_tercile_probability.isel(time=phase_ind), bin_edges=prob_thresholds, dim='time', drop_intermediate=False, return_results='area')
-                    # roc_upper_step = xs.roc(nc_obs_hr.upper_tercile_binary.isel(time=phase_ind), nc_mod_hr.upper_tercile_probability.isel(time=phase_ind), bin_edges=prob_thresholds, dim='time', drop_intermediate=False, return_results='area')
-
-                    # #fill numpy arrays
-                    # roc_lower_np[mo,:,vv,:,:,:,:] = roc_lower_step.values
-                    # roc_center_np[mo,:,vv,:,:,:,:] = roc_center_step.values
-                    # roc_upper_np[mo,:,vv,:,:,:,:] = roc_upper_step.values
-
-                    # roc_lower_step.close()
-                    # roc_center_step.close()
-                    # roc_upper_step.close()
-                    
-                    # del(roc_lower_step,roc_center_step,roc_upper_step,phase_ind)
                     del(phase_ind)
 
                     end_time_roc = time.time()
                     elapsed_time_roc = (end_time_roc - start_time_roc)/60
                     print('The execution time for caclulating the ROC-AUC for the 3 terciles was: '+str(elapsed_time_roc)+' minutes')
-        #calculate ROC AUC
-        roc_lower = xr.DataArray(roc_lower_np, coords=[subperiods,nc_mod_hr.detrended,variables_mod[mm],nc_mod_hr.season,nc_mod_hr.lead,nc_mod_hr.y,nc_mod_hr.x], dims=['subperiod','detrended','variable','season','lead','y','x'], name='roc_auc_lower_tercile').astype(precision)
-        roc_center = xr.DataArray(roc_center_np, coords=[subperiods,nc_mod_hr.detrended,variables_mod[mm],nc_mod_hr.season,nc_mod_hr.lead,nc_mod_hr.y,nc_mod_hr.x], dims=['subperiod','detrended','variable','season','lead','y','x'], name='roc_auc_center_tercile').astype(precision)
-        roc_upper = xr.DataArray(roc_upper_np, coords=[subperiods,nc_mod_hr.detrended,variables_mod[mm],nc_mod_hr.season,nc_mod_hr.lead,nc_mod_hr.y,nc_mod_hr.x], dims=['subperiod','detrended','variable','season','lead','y','x'], name='roc_auc_upper_tercile').astype(precision)
         
-        #merge the roc of the 3 tericles into a single file
-        roc = xr.merge((roc_lower,roc_center,roc_upper)).astype(precision)
-        #transform into ROC-AUC skill score; see https://doi.org/10.1007/s00382-019-04640-4
-        roc_ss = (roc - 0.5) / 0.5
-        roc_ss = roc_ss.rename({'roc_auc_lower_tercile' : 'roc_auc_lower_tercile_skillscore_continuous', 'roc_auc_center_tercile' : 'roc_auc_center_tercile_skillscore_continuous', 'roc_auc_upper_tercile' : 'roc_auc_upper_tercile_skillscore_continuous'})
-        #transform to binary mask based on ROC-AUC skill score
-        roc_ss_bin = (roc_ss > 0).astype(int)
-        roc_ss_bin = roc_ss_bin.rename({'roc_auc_lower_tercile_skillscore_continuous' : 'roc_auc_lower_tercile_skillscore_binary', 'roc_auc_center_tercile_skillscore_continuous' : 'roc_auc_center_tercile_skillscore_binary', 'roc_auc_upper_tercile_skillscore_continuous' : 'roc_auc_upper_tercile_skillscore_binary'})
-        
-        #load previously stored skill masks for the other scores for this model and aggregation window
-        ds_mask_plus_cont = xr.merge((roc_ss,roc_ss_bin))
+            #calculate ROC AUC
+            roc_lower = xr.DataArray(roc_lower_np, coords=[subperiods,nc_mod_hr.detrended,nc_mod_hr.season,nc_mod_hr.lead,nc_mod_hr.y,nc_mod_hr.x], dims=['subperiod','detrended','season','lead','y','x'], name='roc_auc_lower_tercile').astype(precision)
+            roc_center = xr.DataArray(roc_center_np, coords=[subperiods,nc_mod_hr.detrended,nc_mod_hr.season,nc_mod_hr.lead,nc_mod_hr.y,nc_mod_hr.x], dims=['subperiod','detrended','season','lead','y','x'], name='roc_auc_center_tercile').astype(precision)
+            roc_upper = xr.DataArray(roc_upper_np, coords=[subperiods,nc_mod_hr.detrended,nc_mod_hr.season,nc_mod_hr.lead,nc_mod_hr.y,nc_mod_hr.x], dims=['subperiod','detrended','season','lead','y','x'], name='roc_auc_upper_tercile').astype(precision)
+            
+            #merge the roc of the 3 tericles into a single file
+            roc = xr.merge((roc_lower,roc_center,roc_upper)).astype(precision)
 
-        #apply land-sea mask
-        ds_mask_plus_cont = apply_sea_mask(ds_mask_plus_cont,mask_file,'y','x')
-        
-        # add global attributes
-        ds_mask_plus_cont.attrs['version'] = vers
-        ds_mask_plus_cont.attrs['model'] = models[mm]
-        ds_mask_plus_cont.attrs['accumulation_period'] = agg_labels[ag]
-        ds_mask_plus_cont.attrs['validation_period'] = str(years_mod[mm]).replace('[','').replace(']','').replace(', ',' to ')+', grouped by subperiods as indicated by the <subperiod> coordinate'
-        ds_mask_plus_cont.attrs['author'] = "Swen Brands (Instituto de Fisica de Cantabria, CSIC-UC), email: brandssf@ifca.unican.es"
-        ds_mask_plus_cont.attrs['nan_criterion'] = 'A nan is set at a given grid-box if it is returned by xskillscore, e.g. due to a division by zero. It has been confirmed that this occcurs, e.g., if it does not rain at all either in the modelled or quasi-observed time-series. Grid boxes over the sea are also set to nan.'
+            #clean
+            nc_mod_hr.close(), nc_obs_hr.close(), roc_lower.close(); roc_center.close(); roc_upper.close()
+            del(nc_mod_hr, nc_obs_hr, roc_lower, roc_center, roc_upper)
 
-        # add dimension and variable attributes
-        ds_mask_plus_cont['subperiod'].attrs['info'] = 'Verification subperiod: <none> for no subperiod, <enso0init> for neutral ENSO events, <enso1init> for warm / El Niño events and <enso2init> for cold / La Niña events. Condition is valid on the month the model is initialized and becomes available, which is indicated by the <init> suffix.'
-        ds_mask_plus_cont['detrended'].attrs['info'] = 'Linear de-trending was applied to the modelled and (quasi)observed time series prior to validation; yes or no'
-        ds_mask_plus_cont['variable'].attrs['info'] = 'Meteorological variable acronym according to ERA5 nomenclature followed by Copernicus Climate Data Store (CDS)'
-        ds_mask_plus_cont['season'].attrs['info'] = 'Season the forecast is valid for'
-        ds_mask_plus_cont['lead'].attrs['info'] = 'Leadtime of the forecast; one per month'
-        ds_mask_plus_cont['y'].attrs['name'] = 'latitude'
-        ds_mask_plus_cont['y'].attrs['standard_name'] = 'latitude'
-        ds_mask_plus_cont['x'].attrs['name'] = 'longitude'
-        ds_mask_plus_cont['x'].attrs['standard_name'] = 'longitude'
-        
-        breakpoint()
+            #transform into ROC-AUC skill score; see https://doi.org/10.1007/s00382-019-04640-4
+            roc_ss = (roc - 0.5) / 0.5
+            roc_ss = roc_ss.rename({'roc_auc_lower_tercile' : 'roc_auc_lower_tercile_skillscore_continuous', 'roc_auc_center_tercile' : 'roc_auc_center_tercile_skillscore_continuous', 'roc_auc_upper_tercile' : 'roc_auc_upper_tercile_skillscore_continuous'})
+            #transform to binary mask based on ROC-AUC skill score
+            roc_ss_bin = (roc_ss > 0).astype(int)
+            roc_ss_bin = roc_ss_bin.rename({'roc_auc_lower_tercile_skillscore_continuous' : 'roc_auc_lower_tercile_skillscore_binary', 'roc_auc_center_tercile_skillscore_continuous' : 'roc_auc_center_tercile_skillscore_binary', 'roc_auc_upper_tercile_skillscore_continuous' : 'roc_auc_upper_tercile_skillscore_binary'})
+            
+            #load previously stored skill masks for the other scores for this model and aggregation window
+            ds_mask_plus_cont = xr.merge((roc_ss,roc_ss_bin)).astype(precision)
 
+            #clean
+            roc_ss.close(), roc_ss_bin.close()
+            del(roc_ss, roc_ss_bin)
+
+            #apply land-sea mask
+            ds_mask_plus_cont = apply_sea_mask(ds_mask_plus_cont,mask_file,'y','x').astype(precision)
+            
+            # add global attributes
+            ds_mask_plus_cont.attrs['version'] = vers
+            ds_mask_plus_cont.attrs['domain'] = target_domain
+            ds_mask_plus_cont.attrs['mother_domain'] = domain
+            ds_mask_plus_cont.attrs['interpolation_method'] = interp_method
+            ds_mask_plus_cont.attrs['variable_mod'] = variables_mod[mm][vv]
+            ds_mask_plus_cont.attrs['variable_obs'] = variables_obs[mm][vv]
+            ds_mask_plus_cont.attrs['variable'] = variables_obs[mm][vv]+'-'+variable_out_label
+            ds_mask_plus_cont.attrs['model'] = models[mm]
+            ds_mask_plus_cont.attrs['accumulation_period'] = agg_labels[ag]
+            ds_mask_plus_cont.attrs['AUC_probability_thresholds'] = str(prob_thresholds)
+            ds_mask_plus_cont.attrs['nan_criterion'] = 'A nan is set at a given grid-box if it is returned by xskillscore, e.g. due to a division by zero. It has been confirmed that this occcurs, e.g., if it does not rain at all either in the modelled or quasi-observed time-series. Grid boxes over the sea are also set to nan.'
+            ds_mask_plus_cont.attrs['nan_over_sea'] = 'yes'
+            ds_mask_plus_cont.attrs['validation_period'] = str(years_mod[mm]).replace('[','').replace(']','').replace(', ',' to ')+', grouped by subperiods as indicated by the <subperiod> coordinate'
+            ds_mask_plus_cont.attrs['author'] = "Swen Brands (Instituto de Fisica de Cantabria, CSIC-UC), email: brandssf@ifca.unican.es"
+           
+
+            # add dimension and variable attributes
+            ds_mask_plus_cont['subperiod'].attrs['info'] = 'Verification subperiod: <none> for no subperiod, <enso0init> for neutral ENSO events, <enso1init> for warm / El Niño events and <enso2init> for cold / La Niña events. Condition is valid on the month the model is initialized and becomes available, which is indicated by the <init> suffix.'
+            ds_mask_plus_cont['detrended'].attrs['info'] = 'Linear de-trending was applied to the modelled and (quasi)observed time series prior to validation; yes or no'
+            # ds_mask_plus_cont['variable'].attrs['info'] = 'Meteorological variable acronym according to ERA5 nomenclature followed by Copernicus Climate Data Store (CDS)'
+            ds_mask_plus_cont['season'].attrs['info'] = 'Season the forecast is valid for'
+            ds_mask_plus_cont['lead'].attrs['info'] = 'Leadtime of the forecast; one per month'
+            ds_mask_plus_cont['y'].attrs['name'] = 'latitude'
+            ds_mask_plus_cont['y'].attrs['standard_name'] = 'latitude'
+            ds_mask_plus_cont['x'].attrs['name'] = 'longitude'
+            ds_mask_plus_cont['x'].attrs['standard_name'] = 'longitude'
+
+            #save the binary mask xarray dataset and close
+            savename_netcdf = dir_netcdf_skillmasks+'/skill_masks_pticlima_'+target_domain+'_'+agg_labels[ag]+'_'+models[mm]+'_'+variables_mod[mm][vv]+'-'+variable_out_label+'_'+vers+'.nc'
+            #define and apply chunks
+            chunks = {"subperiod": len(ds_mask_plus_cont.subperiod),"detrended": len(ds_mask_plus_cont.detrended), "season" : 1, "lead" : 1 ,"y": round(len(ds_mask_plus_cont.y)/2),"x": round(len(ds_mask_plus_cont.x)/2)}
+            ds_mask_plus_cont.chunk(chunks)
+            #compress with zlib and shuffle=True
+            encoding = {var: {"zlib": True,"complevel": 5,"shuffle": True,"dtype": "float32"} for var in ds_mask_plus_cont.data_vars}
+            ds_mask_plus_cont.to_netcdf(savename_netcdf, engine = 'netcdf4', encoding = encoding)
+
+            #clean
+            ds_mask_plus_cont.close()
+            del(ds_mask_plus_cont)
+            
 print('INFO: medcof2hr.py has been run successfully. A flag is written at '+FLAGDIR)
 flagfile = FLAGDIR+'/medcof2hr_'+str(vers)+'_'+domain+'_'+str(models)+'_model_'+str(variables_mod)+'_'+str(agg_labels)+'_'+str(modulators)+'_'+str(phases)+'.flag'
 flagfile = flagfile.replace("[","").replace("]","").replace("'","").replace(",","_")
