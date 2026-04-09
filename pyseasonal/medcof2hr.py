@@ -60,31 +60,32 @@ masked_variables_std = in_params['masked_variables_std'] #is currently only appl
 filename_telcon = in_params['filename_telcon'] #name of the file located in <dir_telcon>
 modulators = in_params['modulators']
 phases = in_params['phases']
+modulator_ref = in_params['modulator_ref']
+min_nr_events = in_params['min_nr_events']
 interp_method = in_params['interp_method']
 nr_prob_thesholds = in_params['nr_prob_thresholds']
 
 prob_thresholds = np.linspace(0, 1, nr_prob_thesholds) #threshold probability values used to calculated ROC AUC
 
-# grid_name = in_params['grid_name']
-# int_method = in_params['int_method']
-# precip_threshold = in_params['precip_threshold']
-# corr_outlier = in_params['corr_outlier']
-# quantiles = in_params['quantiles']
-# years_obs = in_params['years_obs']
-# modulator_ref = in_params['modulator_ref']
-# min_nr_events = in_params['min_nr_events']
-# years_quantile = in_params['years_quantile']
-# nr_pseudo_mem = in_params['nr_pseudo_mem']
-# testlevel = in_params['testlevel']
-# skillscore_reference = in_params['skillscore_reference']
-
 ## EXECUTE #############################################################
+
+#construct <subperiod> dimension used to save validation results
+subperiods = []
+for sp in np.arange(len(modulators)):
+    if modulators[sp] == 'enso':
+        subperiod_step = modulators[sp]+phases[sp]+modulator_ref
+    elif modulators[sp] == 'none':
+        subperiod_step = 'none'
+    else:
+        raise ValueError('Unexpected entry for modulators[sp] !')
+    subperiods.append(subperiod_step)
 
 #load the model-specific configuration previously set in the config/config_for_get_skill_season.py file
 years_mod = [] #init list containing the start and end years of period to be evaluated for each model (may contain the combined hindcasts and forecasts); this list contains as many sub-lists as there are models to be validated
 years_obs = []
 variables_mod = []
 variables_obs = []
+lead = [] #init list containing the lead-time configuration for each model and aggregation window
 for mm in np.arange(len(models)):
     years_mod_step = config['model_settings'][models[mm]]['years_mod']
     years_obs_step = config['model_settings'][models[mm]]['years_obs']
@@ -95,17 +96,25 @@ for mm in np.arange(len(models)):
     variables_mod.append(variables_mod_step)
     variables_obs.append(variables_obs_step)
 
+    leads_per_model = [] #init lead-times per model
+    for ag in np.arange(len(agg_labels)):
+        lead_step = config['model_settings'][models[mm]]['lead_'+agg_labels[ag]]
+        leads_per_model.append(lead_step)
+    lead.append(leads_per_model)
+
 #print the variables built from the configuration files
 print('------------------------------------------------')
 print('THE FOLLOWNG CONFIGURATION HAS BEEN LOADED AND WILL BE PROCESSED:')
-print('pySeasonal version: '+str(vers))
+print('vers: '+str(vers))
+print('models: '+str(models))
 print('target_domain: ' +str(target_domain))
 print('interp_method: ' +str(interp_method))
 print('models: '+str(models))
 print('agg_labels: '+str(agg_labels))
 print('modulators: '+str(modulators))
 print('phases: '+str(phases))
-print('models: '+str(models))
+print('modulator_ref: '+str(modulator_ref))
+print('min_nr_events: '+str(min_nr_events))
 print('years_mod: '+str(years_mod))
 print('years_obs: '+str(years_obs))
 print('variables_mod: '+str(variables_mod))
@@ -144,6 +153,11 @@ for ag in np.arange(len(agg_labels)):
         os.makedirs(dir_netcdf_tercilprobs)
 
     for mm in np.arange(len(models)):
+        #create a numpy array containing all lead-months for models[mm]
+        lead_arr = np.arange(np.array(lead[mm][ag]).min(),np.array(lead[mm][ag]).max()+1)
+        #get label describing the considered lead-time
+        lead_label = [str(lead[mm][ag][ll]).replace(',','').replace('[','').replace(']','').replace(' ','') for ll in np.arange(len(lead[mm][ag]))]
+
         for vv in np.arange(len(variables_mod[mm])):
             path_mod = dir_netcdf_tercilprobs+'/tercile_prob_pticlima_'+agg_labels[ag]+'_'+models[mm]+'_'+variables_mod[mm][vv]+'_'+domain+'_'+str(years_mod[mm][0])+'_'+str(years_mod[mm][-1])+'_'+vers+'.nc'
             path_obs = dir_netcdf_tercilprobs+'/tercile_bin_pticlima_'+agg_labels[ag]+'_'+obs+'_'+variables_obs[mm][vv]+'_'+domain+'_'+str(years_obs[mm][0])+'_'+str(years_obs[mm][-1])+'_'+vers+'.nc'
@@ -153,6 +167,12 @@ for ag in np.arange(len(agg_labels)):
             # nc_obs = xr.open_dataset(path_obs) #the first two dimensions are singleton and squeezed
             nc_mod = xr.open_dataset(path_mod).squeeze().drop_vars(['model','aggregation']) #the first two dimensions are singleton and squeezed
             nc_obs = xr.open_dataset(path_obs).squeeze().drop_vars(['obs','aggregation']) #the first two dimensions are singleton and squeezed
+
+            #check whether model data and observations have the same time instances
+            if np.all(nc_mod.time == nc_obs.time):
+                print('Model data and observations have the same time instances ! Proceed with interpolation and verification....')
+            else:
+                raise ValueError('Model data and observations do not have the same time instances ! Check <nc_mod> and <nc_obs> !')
 
             #and interpolate them to the high resolution grid defined in <target_domain>
             nc_mod_hr = nc_mod.interp(y=nc_hr.y, x=nc_hr.x, method=interp_method).astype(precision).clip(min=0, max=1)
@@ -171,443 +191,16 @@ for ag in np.arange(len(agg_labels)):
             nc_mod_hr.attrs['interpolation_method'] = interp_method
             nc_obs_hr.attrs['interpolation_method'] = interp_method
 
-            #calculate ROC-AUC
-            for mo in np.arange(len(modulators)):
-                start_time_roc = time.time()
-                roc_upper = xs.roc(nc_obs_hr.upper_tercile_binary, nc_mod_hr.upper_tercile_probability, bin_edges=prob_thresholds, dim='time', drop_intermediate=False, return_results='area')
-                roc_center = xs.roc(nc_obs_hr.center_tercile_binary, nc_mod_hr.center_tercile_probability, bin_edges=prob_thresholds, dim='time', drop_intermediate=False, return_results='area')
-                roc_lower = xs.roc(nc_obs_hr.lower_tercile_binary, nc_mod_hr.lower_tercile_probability, bin_edges=prob_thresholds, dim='time', drop_intermediate=False, return_results='area')
-                end_time_roc = time.time()
-                elapsed_time_roc = (end_time_roc - start_time_roc)/60
-                print('The execution time for caclulating the ROC-AUC for the 3 terciles was: '+str(elapsed_time_roc)+' minutes')
-                breakpoint()
-
-            #create a numpy array containing all lead-months for models[mm]
-            lead_arr = np.arange(np.array(lead[mm][ag]).min(),np.array(lead[mm][ag]).max()+1)
-            #get label describing the considered lead-time
-            lead_label = [str(lead[mm][ag][ll]).replace(',','').replace('[','').replace(']','').replace(' ','') for ll in np.arange(len(lead[mm][ag]))]
-            #get numpy array for the years considered for quantile calculation
-            years_quantile_vec = np.arange(years_quantile[0],years_quantile[1]+1,1)
-
-            if models[mm] == 'ecmwf51' and lead_arr[-1] > 6: #if leadtime > 6 for ecmwf51, the return an error because the 7th forecast month is composed of a few days only in this gcm
-                raise ValueError('The maximum lead requested for '+models[mm]+' ('+str(lead_arr[-1])+') is not valid ! Please check the entries of the input parameter <lead>.')
-            elif models[mm] == 'cmcc35' and lead_arr[-1] > 5:
-                raise ValueError('The maximum lead requested for '+models[mm]+' ('+str(lead_arr[-1])+') is not valid ! Please check the entries of the input parameter <lead>.')
-            else:
-                print('Maximum lead-month = '+str(lead_arr[-1])+' for '+models[mm]+' has been set correctly. Proceed to verification....')
-
+            #calculate ROC-AUC skill score
             
-            nc_gcm = xr.open_dataset(path_gcm, decode_timedelta=False).astype(precision)
-            # nc_gcm = xr.open_dataset(path_gcm, chunks = {'member' : 1}, decode_timedelta=False).astype(precision)
-            nc_gcm[variables_gcm[vv]] = nc_gcm[variables_gcm[vv]].astype(precision)
-            #leads = np.arange(lead[mm][ag])
-            members = nc_gcm.member.values
-            nc_gcm = nc_gcm.isel(lead=lead_arr) #filter out the necessary leads only
+            #create empty numpy array to be filled with ROC-AUC skill score values (dims = subperiod, detrended, variable, season, lead, y, x)
 
-            #optionally apply land-sea mask for model values
-            if variables_gcm[vv] in masked_variables_std: # <masked_variables_std> is defined in ./config/config_for_get_skill_season.py
-                print('Upon user request set in '+configuration_file+', values above the Sea are set to NAN for the model variable: '+variables_gcm[vv]+' !')
-                #get mask label as a function of the requested sub-domain
-                if grid_name == 'ecmwf51' and domain in ('medcof','medcof2'):
-                    mask_file_indir = 'ECMWF_Land_Medcof_descending_lat_reformatted.nc' # mask file as it appears in its directory
-                elif grid_name == 'ecmwf51' and domain == 'iberia':
-                    mask_file_indir = 'ECMWF_Land_Iberia.nc'
-                elif grid_name in ('PTI-grid-v2','PTI-grid-v4') and domain == 'Iberia':
-                    mask_file_indir = 'PTI-grid_Iberia_010_descending_lat_reformatted.nc'
-                elif grid_name in ('PTI-grid-v2','PTI-grid-v4') and domain == 'Canarias':
-                    mask_file_indir = 'PTI-grid_Canarias_descending_lat_reformatted.nc'
-                else:
-                    raise ValueError('Check entry for <grid_name> and/or <domain> input variables !')
+            if vv == 0:
+                roc_lower_np = np.zeros((len(modulators),len(detrending),len(variables_mod[mm]),len(nc_mod_hr.season),len(nc_mod_hr.lead),len(nc_hr.y),len(nc_hr.x)))
+                roc_center_np = np.copy(roc_lower_np)
+                roc_upper_np = np.copy(roc_lower_np)           
 
-                # mask_file = mask_dir+'/ECMWF_Land_'+masklabel+'_ascending_lat.nc' # <mask_dir> is defined in ./config/config_for_get_skill_season.py
-                mask_file = mask_dir+'/'+mask_file_indir #here, descending lats are needed (check why the DataArrays behave distinct concerning ascending or descending lats in pySeasonal)
-
-                #apply the mask on the model probabilities of each tercile
-                nc_gcm = apply_sea_mask(nc_gcm,mask_file,'y','x')
-            else:
-                print('Upon user request set in ./config/config_for_get_skill_season_'+domain+'.py, the modelled values above the Sea are RETAINED for '+variables_gcm[vv]+' ! ')
-
-            #set modelled precip. < precip_threshold to nan; note that slightly negative values are present in the monthly precipiation accumulations of ECMWF51
-            if variables_gcm[vv] == 'tp':
-                print('INFO: setting '+variables_gcm[vv]+' values from '+models[mm]+ '< '+str(precip_threshold)+' 0 !')
-                zero_mask = nc_gcm[variables_gcm[vv]].values < precip_threshold
-                nc_gcm[variables_gcm[vv]].values[zero_mask] = 0.
-                #nc_gcm[variables_gcm[vv]].values[zero_mask] = np.nan
-                del(zero_mask)
-
-            leads = nc_gcm.lead.values
-            dates_gcm = pd.DatetimeIndex(nc_gcm.time.values)
-
-            for oo in np.arange(len(obs)):
-                # path_obs = path_obs_base+'/'+obs[oo]+'/'+variables_obs[vv]+'_'+aggreg+'_'+obs[oo]+'_on_'+models[mm]+'_grid_'+int_method+'_'+domain+'_'+str(years_obs[0])+'_'+str(years_obs[-1])+'.nc'
-                path_obs = path_obs_base+'/'+obs[oo]+'/'+variables_obs[vv]+'_'+aggreg+'_'+obs[oo]+'_on_'+grid_name+'_grid_'+int_method+'_'+domain+'_'+str(years_obs[0])+'_'+str(years_obs[-1])+'.nc'
-                nc_obs = xr.open_dataset(path_obs, decode_timedelta=False).astype(precision)
-
-                # optionally apply land-sea mask for observations; note that the
-                if variables_gcm[vv] in masked_variables_std: # <masked_variables_std> is defined in ./config/config_for_get_skill_season.py
-                    print('Upon user request set in '+configuration_file+', values above the Sea are set to NAN for the observed variable '+variables_obs[vv]+', used as reference dataset for validating the model variable '+variables_gcm[vv]+' ! ')
-                    nc_obs = apply_sea_mask(nc_obs,mask_file,'y','x')
-                else:
-                    print('Upon user request set in ./config/config_for_get_skill_season_'+domain+'.py, the observed values above the Sea are RETAINED for '+variables_obs[vv]+' !')
-
-                #set precision for the observed data variable used as reference for validation
-                nc_obs[variables_obs[vv]] = nc_obs[variables_obs[vv]].astype(precision)
-
-                #set observed precip. < precip_threshold to nan
-                if variables_obs[vv] == 'tp':
-                    print('INFO: setting '+variables_obs[vv]+' values from '+obs[oo]+ '< '+str(precip_threshold)+' to 0 !')
-                    zero_mask = nc_obs[variables_obs[vv]].values < precip_threshold
-                    nc_obs[variables_obs[vv]].values[zero_mask] = 0.
-                    #nc_obs[variables_obs[vv]].values[zero_mask] = np.nan
-                    del(zero_mask)
-
-                dates_obs = pd.DatetimeIndex(nc_obs.time.values)
-                dates_bool_obs = dates_obs.isin(dates_gcm)
-                dates_bool_gcm = dates_gcm.isin(dates_obs)
-                dates_obs = dates_obs[dates_bool_obs]
-                dates_gcm = dates_gcm[dates_bool_gcm]
-
-                #select common time period in gcm and obs data
-                nc_obs = nc_obs.isel(time = dates_bool_obs)
-                nc_gcm = nc_gcm.isel(time = dates_bool_gcm)
-                #redefined date vectors for common time period
-                dates_obs = pd.DatetimeIndex(nc_obs.time.values)
-                dates_gcm = pd.DatetimeIndex(nc_gcm.time.values)
-
-                #check whether the observed and model dates are identical; if yes then get common years to label the netcdf output files generated by this script
-                if np.all(dates_gcm.isin(dates_obs)) and np.all(dates_obs.isin(dates_gcm)):
-                    print('INFO: The dates from observations and the model are identical.')
-                    years_common2label = dates_obs.year.values
-                else:
-                    raise ValueError('The dates from observations do not agree whith those obtained from the model !')
-
-                #set observed precip. < precip_threshold to 0
-                if variables_obs[vv] == 'tp':
-                    print('INFO: setting '+variables_obs[vv]+' values from '+obs[oo]+ '< '+str(precip_threshold)+' to 0...')
-                    zero_mask = nc_obs[variables_obs[vv]].values < precip_threshold
-                    nc_obs[variables_obs[vv]].values[zero_mask] = 0.
-
-                #loop through each season
-                for sea in np.arange(len(season[ag])):
-                    #loop through list of monthly lead times
-                    for ll in np.arange(len(lead[mm][ag])):
-                        print('INFO: validating agg. window '+str(agg_labels[ag])+' for '+variables_obs[vv]+' over '+domain+' domain from '+models[mm]+' vs '+obs[oo]+' in '+str(season[ag][sea])+' and lead-time '+str(lead[mm][ag])+' with detrending '+detrending[det])
-
-                        #get dates for the inter-annual time series containing the requested seasons
-                        seasind_obs = np.where(np.isin(dates_obs.month,season[ag][sea]))[0] #get time indices pointing to all months forming the requested season
-                        nc_obs_isea = nc_obs.isel(time = seasind_obs)
-                        dates_isea = pd.DatetimeIndex(nc_obs_isea.time.values)
-                        #retain only one date entry per year to pair with seaonal mean averages calculated below
-                        seasind_obs_for_dates = np.where(dates_isea.month == season[ag][sea][0])[0]
-                        dates_isea = dates_isea[seasind_obs_for_dates]
-
-                        #init numpy array which will be filled with seasonal mean values (time x season x lead x member x lat x lon)
-                        if sea == 0 and ll == 0:
-                            nr_years = len(dates_isea) #length of the year-to-year time vector for a specific season
-                            nr_seas = len(season[ag])
-                            nr_leads = len(lead[mm][ag])
-                            nr_mems =  len(nc_gcm['member'])
-                            nr_lats = len(nc_gcm['y'])
-                            nr_lons = len(nc_gcm['x'])
-                            obs_seas_mn_5d = np.zeros((nr_years,nr_seas,nr_leads,nr_lats,nr_lons),dtype=precision)
-                            obs_seas_mn_5d[:] = np.nan
-                            gcm_seas_mn_6d = np.zeros((nr_years,nr_seas,nr_leads,nr_mems,nr_lats,nr_lons),dtype=precision)
-                            gcm_seas_mn_6d[:] = np.nan
-                            ## these inits are for the non weighted (nw) seasonal mean values which will be calculated alongside the weighted values below for comparison
-                            # obs_seas_mn_5d_nw = np.copy(obs_seas_mn_5d)
-                            # gcm_seas_mn_6d_nw = np.copy(gcm_seas_mn_6d)
-
-                        #init numpy array which will be filled with quantile values (detrending x variables_gcm x quantiles x season x lead x member x lat x lon)
-                        #if det == 0 and vv == 0 and mm == 0 and sea == 0 and ll == 0:
-                        if det == 0 and vv == 0 and sea == 0 and ll == 0:
-                            print('Initializing numpy arrays to be filled with quantiles '+str(quantiles)+'...')
-                            # gcm_quantile_vals = np.zeros((len(detrending),len(variables_gcm),len(models),len(quantiles),nr_seas,nr_leads,nr_mems,nr_lats,nr_lons),dtype=precision)
-                            gcm_quantile_vals = np.zeros((len(detrending),len(variables_gcm),len(quantiles),nr_seas,nr_leads,nr_mems,nr_lats,nr_lons),dtype=precision)
-                            gcm_quantile_vals[:] = np.nan
-                            # quantile_vals_ens = np.zeros((len(detrending),len(variables_gcm),len(models),len(quantiles),nr_seas,nr_leads,nr_lats,nr_lons),dtype=precision)
-                            quantile_vals_ens = np.zeros((len(detrending),len(variables_gcm),len(quantiles),nr_seas,nr_leads,nr_lats,nr_lons),dtype=precision)
-                            quantile_vals_ens[:] = np.nan
-                            obs_quantile_vals = np.copy(quantile_vals_ens)
-
-                            #init arrays to be filled with the binary observed terciles
-                            lower_tercile_obs = np.zeros((len(detrending),len(variables_gcm),nr_years,nr_seas,nr_leads,nr_lats,nr_lons),dtype=precision)
-                            lower_tercile_obs[:] = np.nan
-                            center_tercile_obs = np.copy(lower_tercile_obs)
-                            upper_tercile_obs = np.copy(lower_tercile_obs)
-
-                        #and loop through each month of this season to calculate the seasonal mean values in both the model and observations
-                        for mon in np.arange(len(season[ag][sea])):
-                            print('INFO: get values for month '+str(season[ag][sea][mon])+' and leadtime '+str(lead[mm][ag][ll][mon])+'...')
-                            # pdb.set_trace()
-                            monthind_gcm = np.where(np.isin(dates_gcm.month,season[ag][sea][mon]))[0]
-                            monthind_obs = np.where(np.isin(dates_obs.month,season[ag][sea][mon]))[0]
-                            #check for consistent indices pointing the target month
-                            if np.sum(monthind_obs - monthind_gcm) != 0:
-                                raise ValueError('The indices indicating the target month in the observed and model data do not agree !')
-
-                            #select the target months/seasons and work with xarray data arrays and numpy arrays from here on instead of working with xr datasets
-                            nc_gcm_mon = nc_gcm[variables_gcm[vv]].isel(time=monthind_gcm) #get the requested calendar month from the model
-                            nc_gcm_mon = nc_gcm_mon.sel(lead=lead[mm][ag][ll][mon]) #get the requested lead from the model
-                            nc_obs_mon = nc_obs[variables_obs[vv]].isel(time=monthind_obs) #get the requested calendar month from the observations / reanalysis, there is no lead time in this case
-                            gcm_mon = nc_gcm_mon.values #retain the numpy arrays with in the xr dataarrays
-                            obs_mon = nc_obs_mon.values #retain the numpy arrays with in the xr dataarrays
-
-                            #set values to nan for first January and Feburary values in the time series forming the DJF-mean value. The J and F values have no D pair at the start of fhe time series.
-                            # option for 2 mon
-                            if season[ag][sea] == [12,1] and str(season[ag][sea][mon]) in ('1'):
-                                print('INFO: target season is '+str(season[ag][sea])+', target month is '+str(season[ag][sea][mon])+'. The first value is thus set to NaN!')
-                                gcm_mon[0,:,:,:] = np.nan
-                                obs_mon[0,:,:] = np.nan
-                            # option for 3mon
-                            elif (season[ag][sea] == [12,1,2] and str(season[ag][sea][mon]) in ('1','2')) or (season[ag][sea] == [11,12,1] and str(season[ag][sea][mon]) in ('1')):
-                                print('INFO: target season is '+str(season[ag][sea])+', target month is '+str(season[ag][sea][mon])+'. The first value is thus set to NaN!')
-                                gcm_mon[0,:,:,:] = np.nan
-                                obs_mon[0,:,:] = np.nan
-                            # option for 4 mon
-                            elif (season[ag][sea] == [10,11,12,1] and str(season[ag][sea][mon]) in ('1')) or (season[ag][sea] == [11,12,1,2] and str(season[ag][sea][mon]) in ('1','2')) or (season[ag][sea] == [12,1,2,3] and str(season[ag][sea][mon]) in ('1','2','3')):
-                                print('INFO: target season is '+str(season[ag][sea])+', target month is '+str(season[ag][sea][mon])+'. The first value is thus set to NaN!')
-                                gcm_mon[0,:,:,:] = np.nan
-                                obs_mon[0,:,:] = np.nan
-                            # option for 5 mon
-                            elif (season[ag][sea] == [9,10,11,12,1] and str(season[ag][sea][mon]) in ('1')) or (season[ag][sea] == [10,11,12,1,2] and str(season[ag][sea][mon]) in ('1','2')) or (season[ag][sea] == [11,12,1,2,3] and str(season[ag][sea][mon]) in ('1','2','3')) or (season[ag][sea] == [12,1,2,3,4] and str(season[ag][sea][mon]) in ('1','2','3','4')):
-                                print('INFO: target season is '+str(season[ag][sea])+', target month is '+str(season[ag][sea][mon])+'. The first value is thus set to NaN!')
-                                gcm_mon[0,:,:,:] = np.nan
-                                obs_mon[0,:,:] = np.nan
-                            else:
-                                print('INFO: target season is '+str(season[ag][sea])+', target month is '+str(season[ag][sea][mon]))
-
-                            ##init numpy array with additional dimension <month> whose lenght equals the number of months in season[sea]
-                            if mon == 0:
-                                gcm_allmon = np.zeros((gcm_mon.shape[0],gcm_mon.shape[1],gcm_mon.shape[2],gcm_mon.shape[3],len(season[ag][sea])), dtype=precision)
-                                gcm_allmon[:] = np.nan
-                                obs_allmon = np.zeros((obs_mon.shape[0],obs_mon.shape[1],obs_mon.shape[2],len(season[ag][sea])), dtype=precision)
-                                obs_allmon[:] = np.nan
-                            #close temporary xarray objects
-                            nc_gcm_mon.close()
-                            nc_obs_mon.close()
-                            nc_obs_isea.close()
-
-                            #fill the initialized arrays
-                            gcm_allmon[:,:,:,:,mon] = gcm_mon
-                            obs_allmon[:,:,:,mon] = obs_mon
-                        #calculate weighted seasonal mean values
-                        weights = nc_obs_isea.time.dt.days_in_month #get number of days per month for all months of all years forming the time series
-                        seasind = np.arange(len(season[ag][sea])) #get index to cut out the n months of the first year, where n is the season length in months, i.e. typically 3
-                        weights = weights[seasind] #cut ot the number of days for these months and replicate to match the dimensions of obs_allmon and gcm_allmon
-                        weights_obs = np.tile(weights,(nr_years,nr_lats,nr_lons,1))
-                        weights_gcm = np.tile(weights,(nr_years,nr_mems,nr_lats,nr_lons,1))
-                        obs_seas_mn_5d[:,sea,ll,:,:] = np.sum(obs_allmon * weights_obs, axis = 3) / weights_obs.sum(axis=3)
-                        gcm_seas_mn_6d[:,sea,ll,:,:] = np.sum(gcm_allmon * weights_gcm, axis = 4) / weights_gcm.sum(axis=4)
-
-                        #calculate and store unweighted seasonal mean values for comparison
-                        # obs_seas_mn_5d_nw[:,sea,ll,:,:] = obs_allmon.mean(axis=-1)
-                        # gcm_seas_mn_6d_nw[:,sea,ll,:,:,:] = gcm_allmon.mean(axis=-1)
-
-                #convert numpy array into xarray data arrays
-                obs_seas_mn_5d = xr.DataArray(obs_seas_mn_5d,coords=[dates_isea,season_label[ag],lead_label,nc_obs.y,nc_obs.x],dims=['time', 'season', 'lead', 'y', 'x'], name=variables_obs[vv]).astype(precision) #convert to xarray data array
-                #obs_seas_mn_6d = xr.DataArray(obs_seas_mn_6d,coords=[dates_isea,season_label[ag],lead_label,members,nc_obs.y,nc_obs.x],dims=['time', 'season', 'lead', 'member', 'y', 'x'], name=variables_obs[vv])
-                gcm_seas_mn_6d = xr.DataArray(gcm_seas_mn_6d,coords=[dates_isea,season_label[ag],lead_label,members,nc_gcm.y,nc_gcm.x],dims=['time', 'season', 'lead', 'member', 'y', 'x'], name=variables_gcm[vv]).astype(precision) #convert to xarray data array
-                gcm_seas_mn_5d = gcm_seas_mn_6d.mean(dim='member') #get ensemble mean values
-
-                #optionally apply linear detrending to the time-series, see https://gist.github.com/rabernat/1ea82bb067c3273a6166d1b1f77d490f
-                if detrending[det] == 'yes':
-                    print('INFO: As requested by the user, the gcm and obs time series are linearly detrended.')
-                    obs_seas_mn_5d = lin_detrend(obs_seas_mn_5d,'no')
-                    start_time_detrending = time.time()
-                    gcm_seas_mn_6d = lin_detrend(gcm_seas_mn_6d,'no')
-                    end_time_detrending = time.time()
-
-                    # #alternative loop
-                    # start_time = time.time()
-                    # gcm_seas_mn_6d_np = gcm_seas_mn_6d.values
-                    # gcm_seas_mn_6d_np2fill = np.zeros(gcm_seas_mn_6d_np.shape, dtype=precision)
-                    # gcm_seas_mn_6d_np2fill[:] = np.nan
-                    # for s in np.arange(len(gcm_seas_mn_6d.season)):
-                    #     for l in np.arange(len(gcm_seas_mn_6d.lead)):
-                    #         for m in np.arange(len(gcm_seas_mn_6d.member)):
-                    #             for la in np.arange(len(gcm_seas_mn_6d.y)):
-                    #                 for lo in np.arange(len(gcm_seas_mn_6d.x)):
-                    #                     ts = gcm_seas_mn_6d_np[:,s,l,m,la,lo]
-                    #                     time_axis = np.arange(len(ts))
-                    #                     mask = ~np.isnan(ts)
-                    #                     fit1 = linregress(time_axis[mask], ts[mask])
-                    #                     trend = fit1.slope*time_axis
-                    #                     ts_dt = ts - trend
-                    #                     #ts_dt = detrend(ts[mask], axis=-1, type='linear', bp=0, overwrite_data=False)
-                    #                     gcm_seas_mn_6d_np2fill[:,s,l,m,la,lo] = ts_dt
-                    #                     #slope, intercept, r_value, p_value, std_err = stats.linregress(varx[mask], vary[mask])
-                    # end_time = time.time()
-                    # print(f"the Execution time for detrending was {end_time - start_time} seconds")
-                    # gcm_seas_mn_6d = xr.DataArray(gcm_seas_mn_6d_np2fill,coords=[dates_isea,season_label[ag],lead_label,members,nc_gcm.y,nc_gcm.x],dims=['time', 'season', 'lead', 'member', 'y', 'x'], name=variables_gcm[vv]).astype(precision) #convert to xarray data array
-
-                    gcm_seas_mn_5d = lin_detrend(gcm_seas_mn_5d,'no')
-                    print(f"the execution time for detrending was {end_time_detrending - start_time_detrending} seconds")
-
-                elif detrending[det] == 'no':
-                    print('INFO: As requested by the user, the gcm and obs time series are not detrended.')
-                else:
-                    raise ValueError('Check entry for <detrending[det]>')
-
-                #get obs_seas_mn_6d in with float32 precision
-                # pdb.set_trace()
-                # member_dim = gcm_seas_mn_6d.dims.index('member')
-                # obs_seas_mn_6d = np.expand_dims(obs_seas_mn_5d.values.astype(precision),axis=member_dim).repeat(nr_pseudo_mem,axis=member_dim) # expand and repeat in numpy
-                # obs_seas_mn_6d = xr.DataArray(obs_seas_mn_6d,coords=[dates_isea,season_label[ag],lead_label,members,nc_obs.y,nc_obs.x],dims=['time', 'season', 'lead', 'member', 'y', 'x'], name=variables_obs[vv]).astype(precision) #then convert to xarray data array
-
-                #calculate the quantiles along the time dimension and put them into the pre-initialized numpy arrays
-                bool_obs_quantile_years = pd.DatetimeIndex(obs_seas_mn_5d.time).year.isin(years_quantile_vec) #get boolean for obs
-                bool_gcm_quantile_years = pd.DatetimeIndex(gcm_seas_mn_5d.time).year.isin(years_quantile_vec) #get boolean for gcm
-
-                #then calculate the member-wise quantiles
-                start_time_quantiles = time.time()
-                obs_quantile_vals_step = obs_seas_mn_5d.isel(time = bool_obs_quantile_years).quantile(quantiles, dim='time').astype(precision)
-                gcm_quantile_vals_step = gcm_seas_mn_6d.isel(time = bool_gcm_quantile_years).quantile(quantiles, dim='time').astype(precision)
-                end_time_quantiles = time.time()
-                elapsed_time_quantiles = (end_time_quantiles - start_time_quantiles)/60
-                print('The execution time for caclulating the modelled and observed QUANTILES was: '+str(elapsed_time_quantiles)+' minutes')
-
-                # gcm_quantile_vals[det,vv,mm,:,:,:,:,:,:] = gcm_quantile_vals_step.values #here numpy arrays are filled
-                gcm_quantile_vals[det,vv,:,:,:,:,:,:] = gcm_quantile_vals_step.values #here numpy arrays are filled
-                obs_quantile_vals[det,vv,:,:,:,:,:] = obs_quantile_vals_step.values #and here too
-
-                #get observed tercile thresholds
-                t1_obs = np.expand_dims(obs_quantile_vals_step.sel(quantile=0.33,method='nearest').values,axis=0).astype(precision).repeat(obs_seas_mn_5d.shape[0],axis=0)
-                t2_obs = np.expand_dims(obs_quantile_vals_step.sel(quantile=0.66,method='nearest').values,axis=0).astype(precision).repeat(obs_seas_mn_5d.shape[0],axis=0)
-
-                #get binary arrays
-                lower_tercile_obs_step = (obs_seas_mn_5d <= t1_obs).astype(precision)
-                center_tercile_obs_step = ((obs_seas_mn_5d > t1_obs) * (obs_seas_mn_5d <= t2_obs)).astype(precision)
-                upper_tercile_obs_step = (obs_seas_mn_5d > t2_obs).astype(precision)
-
-                #recover nans lost in the former 3 lines
-                nanmask = np.isnan(obs_seas_mn_5d)
-                lower_tercile_obs_step.values[nanmask] = np.nan
-                center_tercile_obs_step.values[nanmask] = np.nan
-                upper_tercile_obs_step.values[nanmask] = np.nan
-
-                #fill the pre-initialized numpy arrays
-                lower_tercile_obs[det,vv,:,:,:,:,:] = lower_tercile_obs_step
-                center_tercile_obs[det,vv,:,:,:,:,:] = center_tercile_obs_step
-                upper_tercile_obs[det,vv,:,:,:,:,:] = upper_tercile_obs_step
-
-                dates_obs = pd.DatetimeIndex(obs_seas_mn_5d.time.values)
-                dates_gcm_5d = pd.DatetimeIndex(gcm_seas_mn_5d.time.values)
-                dates_gcm_6d = pd.DatetimeIndex(gcm_seas_mn_6d.time.values)
-                nr_years = len(dates_obs)
-
-                #check whether the 5d and 6d model arrays have the same time dimension
-                if np.all(dates_gcm_5d.isin(dates_gcm_6d)) and np.all(dates_gcm_6d.isin(dates_gcm_5d)):
-                    print('INFO: The 5d and 6d data arrays from the model are identical.')
-                else:
-                    raise ValueError('The 5d and 6d data arrays from the model are not identical !')
-                #continue with a single dates_gcm pandas datetime index and delete the unnecessary ones
-                dates_gcm = dates_gcm_5d
-                del(dates_gcm_5d,dates_gcm_6d)
-
-                #check whether the modelled and observed dates are identical
-                if np.all(dates_obs.isin(dates_gcm)) and np.all(dates_gcm.isin(dates_obs)):
-                    print('INFO: the modelled and observed date vectors are identical.')
-                    years_common = dates_gcm.year.values
-                    print('INFO: the common time period used for verification is '+str(years_common)+' !')
-                else:
-                    raise ValueError('The modelled and observed date vectors are not identical !')
-
-                #get overall / ensemble quantiles calculated upon the array with flattened "member" dimension, thereby mimicing a n member times longer time series
-                gcm_seas_mn_5d_flat_mems = gcm_seas_mn_6d.transpose('time','member','season','lead','y','x') #change order of the dimensions
-                shape_gcm = gcm_seas_mn_5d_flat_mems.shape #get new shape
-                gcm_seas_mn_5d_flat_mems = gcm_seas_mn_5d_flat_mems.values.reshape((shape_gcm[0]*shape_gcm[1],shape_gcm[2],shape_gcm[3],shape_gcm[4],shape_gcm[5])) #reshape to concatenate the members along the first / time axis
-                quantile_vals_ens_step = np.nanquantile(gcm_seas_mn_5d_flat_mems,quantiles,axis=0)
-                # quantile_vals_ens[det,vv,mm,:,:,:,:,:] = quantile_vals_ens_step
-                quantile_vals_ens[det,vv,:,:,:,:,:] = quantile_vals_ens_step
-
-                # turn numpy array into xarray data array
-                quantile_vals_ens_step = xr.DataArray(quantile_vals_ens_step, coords=[quantiles,gcm_seas_mn_6d.season,gcm_seas_mn_6d.lead,gcm_seas_mn_6d.y,gcm_seas_mn_6d.x], dims=['quantile_threshold','season','lead','y','x'], name='quantile_ensemble').astype(precision)
-
-                #get year-to-year tercile probability forecasts for the non conditioned time series
-                if modulators[mo] == 'none':
-                    print('Calculating tercile probability forecasts for temporal aggregation '+agg_labels[ag]+', '+models[mm]+', variable '+variables_gcm[vv]+' and modulator '+modulators[mo])
-                    lower_xr = quantile_vals_ens_step.sel(quantile_threshold=0.33,method='nearest')
-                    upper_xr = quantile_vals_ens_step.sel(quantile_threshold=0.66,method='nearest')
-                    time_ind = gcm_seas_mn_6d.dims.index('time')
-                    mem_ind = gcm_seas_mn_6d.dims.index('member')
-
-                    lower_np = np.expand_dims(np.expand_dims(lower_xr.values,axis=0),axis=-3)
-                    lower_np = lower_np.repeat(repeats=gcm_seas_mn_6d.shape[time_ind], axis=time_ind).repeat(repeats=gcm_seas_mn_6d.shape[mem_ind], axis=mem_ind)
-
-                    upper_np = np.expand_dims(np.expand_dims(upper_xr.values,axis=0),axis=-3)
-                    upper_np = upper_np.repeat(repeats=gcm_seas_mn_6d.shape[time_ind], axis=time_ind).repeat(repeats=gcm_seas_mn_6d.shape[mem_ind], axis=mem_ind)
-
-                    valid_ind = ~np.isnan(lower_np) * ~np.isnan(upper_np)
-                    upper_ind = (gcm_seas_mn_6d > upper_np) * valid_ind
-                    center_ind = (gcm_seas_mn_6d > lower_np) * (gcm_seas_mn_6d <= upper_np) * valid_ind
-                    lower_ind = (gcm_seas_mn_6d <= lower_np) * valid_ind
-
-                    #sum members in each category and devide by the number of members, thus obtaining the probability
-                    nr_mem_step = len(gcm_seas_mn_6d.member)
-                    lower_prob = (lower_ind.sum(dim='member')/nr_mem_step).rename('lower_tercile_probability')
-                    center_prob = (center_ind.sum(dim='member')/nr_mem_step).rename('center_tercile_probability')
-                    upper_prob = (upper_ind.sum(dim='member')/nr_mem_step).rename('upper_tercile_probability')
-
-                    #initialize numpy arrays to be filled with probability forecasts per tercile
-                    if det == 0 and vv == 0 and oo == 0:
-                        lower_prob_np = np.zeros((len(detrending),len(variables_gcm),lower_prob.shape[0],lower_prob.shape[1],lower_prob.shape[2],lower_prob.shape[3],lower_prob.shape[4]), dtype=precision)
-                        center_prob_np = np.copy(lower_prob_np)
-                        upper_prob_np = np.copy(lower_prob_np)
-
-                    lower_prob_np[det,vv,:,:,:,:,:] = lower_prob.values
-                    center_prob_np[det,vv,:,:,:,:,:] = center_prob.values
-                    upper_prob_np[det,vv,:,:,:,:,:] = upper_prob.values
-
-                #generate 6d numpy array with observations replicated along the <member dimension>; will be used as reference for the member-wise GCM verification
-                if skillscore_reference == 'clim': #use climatological mean observations as reference forecast
-                    print('As requested by the user, climatological-mean time series are used as reference forecasts')
-                    ref_forecast = obs_seas_mn_5d.mean(dim='time').values
-                    ref_forecast = np.expand_dims(np.expand_dims(ref_forecast,axis=0),axis=3)
-                    ref_forecast = np.tile(ref_forecast,(nr_years,1,1,nr_pseudo_mem,1,1)) #get 6d numpy array containing the naiv climatological forecasts
-                    # ref_forecast = xr.DataArray(ref_forecast,coords=[dates_isea,season_label[ag],lead_label,members[0:nr_pseudo_mem],nc_obs.y,nc_obs.x],dims=['time', 'season', 'lead', 'member', 'y', 'x'], name=variables_obs[vv]+'_'+skillscore_reference).astype(precision)
-                    ref_forecast = xr.DataArray(ref_forecast,coords=[dates_isea,season_label[ag],lead_label,np.arange(nr_pseudo_mem),nc_obs.y,nc_obs.x],dims=['time', 'season', 'lead', 'member', 'y', 'x'], name=variables_obs[vv]+'_'+skillscore_reference).astype(precision)
-                elif skillscore_reference == 'rand': #use randomly reshuffled observed time series as reference forecast
-                    print('As requested by the user, randomly reshuffled time series are used as reference forecasts. '+str(nr_pseudo_mem)+' random time series will be generated to this end.')
-                    #init the output array of randomly resuffled time series and fill
-                    ref_forecast = np.zeros((obs_seas_mn_5d.shape[0],obs_seas_mn_5d.shape[1],obs_seas_mn_5d.shape[2],nr_pseudo_mem,obs_seas_mn_5d.shape[3],obs_seas_mn_5d.shape[4]), dtype=precision)
-                    ref_forecast[:] = np.nan
-                    ntime = len(years_common) #number of years
-                    for ii in np.arange(nr_pseudo_mem):
-                        rand1 = np.random.randint(0,ntime,ntime)
-                        ref_forecast[:,:,:,ii,:,:] = obs_seas_mn_5d[rand1,:,:,:,:]
-                        del(rand1)
-                    # ref_forecast = xr.DataArray(ref_forecast,coords=[dates_isea,season_label[ag],lead_label,members[0:nr_pseudo_mem],nc_obs.y,nc_obs.x],dims=['time', 'season', 'lead', 'member', 'y', 'x'], name=variables_obs[vv]+'_'+skillscore_reference).astype(precision)
-                    ref_forecast = xr.DataArray(ref_forecast,coords=[dates_isea,season_label[ag],lead_label,np.arange(nr_pseudo_mem),nc_obs.y,nc_obs.x],dims=['time', 'season', 'lead', 'member', 'y', 'x'], name=variables_obs[vv]+'_'+skillscore_reference).astype(precision)
-                else:
-                    raise ValueError('Check entry for <skillscore_reference> input parameter !')
-
-                #get name of the output file containing the verification results
-                if modulators[mo] == 'enso':
-                    savename_results = dir_netcdf_scores+'/validation_results_season_'+variables_gcm[vv]+'_'+agg_labels[ag]+'_'+models[mm]+'_vs_'+obs[oo]+'_'+domain+'_corroutlier_'+corr_outlier+'_detrended_'+detrending[det]+'_'+str(years_common2label[0])+'_'+str(years_common2label[-1])+'_'+modulators[mo]+str(phases[mo])+modulator_ref+'_'+vers+'.nc'
-                elif modulators[mo] == 'none':
-                    savename_results = dir_netcdf_scores+'/validation_results_season_'+variables_gcm[vv]+'_'+agg_labels[ag]+'_'+models[mm]+'_vs_'+obs[oo]+'_'+domain+'_corroutlier_'+corr_outlier+'_detrended_'+detrending[det]+'_'+str(years_common2label[0])+'_'+str(years_common2label[-1])+'_'+modulators[mo]+'_'+vers+'.nc'
-                else:
-                    raise ValueError('Unknown entry for <modulators[mo]> input parameter !')
-
-                ##start verification
-                #init numpy arrays to be filled along the "lead" dimension
-                pearson_r_np = np.zeros((len(season[ag]),len(lead[mm][ag]),len(gcm_seas_mn_5d.y),len(gcm_seas_mn_5d.x)), dtype=precision)
-                pearson_pval_np = np.copy(pearson_r_np)
-                pearson_pval_effn_np = np.copy(pearson_r_np)
-                spearman_r_np = np.copy(pearson_r_np)
-                spearman_pval_np = np.copy(pearson_r_np)
-                spearman_pval_effn_np = np.copy(pearson_r_np)
-                bias_np = np.copy(pearson_r_np)
-                relbias_np = np.copy(pearson_r_np)
-                crps_ensemble_np = np.copy(pearson_r_np)
-                reliability_lower_np = np.copy(pearson_r_np)
-                reliability_center_np = np.copy(pearson_r_np)
-                reliability_upper_np = np.copy(pearson_r_np)
-                roc_auc_lower_np = np.copy(pearson_r_np)
-                roc_auc_center_np = np.copy(pearson_r_np)
-                roc_auc_upper_np = np.copy(pearson_r_np)
-                rpc_np = np.copy(pearson_r_np)
-
+            for mo in np.arange(len(modulators)):
                 #get conditional verficiation results per lead-time
                 for ll in np.arange(len(lead_label)):
                     if modulators[mo] == 'enso':
@@ -615,527 +208,99 @@ for ag in np.arange(len(agg_labels)):
                         if modulator_ref == 'init':
                             # indices_sub = indices.shift(time=int(lead_label[ll])) #shift the values in indices towards the future by lead_label[ll] months
                             indices_sub = indices.shift(time=int(lead_label[ll][0])) #shift the values in indices towards the future by lead_label[ll] months
-                            indices_sub = indices_sub.isel(time=np.isin(indices_sub.time,obs_seas_mn_5d.time)) #get common time period with observations, which in turn was syncronized with model data above
+                            indices_sub = indices_sub.isel(time=np.isin(indices_sub.time,nc_obs_hr.time)) #get common time period with observations, which in turn was syncronized with model data above
                         elif modulator_ref == 'valid':
-                            indices_sub = indices.isel(time=np.isin(indices.time,obs_seas_mn_5d.time)) #get common time period with observations, which in turn was syncronized with model data above
+                            indices_sub = indices.isel(time=np.isin(indices.time,nc_obs_hr.time)) #get common time period with observations, which in turn was syncronized with model data above
                         else:
                             raise ValueError('Check entry for <modulator_ref> input parameter !')
                         # phase_ind = (indices_sub.oni2enso == phases[mo]).values
                         phase_ind = (indices_sub.oni2enso == int(phases[mo])).values
+                        
                         #check whether the minumum number of events set in <min_nr_events> is reached
                         if sum(phase_ind==False) < min_nr_events:
                             raise ValueError('<phase_ind> must at least contain '+str(min_nr_events)+' True values !')
+                        print('Start conditional verifcation for lead label '+str(lead_label[ll])+' and '+modulators[mo]+phases[mo]+', which occurred on the following time instances:')
                     elif modulators[mo] == 'none':
-                        indices_sub = indices.isel(time=np.isin(indices.time,obs_seas_mn_5d.time)) #is not used below any more if modulators[mo] = 'none'
-                        phase_ind = np.array([True]*len(obs_seas_mn_5d.time)) #set all indices to True
+                        indices_sub = indices.isel(time=np.isin(indices.time,nc_obs_hr.time)) #is not used below any more if modulators[mo] = 'none'
+                        phase_ind = np.array([True]*len(nc_obs_hr.time)) #set all indices to True
+                        print('Start unconditional verifcation for lead label '+str(lead_label[ll])+', and '+modulators[mo]+phases[mo]+' considering the full time series:')
                     else:
                         raise ValueError('Unknown entry for <modulators[mo]> input parameter !')
+                    #print time instances to be verified
+                    print(nc_obs_hr.upper_tercile_binary.isel(time=phase_ind).time) 
+                    
+                    start_time_roc = time.time()
 
-                    #get xarray data array for each lead time and calculate skill scores
-                    print('Calculating Pearson correlation coefficient....')
-                    pearson_r = xs.pearson_r(obs_seas_mn_5d.isel(time=phase_ind).sel(lead=lead_label[ll]),gcm_seas_mn_5d.isel(time=phase_ind).sel(lead=lead_label[ll]),dim='time',skipna=True).rename('pearson_r')
-                    pearson_r_np[:,ll,:,:] = pearson_r.values
+                    #ROC-AUC
+                    roc_lower_np[mo,:,vv,:,ll,:,:] = xs.roc(nc_obs_hr.lower_tercile_binary.isel(time=phase_ind).sel(lead=lead_label[ll]), nc_mod_hr.lower_tercile_probability.isel(time=phase_ind).sel(lead=lead_label[ll]), bin_edges=prob_thresholds, dim='time', drop_intermediate=False, return_results='area').values
+                    roc_center_np[mo,:,vv,:,ll,:,:] = xs.roc(nc_obs_hr.center_tercile_binary.isel(time=phase_ind).sel(lead=lead_label[ll]), nc_mod_hr.center_tercile_probability.isel(time=phase_ind).sel(lead=lead_label[ll]), bin_edges=prob_thresholds, dim='time', drop_intermediate=False, return_results='area').values
+                    roc_upper_np[mo,:,vv,:,ll,:,:] = xs.roc(nc_obs_hr.upper_tercile_binary.isel(time=phase_ind).sel(lead=lead_label[ll]), nc_mod_hr.upper_tercile_probability.isel(time=phase_ind).sel(lead=lead_label[ll]), bin_edges=prob_thresholds, dim='time', drop_intermediate=False, return_results='area').values
 
-                    ## calculate ratio of predictable components following Cottrell et al. 2024, https://doi.org/10.1002/asl.1212
-                    print('Calculating predictable component in the model....')
-                    pearson_r_mod = xs.pearson_r(gcm_seas_mn_6d.isel(time=phase_ind).sel(lead=lead_label[ll]),gcm_seas_mn_5d.isel(time=phase_ind).sel(lead=lead_label[ll]),dim='time',skipna=True).rename('pearson_r_mod')
-                    #rpc = (pearson_r / np.sqrt(gcm_seas_mn_5d.isel(time=phase_ind).sel(lead=lead_label[ll]).var(dim='time') / gcm_seas_mn_6d.isel(time=phase_ind).sel(lead=lead_label[ll]).var(dim='time').mean(dim='member'))).rename('rpc')
-                    print('Calculating Ratio of Predictable Components....')
-                    rpc = (pearson_r / pearson_r_mod.mean(dim='member')).rename('rpc')
-                    rpc_np[:,ll,:,:] = rpc.values
-                    pearson_r.close()
-                    pearson_r_mod.close()
-                    rpc.close()
-                    del(pearson_r,pearson_r_mod,rpc)
+                    # roc_lower_step = xs.roc(nc_obs_hr.lower_tercile_binary.isel(time=phase_ind), nc_mod_hr.lower_tercile_probability.isel(time=phase_ind), bin_edges=prob_thresholds, dim='time', drop_intermediate=False, return_results='area')
+                    # roc_center_step = xs.roc(nc_obs_hr.center_tercile_binary.isel(time=phase_ind), nc_mod_hr.center_tercile_probability.isel(time=phase_ind), bin_edges=prob_thresholds, dim='time', drop_intermediate=False, return_results='area')
+                    # roc_upper_step = xs.roc(nc_obs_hr.upper_tercile_binary.isel(time=phase_ind), nc_mod_hr.upper_tercile_probability.isel(time=phase_ind), bin_edges=prob_thresholds, dim='time', drop_intermediate=False, return_results='area')
 
-                    print('Calculating p-value of the Pearson correlation coefficient....')
-                    pearson_pval = xs.pearson_r_p_value(obs_seas_mn_5d.isel(time=phase_ind).sel(lead=lead_label[ll]),gcm_seas_mn_5d.isel(time=phase_ind).sel(lead=lead_label[ll]),dim='time',skipna=True).rename('pearson_pval')
-                    pearson_pval_np[:,ll,:,:] = pearson_pval.values
-                    pearson_pval.close()
-                    del(pearson_pval)
+                    # #fill numpy arrays
+                    # roc_lower_np[mo,:,vv,:,:,:,:] = roc_lower_step.values
+                    # roc_center_np[mo,:,vv,:,:,:,:] = roc_center_step.values
+                    # roc_upper_np[mo,:,vv,:,:,:,:] = roc_upper_step.values
 
-                    print('Calculating p-value of the Pearson correlation coefficient with effective sample size....')
-                    pearson_pval_effn = xs.pearson_r_eff_p_value(obs_seas_mn_5d.isel(time=phase_ind).sel(lead=lead_label[ll]),gcm_seas_mn_5d.isel(time=phase_ind).sel(lead=lead_label[ll]),dim='time',skipna=True).rename('pearson_pval_effn')
-                    pearson_pval_effn_np[:,ll,:,:] = pearson_pval_effn.values
-                    pearson_pval_effn.close()
-                    del(pearson_pval_effn)
-
-                    print('Calculating Spearman rank correlation coefficient....')
-                    spearman_r = xs.spearman_r(obs_seas_mn_5d.isel(time=phase_ind).sel(lead=lead_label[ll]),gcm_seas_mn_5d.isel(time=phase_ind).sel(lead=lead_label[ll]),dim='time',skipna=True).rename('spearman_r')
-                    spearman_r_np[:,ll,:,:] = spearman_r.values
-                    spearman_r.close()
-                    del(spearman_r)
-
-                    print('Calculating p-value of the Spearman rank correlation coefficient....')
-                    spearman_pval = xs.spearman_r_p_value(obs_seas_mn_5d.isel(time=phase_ind).sel(lead=lead_label[ll]),gcm_seas_mn_5d.isel(time=phase_ind).sel(lead=lead_label[ll]),dim='time',skipna=True).rename('spearman_pval')
-                    spearman_pval_np[:,ll,:,:] = spearman_pval.values
-                    spearman_pval.close()
-                    del(spearman_pval)
-
-                    print('Calculating p-value of the Spearman rank correlation coefficient with effective sample size....')
-                    spearman_pval_effn = xs.spearman_r_eff_p_value(obs_seas_mn_5d.isel(time=phase_ind).sel(lead=lead_label[ll]),gcm_seas_mn_5d.isel(time=phase_ind).sel(lead=lead_label[ll]),dim='time',skipna=True).rename('spearman_pval_effn')
-                    spearman_pval_effn_np[:,ll,:,:] = spearman_pval_effn.values
-                    spearman_pval_effn.close()
-                    del(spearman_pval_effn)
-
-                    print('Calculating bias....')
-                    bias = xs.me(obs_seas_mn_5d.isel(time=phase_ind).sel(lead=lead_label[ll]),gcm_seas_mn_5d.isel(time=phase_ind).sel(lead=lead_label[ll]),dim='time',skipna=True).rename('bias') #in xskillscore the bias is termed me
-                    bias_np[:,ll,:,:] = bias.values
-
-                    print('Calculating relative bias....')
-                    relbias = (bias/obs_seas_mn_5d.isel(time=phase_ind).sel(lead=lead_label[ll]).mean(dim='time')*100).rename('relbias')
-                    relbias_np[:,ll,:,:] = relbias.values
-                    bias.close()
-                    del(bias)
-                    relbias.close()
-                    del(relbias)
-
-                    ## display memory currently in use (in MB)
-                    # process = psutil.Process(os.getpid())
-                    # mem_info = process.memory_info()
-                    # print(f"Memory used before calculating CRPSS: {mem_info.rss / 1024 ** 2:.2f} MB")
-                    print('The memory (gb) in use before calculating the CRPSS is:')
-                    print(psutil.Process().memory_info().rss / (1024 ** 3))
-
-                    #Calculate the CRPS with variable distribution estimated from ensemble members
-                    start_time_crps = time.time()
-                    print('Calculating Continuous Ranked Probability Score with variable distribution estimated empirically from the model ensemble....')
-                    crps_ensemble = xs.crps_ensemble(obs_seas_mn_5d.isel(time=phase_ind).sel(lead=lead_label[ll]),gcm_seas_mn_6d.isel(time=phase_ind).sel(lead=lead_label[ll]),member_weights=None,issorted=False,member_dim='member',dim='time',weights=None,keep_attrs=False).rename('crps_ensemble')
-                    end_time_crps = time.time()
-                    elapsed_time_crps = (end_time_crps - start_time_crps)/60
-                    print('The execution time for caclulating the model vs. obs. CRPS was: '+str(elapsed_time_crps)+' minutes')
-                    crps_ensemble_np[:,ll,:,:] = crps_ensemble.values
-                    crps_ensemble.close()
-                    del(crps_ensemble)
-
-                    print('Calculating reliability for the lower, center and upper terciles....')
-                    reliability_lower = get_reliability_or_roc(obs_seas_mn_5d.isel(time=phase_ind).sel(lead=lead_label[ll]),gcm_seas_mn_6d.isel(time=phase_ind).sel(lead=lead_label[ll]),obs_quantile_vals_step.sel(lead=lead_label[ll]),gcm_quantile_vals_step.sel(lead=lead_label[ll]),'lower_tercile',score_f = 'reliability',bin_edges_f = bin_edges_reliability).rename('reliability_lower_tercile') #calculate reliability for the first tercile
-                    reliability_lower_np[:,ll,:,:] = reliability_lower.values
-                    reliability_lower.close()
-                    del(reliability_lower)
-
-                    reliability_center = get_reliability_or_roc(obs_seas_mn_5d.isel(time=phase_ind).sel(lead=lead_label[ll]),gcm_seas_mn_6d.isel(time=phase_ind).sel(lead=lead_label[ll]),obs_quantile_vals_step.sel(lead=lead_label[ll]),gcm_quantile_vals_step.sel(lead=lead_label[ll]),'center_tercile',score_f = 'reliability',bin_edges_f = bin_edges_reliability).rename('reliability_center_tercile') #calculate reliability for the second tercile
-                    reliability_center_np[:,ll,:,:] = reliability_center.values
-                    reliability_center.close()
-                    del(reliability_center)
-
-                    reliability_upper = get_reliability_or_roc(obs_seas_mn_5d.isel(time=phase_ind).sel(lead=lead_label[ll]),gcm_seas_mn_6d.isel(time=phase_ind).sel(lead=lead_label[ll]),obs_quantile_vals_step.sel(lead=lead_label[ll]),gcm_quantile_vals_step.sel(lead=lead_label[ll]),'upper_tercile',score_f = 'reliability',bin_edges_f = bin_edges_reliability).rename('reliability_upper_tercile') #calculate reliability for the third tercile
-                    reliability_upper_np[:,ll,:,:] = reliability_upper.values
-                    reliability_upper.close()
-                    del(reliability_upper)
-
-                    print('Calculating ROC-AUC for the lower, center and upper terciles....')
-                    roc_auc_lower = get_reliability_or_roc(obs_seas_mn_5d.isel(time=phase_ind).sel(lead=lead_label[ll]),gcm_seas_mn_6d.isel(time=phase_ind).sel(lead=lead_label[ll]),obs_quantile_vals_step.sel(lead=lead_label[ll]),gcm_quantile_vals_step.sel(lead=lead_label[ll]),'lower_tercile',score_f = 'roc_auc').rename('roc_auc_lower_tercile') #calculate roc area under the curve for the first tercile
-                    roc_auc_lower_np[:,ll,:,:] = roc_auc_lower.values
-                    roc_auc_lower.close()
-                    del(roc_auc_lower)
-
-                    roc_auc_center = get_reliability_or_roc(obs_seas_mn_5d.isel(time=phase_ind).sel(lead=lead_label[ll]),gcm_seas_mn_6d.isel(time=phase_ind).sel(lead=lead_label[ll]),obs_quantile_vals_step.sel(lead=lead_label[ll]),gcm_quantile_vals_step.sel(lead=lead_label[ll]),'center_tercile',score_f = 'roc_auc').rename('roc_auc_center_tercile') #calculate roc area under the curve for the third tercile
-                    roc_auc_center_np[:,ll,:,:] = roc_auc_center.values
-                    roc_auc_center.close()
-                    del(roc_auc_center)
-
-                    roc_auc_upper = get_reliability_or_roc(obs_seas_mn_5d.isel(time=phase_ind).sel(lead=lead_label[ll]),gcm_seas_mn_6d.isel(time=phase_ind).sel(lead=lead_label[ll]),obs_quantile_vals_step.sel(lead=lead_label[ll]),gcm_quantile_vals_step.sel(lead=lead_label[ll]),'upper_tercile',score_f = 'roc_auc').rename('roc_auc_upper_tercile') #calculate roc area under the curve for the third tercile
-                    roc_auc_upper_np[:,ll,:,:] = roc_auc_upper.values
-                    roc_auc_upper.close()
-                    del(roc_auc_upper)
-
+                    # roc_lower_step.close()
+                    # roc_center_step.close()
+                    # roc_upper_step.close()
+                    
+                    # del(roc_lower_step,roc_center_step,roc_upper_step,phase_ind)
                     del(phase_ind)
 
-                #transform numpy arrays to xarray data arrays
-                pearson_r = xr.DataArray(pearson_r_np, coords=[obs_seas_mn_5d.season,obs_seas_mn_5d.lead,obs_seas_mn_5d.y,obs_seas_mn_5d.x], dims=['season','lead','y','x'], name='pearson_r').astype(precision)
-                pearson_pval = xr.DataArray(pearson_pval_np, coords=[obs_seas_mn_5d.season,obs_seas_mn_5d.lead,obs_seas_mn_5d.y,obs_seas_mn_5d.x], dims=['season','lead','y','x'], name='pearson_pval').astype(precision)
-                pearson_pval_effn = xr.DataArray(pearson_pval_effn_np, coords=[obs_seas_mn_5d.season,obs_seas_mn_5d.lead,obs_seas_mn_5d.y,obs_seas_mn_5d.x], dims=['season','lead','y','x'], name='pearson_pval_effn').astype(precision)
-                spearman_r = xr.DataArray(spearman_r_np, coords=[obs_seas_mn_5d.season,obs_seas_mn_5d.lead,obs_seas_mn_5d.y,obs_seas_mn_5d.x], dims=['season','lead','y','x'], name='spearman_r').astype(precision)
-                spearman_pval = xr.DataArray(spearman_pval_np, coords=[obs_seas_mn_5d.season,obs_seas_mn_5d.lead,obs_seas_mn_5d.y,obs_seas_mn_5d.x], dims=['season','lead','y','x'], name='spearman_pval').astype(precision)
-                spearman_pval_effn = xr.DataArray(spearman_pval_effn_np, coords=[obs_seas_mn_5d.season,obs_seas_mn_5d.lead,obs_seas_mn_5d.y,obs_seas_mn_5d.x], dims=['season','lead','y','x'], name='spearman_pval_effn').astype(precision)
-                bias = xr.DataArray(bias_np, coords=[obs_seas_mn_5d.season,obs_seas_mn_5d.lead,obs_seas_mn_5d.y,obs_seas_mn_5d.x], dims=['season','lead','y','x'], name='bias').astype(precision)
-                relbias = xr.DataArray(relbias_np, coords=[obs_seas_mn_5d.season,obs_seas_mn_5d.lead,obs_seas_mn_5d.y,obs_seas_mn_5d.x], dims=['season','lead','y','x'], name='relbias').astype(precision)
-                crps_ensemble = xr.DataArray(crps_ensemble_np, coords=[obs_seas_mn_5d.season,obs_seas_mn_5d.lead,obs_seas_mn_5d.y,obs_seas_mn_5d.x], dims=['season','lead','y','x'], name='crps_ensemble').astype(precision)
-                reliability_lower = xr.DataArray(reliability_lower_np, coords=[obs_seas_mn_5d.season,obs_seas_mn_5d.lead,obs_seas_mn_5d.y,obs_seas_mn_5d.x], dims=['season','lead','y','x'], name='reliability_lower_tercile').astype(precision)
-                reliability_center = xr.DataArray(reliability_center_np, coords=[obs_seas_mn_5d.season,obs_seas_mn_5d.lead,obs_seas_mn_5d.y,obs_seas_mn_5d.x], dims=['season','lead','y','x'], name='reliability_center_tercile').astype(precision)
-                reliability_upper = xr.DataArray(reliability_upper_np, coords=[obs_seas_mn_5d.season,obs_seas_mn_5d.lead,obs_seas_mn_5d.y,obs_seas_mn_5d.x], dims=['season','lead','y','x'], name='reliability_upper_tercile').astype(precision)
-                roc_auc_lower = xr.DataArray(roc_auc_lower_np, coords=[obs_seas_mn_5d.season,obs_seas_mn_5d.lead,obs_seas_mn_5d.y,obs_seas_mn_5d.x], dims=['season','lead','y','x'], name='roc_auc_lower_tercile').astype(precision)
-                roc_auc_center = xr.DataArray(roc_auc_center_np, coords=[obs_seas_mn_5d.season,obs_seas_mn_5d.lead,obs_seas_mn_5d.y,obs_seas_mn_5d.x], dims=['season','lead','y','x'], name='roc_auc_center_tercile').astype(precision)
-                roc_auc_upper = xr.DataArray(roc_auc_upper_np, coords=[obs_seas_mn_5d.season,obs_seas_mn_5d.lead,obs_seas_mn_5d.y,obs_seas_mn_5d.x], dims=['season','lead','y','x'], name='roc_auc_upper_tercile').astype(precision)
-                rpc = xr.DataArray(rpc_np, coords=[obs_seas_mn_5d.season,obs_seas_mn_5d.lead,obs_seas_mn_5d.y,obs_seas_mn_5d.x], dims=['season','lead','y','x'], name='rpc').astype(precision)
-
-                #set possible infinite values in relbias to nan
-                infmask = np.isinf(relbias.values)
-                relbias.values[infmask] = np.nan
-                del(infmask) #delete to save memory
-
-                ##Continuous Ranked Probability Score and respective skill score
-                # pdb.set_trace()
-                if skillscore_reference == 'rand':
-                    print('Calculating Continuous Ranked Probability Skill Score with respect to an ensemble of '+str(nr_pseudo_mem)+' randomly re-shuffled samples of the observed time series....')
-                elif skillscore_reference == 'clim':
-                    print('Calculating Continuous Ranked Probability Skill Score with respect to a climatological forecast.')
-                else:
-                    raise ValueError('Unknown entry for <skillscore_reference> !')
-
-                start_time_crps = time.time()
-                crps_ensemble_clim = xs.crps_ensemble(obs_seas_mn_5d,ref_forecast,member_weights=None,issorted=False,member_dim='member',dim='time',weights=None,keep_attrs=False).rename('crps_ensemble_'+skillscore_reference)
-                #crps_ensemble_clim = xs.crps_ensemble(obs_seas_mn_6d,ref_forecast,member_weights=None,issorted=False,member_dim='member',dim='time',weights=None,keep_attrs=False).rename('crps_ensemble_'+skillscore_reference)
-                crps_ensemble_skillscore = 1 - (crps_ensemble/crps_ensemble_clim)
-                end_time_crps = time.time()
-                elapsed_time_crps = (end_time_crps - start_time_crps)/60
-                print('The execution time for caclulating the model vs. obs. CRPSS was: '+str(elapsed_time_crps)+' minutes')
-
-                #close and delete unnecesarry objects to save mem
-                crps_ensemble_clim.close()
-                del(crps_ensemble_clim)
-
-                # close and delete xarray objects not needed any more
-                obs_quantile_vals_step.close()
-                gcm_quantile_vals_step.close()
-                del(obs_quantile_vals_step,gcm_quantile_vals_step)
-
-                #calc. roc auc skill scores, see https://doi.org/10.1007/s00382-019-04640-4
-                roc_auc_lower_skillscore = (roc_auc_lower - 0.5) / 0.5 #roc auc lower tercile skill score
-                roc_auc_center_skillscore = (roc_auc_center - 0.5) / 0.5 #roc auc center tercile skill score
-                roc_auc_upper_skillscore = (roc_auc_upper - 0.5) / 0.5 #roc auc upper tercile skill score
-
-                #set name of all 3 skill scores
-                crps_ensemble_skillscore = crps_ensemble_skillscore.rename('crps_ensemble_skillscore_'+skillscore_reference)
-                roc_auc_lower_skillscore = roc_auc_lower_skillscore.rename('roc_auc_lower_tercile_skillscore')
-                roc_auc_center_skillscore = roc_auc_center_skillscore.rename('roc_auc_center_tercile_skillscore')
-                roc_auc_upper_skillscore = roc_auc_upper_skillscore.rename('roc_auc_upper_tercile_skillscore')
-
-                #set infinite values to nan for all 3 skill scores
-                infmask_crps = np.isinf(crps_ensemble_skillscore.values)
-                crps_ensemble_skillscore.values[infmask_crps] = np.nan
-                del(infmask_crps)
-                infmask_roc_auc_lower = np.isinf(roc_auc_lower_skillscore.values)
-                roc_auc_lower_skillscore.values[infmask_roc_auc_lower] = np.nan
-                del(infmask_roc_auc_lower)
-                infmask_roc_auc_center = np.isinf(roc_auc_center_skillscore.values)
-                roc_auc_center_skillscore.values[infmask_roc_auc_center] = np.nan
-                del(infmask_roc_auc_center)
-                infmask_roc_auc_upper = np.isinf(roc_auc_upper_skillscore.values)
-                roc_auc_upper_skillscore.values[infmask_roc_auc_upper] = np.nan
-                del(infmask_roc_auc_upper)
-
-                #add attribures
-                pearson_r.attrs['units'] = 'dimensionless'
-                pearson_pval.attrs['units'] = 'probability'
-                pearson_pval_effn.attrs['units'] = 'probability'
-                spearman_r.attrs['units'] = 'dimensionless'
-                spearman_pval.attrs['units'] = 'probability'
-                spearman_pval_effn.attrs['units'] = 'probability'
-                spearman_pval_effn.attrs['units'] = 'probability'
-                crps_ensemble.attrs['units'] = 'cummulative probability error'
-                crps_ensemble_skillscore.attrs['units'] = 'bound between -1 and 1, positive values indicate more skill than the reference climatological forecast'
-                crps_ensemble_skillscore.attrs['reference'] = 'Wilks (2006), pages 281 and 302-304'
-
-                bias.attrs['units'] = nc_obs[variables_obs[vv]].units
-
-                # try:
-                #     bias.attrs['units'] = nc_obs[variables_obs[vv]].units
-                # except:
-                #     pdb.set_trace()
-                #     print('WARNING: Units for '+variables_obs[vv]+' cannot be set from observational reference file and will be set from model file instead !')
-                #     bias.attrs['units'] = nc_gcm[variables_gcm[vv]].units
-
-                relbias.attrs['units'] = 'percent'
-                reliability_lower.attrs['units'] = 'probability'
-                reliability_center.attrs['units'] = 'probability'
-                reliability_upper.attrs['units'] = 'probability'
-                roc_auc_lower.attrs['units'] = 'area under the curve'
-                roc_auc_center.attrs['units'] = 'area under the curve'
-                roc_auc_upper.attrs['units'] = 'area under the curve'
-                roc_auc_lower_skillscore.attrs['units'] = 'bound between -1 and 1, positive values indicate more skill than the reference climatological forecast'
-                roc_auc_center_skillscore.attrs['units'] = 'bound between -1 and 1, positive values indicate more skill than the reference climatological forecast'
-                roc_auc_upper_skillscore.attrs['units'] = 'bound between -1 and 1, positive values indicate more skill than the reference climatological forecast'
-                rpc.attrs['source'] = 'Eade et al. 2014, GRL, doi:10.1002/2014GL061146, equation 1'
-                rpc.attrs['long_name'] = 'Ratio of Predictabile Components'
-                rpc.attrs['standard_name'] = 'Ratio of Predictabile Components'
-                rpc.attrs['units'] = 'ratio'
-                rpc.attrs['info'] = 'An RPC value of 1 refers to a forecast system that perfectly reflects the actual predictability (Eade et al. 2014).'
-
-                #join xarray dataArrays containing the verification results into a single xarray dataset, set attributes and save to netCDF format
-                results = xr.merge((pearson_r,pearson_pval,pearson_pval_effn,spearman_r,spearman_pval,spearman_pval_effn,bias,relbias,crps_ensemble,crps_ensemble_skillscore,reliability_lower,reliability_center,reliability_upper,roc_auc_lower,roc_auc_center,roc_auc_upper,roc_auc_lower_skillscore,roc_auc_center_skillscore,roc_auc_upper_skillscore,rpc)).astype(precision) #merge xr dataarrays into a single xr dataset
-                del results.attrs['units'] #delete global attributge <units>, which is unexpectedly created by xr.merge() in the previous line; <units> are preserved as variable attribute.
-                #set global and variable attributes
-                start_year = str(dates_isea[0])[0:5].replace('-','') #start year considered in the skill assessment
-                end_year = str(dates_isea[-1])[0:5].replace('-','') #end year considered in the skill assessment
-                results.x['standard_name'] = 'longitude'
-                results.y['standard_name'] = 'latitude'
-                results.attrs['variable'] = variables_gcm[vv]
-                results.attrs['prediction_system'] = models[mm]
-                results.attrs['reference_observations'] = obs[oo]
-                results.attrs['domain'] = domain
-                results.attrs['validation_period'] = start_year+' to '+end_year
-                results.attrs['modulation'] = modulators[mo]+' in phase '+str(phases[mo])+' as defined in oni2enso.py'
-
-                #set attributes related to modulation through low-frequency climate oscillations
-                if modulators[mo] == 'none':
-                    results.attrs['modulation'] = modulators[mo]
-                else:
-                    results.attrs['modulation'] = modulators[mo]+' in phase '+str(phases[mo])+' as defined in oni2enso.py'
-                    results.attrs['modulation_time'] = 'model initializtion' #refers to the fact that the forecasts are conditioned on climate oscillation phases valid for the initialization month
-
-                results.attrs['time_series_detrending'] = detrending[det]
-                results.attrs['outlier_correction'] = corr_outlier
-                results.attrs['version'] = vers
-                results.attrs['author'] = 'Swen Brands, brandssf@ifca.unican.es or swen.brands@gmail.com'
-
-                #save the results
-                results.to_netcdf(savename_results)
-
-                #retain dimensions used to store quantiles before deleting and closing the respective objects
-                print('retain dimension attributes for storing the quantiles....')
-                season2quan = results.season
-                lead2quan = results.lead
-                y2quan = results.y.astype(precision)
-                x2quan = results.x.astype(precision)
-
-                #close and delete remaining temporary xarray objects to free memory
-                results.close()
-                pearson_r.close()
-                pearson_pval.close()
-                pearson_pval_effn.close()
-                spearman_r.close()
-                spearman_pval.close()
-                spearman_pval_effn.close()
-                bias.close()
-                relbias.close()
-                crps_ensemble.close()
-                crps_ensemble_skillscore.close()
-                obs_seas_mn_5d.close()
-                # obs_seas_mn_6d.close()
-                gcm_seas_mn_5d.close()
-                gcm_seas_mn_6d.close()
-                reliability_lower.close()
-                reliability_center.close()
-                reliability_upper.close()
-                roc_auc_lower.close()
-                roc_auc_center.close()
-                roc_auc_upper.close()
-                roc_auc_lower_skillscore.close()
-                roc_auc_center_skillscore.close()
-                roc_auc_upper_skillscore.close()
-                rpc.close()
-                indices_sub.close()
-                del(results,pearson_r,pearson_pval,pearson_pval_effn,spearman_r,spearman_pval,spearman_pval_effn,bias,relbias,crps_ensemble,crps_ensemble_skillscore,obs_seas_mn_5d,gcm_seas_mn_5d,gcm_seas_mn_6d,reliability_lower,reliability_center,reliability_upper,roc_auc_lower,roc_auc_center,roc_auc_upper,roc_auc_lower_skillscore,roc_auc_center_skillscore,roc_auc_upper_skillscore,rpc,indices_sub)
-
-            #close nc files containing observations
-            nc_obs.close()
-            del(nc_obs)
-        #retain attributes and then close and delete nc files containing model data
-        x_attrs = nc_gcm.x.attrs
-        y_attrs = nc_gcm.y.attrs
-        nc_gcm.close()
-        del(nc_gcm)
-
-    #save tercile probabilities and quantiles into an xarray data arrays; do this separately for each aggregation time and model, but only for the entire time series, i.e. modulator=='none'
-    if modulators[mo] == 'none':
-        #merge and save model terciles
-        upper_prob = xr.DataArray(upper_prob_np, coords=[detrending,variables_gcm,upper_prob.time,upper_prob.season,upper_prob.lead,upper_prob.y,upper_prob.x], dims=['detrended','variable',upper_prob.dims[0],upper_prob.dims[1],upper_prob.dims[2],upper_prob.dims[3],upper_prob.dims[4]],name='upper_tercile_probability').astype(precision)
-        center_prob = xr.DataArray(center_prob_np, coords=[detrending,variables_gcm,center_prob.time,center_prob.season,center_prob.lead,center_prob.y,center_prob.x], dims=['detrended','variable',center_prob.dims[0],center_prob.dims[1],center_prob.dims[2],center_prob.dims[3],center_prob.dims[4]],name='center_tercile_probability').astype(precision)
-        lower_prob = xr.DataArray(lower_prob_np, coords=[detrending,variables_gcm,lower_prob.time,lower_prob.season,lower_prob.lead,lower_prob.y,lower_prob.x], dims=['detrended','variable',lower_prob.dims[0],lower_prob.dims[1],lower_prob.dims[2],lower_prob.dims[3],lower_prob.dims[4]],name='lower_tercile_probability').astype(precision)
-
-        ## interpolate tercile probability values to observational PTI grid
+                    end_time_roc = time.time()
+                    elapsed_time_roc = (end_time_roc - start_time_roc)/60
+                    print('The execution time for caclulating the ROC-AUC for the 3 terciles was: '+str(elapsed_time_roc)+' minutes')
+        #calculate ROC AUC
+        roc_lower = xr.DataArray(roc_lower_np, coords=[subperiods,nc_mod_hr.detrended,variables_mod[mm],nc_mod_hr.season,nc_mod_hr.lead,nc_mod_hr.y,nc_mod_hr.x], dims=['subperiod','detrended','variable','season','lead','y','x'], name='roc_auc_lower_tercile').astype(precision)
+        roc_center = xr.DataArray(roc_center_np, coords=[subperiods,nc_mod_hr.detrended,variables_mod[mm],nc_mod_hr.season,nc_mod_hr.lead,nc_mod_hr.y,nc_mod_hr.x], dims=['subperiod','detrended','variable','season','lead','y','x'], name='roc_auc_center_tercile').astype(precision)
+        roc_upper = xr.DataArray(roc_upper_np, coords=[subperiods,nc_mod_hr.detrended,variables_mod[mm],nc_mod_hr.season,nc_mod_hr.lead,nc_mod_hr.y,nc_mod_hr.x], dims=['subperiod','detrended','variable','season','lead','y','x'], name='roc_auc_upper_tercile').astype(precision)
         
-        #optionally apply land-sea mask to variable specific output file
-        if variables_gcm[vv] in masked_variables_std: # <masked_variables_std> is defined in ./config/config_for_get_skill_season.py
-            print('Upon user request set in '+configuration_file+', values above the Sea are set to NAN for '+variables_gcm[vv]+' in the arrays containing modelled tercile probability time-series ! ')
-            #get mask label as a function of the requested sub-domain
-            if grid_name == 'ecmwf51' and domain in ('medcof','medcof2'):
-                mask_file_indir = 'ECMWF_Land_Medcof_descending_lat_reformatted.nc' # mask file as it appears in its directory
-            elif grid_name == 'ecmwf51' and domain == 'iberia':
-                mask_file_indir = 'ECMWF_Land_Iberia.nc'
-            elif grid_name in ('PTI-grid-v2', 'PTI-grid-v4') and domain == 'Iberia':
-                mask_file_indir = 'PTI-grid_Iberia_010_descending_lat_reformatted.nc'
-            elif grid_name in ('PTI-grid-v2', 'PTI-grid-v4') and domain == 'Canarias':
-                mask_file_indir = 'PTI-grid_Canarias_descending_lat_reformatted.nc'
-            else:
-                raise ValueError('Check entry for <grid_name> and/or <domain> input variables !')
+        #merge the roc of the 3 tericles into a single file
+        roc = xr.merge((roc_lower,roc_center,roc_upper)).astype(precision)
+        #transform into ROC-AUC skill score; see https://doi.org/10.1007/s00382-019-04640-4
+        roc_ss = (roc - 0.5) / 0.5
+        roc_ss = roc_ss.rename({'roc_auc_lower_tercile' : 'roc_auc_lower_tercile_skillscore_continuous', 'roc_auc_center_tercile' : 'roc_auc_center_tercile_skillscore_continuous', 'roc_auc_upper_tercile' : 'roc_auc_upper_tercile_skillscore_continuous'})
+        #transform to binary mask based on ROC-AUC skill score
+        roc_ss_bin = (roc_ss > 0).astype(int)
+        roc_ss_bin = roc_ss_bin.rename({'roc_auc_lower_tercile_skillscore_continuous' : 'roc_auc_lower_tercile_skillscore_binary', 'roc_auc_center_tercile_skillscore_continuous' : 'roc_auc_center_tercile_skillscore_binary', 'roc_auc_upper_tercile_skillscore_continuous' : 'roc_auc_upper_tercile_skillscore_binary'})
+        
+        #load previously stored skill masks for the other scores for this model and aggregation window
+        ds_mask_plus_cont = xr.merge((roc_ss,roc_ss_bin))
 
-            # mask_file = mask_dir+'/ECMWF_Land_'+masklabel+'_ascending_lat.nc' # <mask_dir> is defined in ./config/config_for_get_skill_season.py
-            mask_file = mask_dir+'/'+mask_file_indir #here, descending lats are needed (check why the DataArrays behave distinct concerning ascending or descending lats in pySeasonal)
+        #apply land-sea mask
+        ds_mask_plus_cont = apply_sea_mask(ds_mask_plus_cont,mask_file,'y','x')
+        
+        # add global attributes
+        ds_mask_plus_cont.attrs['version'] = vers
+        ds_mask_plus_cont.attrs['model'] = models[mm]
+        ds_mask_plus_cont.attrs['accumulation_period'] = agg_labels[ag]
+        ds_mask_plus_cont.attrs['validation_period'] = str(years_mod[mm]).replace('[','').replace(']','').replace(', ',' to ')+', grouped by subperiods as indicated by the <subperiod> coordinate'
+        ds_mask_plus_cont.attrs['author'] = "Swen Brands (Instituto de Fisica de Cantabria, CSIC-UC), email: brandssf@ifca.unican.es"
+        ds_mask_plus_cont.attrs['nan_criterion'] = 'A nan is set at a given grid-box if it is returned by xskillscore, e.g. due to a division by zero. It has been confirmed that this occcurs, e.g., if it does not rain at all either in the modelled or quasi-observed time-series. Grid boxes over the sea are also set to nan.'
 
-            #apply the mask on the model probabilities of each tercile
-            upper_prob = apply_sea_mask(upper_prob,mask_file,'y','x')
-            center_prob = apply_sea_mask(center_prob,mask_file,'y','x')
-            lower_prob = apply_sea_mask(lower_prob,mask_file,'y','x')
-        else:
-            print('Upon user request set in ./config/config_for_get_skill_season.py, values above the Sea are RETAINED for '+variables_gcm[vv]+' in the arrays containing modelled tercile probability time-series ! ')
+        # add dimension and variable attributes
+        ds_mask_plus_cont['subperiod'].attrs['info'] = 'Verification subperiod: <none> for no subperiod, <enso0init> for neutral ENSO events, <enso1init> for warm / El Niño events and <enso2init> for cold / La Niña events. Condition is valid on the month the model is initialized and becomes available, which is indicated by the <init> suffix.'
+        ds_mask_plus_cont['detrended'].attrs['info'] = 'Linear de-trending was applied to the modelled and (quasi)observed time series prior to validation; yes or no'
+        ds_mask_plus_cont['variable'].attrs['info'] = 'Meteorological variable acronym according to ERA5 nomenclature followed by Copernicus Climate Data Store (CDS)'
+        ds_mask_plus_cont['season'].attrs['info'] = 'Season the forecast is valid for'
+        ds_mask_plus_cont['lead'].attrs['info'] = 'Leadtime of the forecast; one per month'
+        ds_mask_plus_cont['y'].attrs['name'] = 'latitude'
+        ds_mask_plus_cont['y'].attrs['standard_name'] = 'latitude'
+        ds_mask_plus_cont['x'].attrs['name'] = 'longitude'
+        ds_mask_plus_cont['x'].attrs['standard_name'] = 'longitude'
+        
+        breakpoint()
 
-        tercile_prob = xr.merge((lower_prob,center_prob,upper_prob))
-
-        #add singeton dimensions for visualization purposes
-        tercile_prob = tercile_prob.expand_dims(aggregation=[agg_labels[ag]])
-        tercile_prob = tercile_prob.expand_dims(model=[models[mm]])
-
-        tercile_prob['x'].attrs = x_attrs
-        tercile_prob['y'].attrs = y_attrs
-        tercile_prob['detrended'].attrs['info'] = 'Linear de-trending was applied to the modelled and (quasi)observed time series prior to validation; yes or no'
-        tercile_prob['variable'].attrs['info'] = 'Meteorological variable acronym according to ERA5 nomenclature followed by Copernicus Climate Data Store (CDS)'
-        tercile_prob['season'].attrs['info'] = 'Season the forecast is valid for'
-        tercile_prob['lead'].attrs['info'] = 'Leadtime of the forecast; one per month'
-        #global attributes
-        tercile_prob.attrs['model'] = models[mm]
-        tercile_prob.attrs['description'] = 'observed tercile probabilities obtained from '+models[mm]
-        tercile_prob.attrs['reference_period'] = str(years_quantile[0])+' to '+str(years_quantile[-1])
-        tercile_prob.attrs['version'] = vers
-        tercile_prob.attrs['author'] = "Swen Brands (CSIC-UC, Instituto de Fisica de Cantabria), brandssf@ifca.unican.es or swen.brands@gmail.com"
-
-        #reformat the time dimension to only retain the years for the model terciles (continuous probability values)
-        datevec_years = pd.DatetimeIndex(tercile_prob.time).year.astype(str)
-        tercile_prob['time'] = pd.date_range(start=datevec_years[0], end=datevec_years[-1], freq="YS")
-        del(datevec_years)
-
-        # option to save one variable per file
-        for vvv in np.arange(len(variables_gcm)):
-            tercile_prob_singlevar = tercile_prob.sel(variable=variables_gcm[vvv]).drop_vars("variable")
-            tercile_prob_singlevar.attrs['variable'] = variables_gcm[vvv]
-            savename_tercile_prob_singlevar = dir_netcdf_tercilprobs+'/tercile_prob_pticlima_'+agg_labels[ag]+'_'+models[mm]+'_'+variables_gcm[vvv]+'_'+domain+'_'+str(years_common2label[0])+'_'+str(years_common2label[-1])+'_'+vers+'.nc'
-            encoding = {'upper_tercile_probability': {'zlib': True, 'complevel': compression_level}, 'center_tercile_probability': {'zlib': True, 'complevel': compression_level}, 'lower_tercile_probability': {'zlib': True, 'complevel': compression_level}}
-            tercile_prob_singlevar.to_netcdf(savename_tercile_prob_singlevar,encoding=encoding)
-            tercile_prob_singlevar.close()
-            del(tercile_prob_singlevar)
-
-        # # option to save various variables per file
-        # savename_tercile_prob = dir_netcdf_tercilprobs+'/tercile_prob_pticlima_'+agg_labels[ag]+'_'+models[mm]+'_'+domain+'_'+str(years_common2label[0])+'_'+str(years_common2label[-1])+'_'+vers+'.nc'
-        # encoding = {'upper_tercile_probability': {'zlib': True, 'complevel': compression_level}, 'center_tercile_probability': {'zlib': True, 'complevel': compression_level}, 'lower_tercile_probability': {'zlib': True, 'complevel': compression_level}}
-        # tercile_prob.to_netcdf(savename_tercile_prob,encoding=encoding)
-
-        #merge and save observed terciles
-        lower_tercile_obs = xr.DataArray(lower_tercile_obs, coords=[detrending,variables_obs,lower_prob.time,lower_prob.season,lower_prob.lead,lower_prob.y,lower_prob.x], dims=['detrended','variable',lower_prob.dims[2],lower_prob.dims[3],lower_prob.dims[4],lower_prob.dims[5],lower_prob.dims[6]],name='lower_tercile_binary').astype(precision)
-        center_tercile_obs = xr.DataArray(center_tercile_obs, coords=[detrending,variables_obs,center_prob.time,center_prob.season,center_prob.lead,center_prob.y,center_prob.x], dims=['detrended','variable',center_prob.dims[2],center_prob.dims[3],center_prob.dims[4],center_prob.dims[5],center_prob.dims[6]],name='center_tercile_binary').astype(precision)
-        upper_tercile_obs = xr.DataArray(upper_tercile_obs, coords=[detrending,variables_obs,upper_prob.time,upper_prob.season,upper_prob.lead,upper_prob.y,upper_prob.x], dims=['detrended','variable',upper_prob.dims[2],upper_prob.dims[3],upper_prob.dims[4],upper_prob.dims[5],upper_prob.dims[6]],name='upper_tercile_binary').astype(precision)
-
-        if variables_gcm[vv] in masked_variables_std: # <masked_variables_std> is defined in ./config/config_for_get_skill_season.py
-            print('Upon user request set in ./config/config_for_get_skill_season.py, values above the Sea are set to NAN for '+variables_gcm[vv]+' in the arrays containing observed tercile occurrence time-series ! ')
-            lower_tercile_obs = apply_sea_mask(lower_tercile_obs,mask_file,'y','x') #mask_file is defined above
-            center_tercile_obs = apply_sea_mask(center_tercile_obs,mask_file,'y','x')
-            upper_tercile_obs = apply_sea_mask(upper_tercile_obs,mask_file,'y','x')
-        else:
-            print('Upon user request set in ./config/config_for_get_skill_season.py, values above the Sea are RETAINED for '+variables_gcm[vv]+' in the arrays containing observed tercile occurrence time-series ! ')
-
-        tercile_bin_obs = xr.merge((lower_tercile_obs,center_tercile_obs,upper_tercile_obs)) #merge the observed tercile occurrence time series into a single xarray dataset
-
-        #check whether there are two 1 values for the same year
-        merger = xr.concat([lower_tercile_obs,center_tercile_obs,upper_tercile_obs], dim='tercile').assign_coords(tercile=('tercile', [1,2,3]))
-        if np.any(merger.sum(dim='tercile') > 1):
-            raise ValueError('Binary value 1 has been found in <merger> for more than 1 tercile per year ! It should only appear in one specific tercile !')
-        merger.close()
-        del(merger)
-
-        #add singeton dimensions for visualization purposes
-        tercile_bin_obs = tercile_bin_obs.expand_dims(aggregation=[agg_labels[ag]])
-        tercile_bin_obs = tercile_bin_obs.expand_dims(obs=[obs[oo]])
-
-        #dimension attributes
-        tercile_bin_obs['x'].attrs = x_attrs
-        tercile_bin_obs['y'].attrs = y_attrs
-        tercile_bin_obs['detrended'].attrs['info'] = 'Linear de-trending was applied to the modelled and (quasi)observed time series prior to validation; yes or no'
-        tercile_bin_obs['variable'].attrs['info'] = 'Meteorological variable acronym according to ERA5 nomenclature followed by Copernicus Climate Data Store (CDS)'
-        tercile_bin_obs['season'].attrs['info'] = 'Season the forecast is valid for'
-        tercile_bin_obs['lead'].attrs['info'] = 'Leadtime of the forecast; one per month'
-        #global attributes
-        tercile_bin_obs.attrs['observation'] = obs[oo]
-        tercile_bin_obs.attrs['description'] = 'observed terciles in binary format obtained from '+obs[oo]
-        tercile_bin_obs.attrs['reference_period'] = str(years_quantile[0])+' to '+str(years_quantile[-1])
-        tercile_bin_obs.attrs['version'] = vers
-        tercile_bin_obs.attrs['author'] = "Swen Brands (CSIC-UC, Instituto de Fisica de Cantabria), brandssf@ifca.unican.es or swen.brands@gmail.com"
-
-        # reformat the time dimension to only retain the years for the observed terciles in binary format
-        datevec_years = pd.DatetimeIndex(tercile_bin_obs.time).year.astype(str)
-        tercile_bin_obs['time'] = pd.date_range(start=datevec_years[0], end=datevec_years[-1], freq="YS")
-        del(datevec_years)
-
-        # option to save one variable per file
-        for vvv in np.arange(len(variables_obs)):
-            tercile_bin_obs_singlevar = tercile_bin_obs.sel(variable=variables_obs[vvv]).drop_vars("variable")
-            tercile_bin_obs_singlevar.attrs['variable'] = variables_obs[vvv]
-            savename_tercile_bin_obs_singlevar = dir_netcdf_tercilprobs+'/tercile_bin_pticlima_'+agg_labels[ag]+'_'+obs[oo]+'_'+variables_obs[vvv]+'_'+domain+'_'+str(years_common2label[0])+'_'+str(years_common2label[-1])+'_'+vers+'.nc'
-            encoding = {'upper_tercile_binary': {'zlib': True, 'complevel': compression_level}, 'center_tercile_binary': {'zlib': True, 'complevel': compression_level}, 'lower_tercile_binary': {'zlib': True, 'complevel': compression_level}}
-            tercile_bin_obs_singlevar.to_netcdf(savename_tercile_bin_obs_singlevar,encoding=encoding)
-            tercile_bin_obs_singlevar.close()
-            del(tercile_bin_obs_singlevar)
-            time.sleep(1)
-
-        # # # option to save various variables per file
-        # savename_tercile_bin_obs = dir_netcdf_tercilprobs+'/tercile_bin_pticlima_'+agg_labels[ag]+'_'+obs[oo]+'_'+domain+'_'+str(years_common2label[0])+'_'+str(years_common2label[-1])+'_'+vers+'.nc'
-        # encoding = {'upper_tercile_binary': {'zlib': True, 'complevel': compression_level}, 'center_tercile_binary': {'zlib': True, 'complevel': compression_level}, 'lower_tercile_binary': {'zlib': True, 'complevel': compression_level}}
-        # tercile_bin_obs.to_netcdf(savename_tercile_bin_obs,encoding=encoding)
-
-        #clean
-        upper_prob.close()
-        center_prob.close()
-        lower_prob.close()
-        tercile_prob.close()
-        lower_tercile_obs.close()
-        center_tercile_obs.close()
-        upper_tercile_obs.close()
-        tercile_bin_obs.close()
-        del(upper_prob,center_prob,lower_prob,tercile_prob,lower_tercile_obs,center_tercile_obs,upper_tercile_obs,tercile_bin_obs)
-
-        #save the quantiles separately for each aggregation time and model
-        #convert the two numpy arrays containing the two types of quantiles (memberwise and ensemble) into two xarray data arrays, merge them to a single xarray dataset, add attributes to this dataset and save it to netCDF format
-        #gcm_quantile_vals = xr.DataArray(gcm_quantile_vals, coords=[detrending,variables_gcm,models[mm],np.round(quantiles,2).astype(precision),season2quan,lead2quan,members,y2quan,x2quan], dims=['detrended','variable','model','quantile_threshold','season','lead','member','y','x'], name='quantile_memberwise').astype(precision)
-        gcm_quantile_vals = xr.DataArray(gcm_quantile_vals, coords=[detrending,variables_gcm,np.round(quantiles,2).astype(precision),season2quan,lead2quan,members,y2quan,x2quan], dims=['detrended','variable','quantile_threshold','season','lead','member','y','x'], name='quantile_memberwise').astype(precision)
-        gcm_quantile_vals.attrs['description'] = 'quantile thresholds calculated separately fore each ensemble member'
-        #quantile_vals_ens = xr.DataArray(quantile_vals_ens, coords=[detrending,variables_gcm,models[mm],np.round(quantiles,2).astype(precision),season2quan,lead2quan,y2quan,x2quan], dims=['detrended','variable','model','quantile_threshold','season','lead','y','x'], name='quantile_ensemble').astype(precision)
-        quantile_vals_ens = xr.DataArray(quantile_vals_ens, coords=[detrending,variables_gcm,np.round(quantiles,2).astype(precision),season2quan,lead2quan,y2quan,x2quan], dims=['detrended','variable','quantile_threshold','season','lead','y','x'], name='quantile_ensemble').astype(precision)
-        quantile_vals_ens.attrs['description'] = 'quantile thresholds calculated on all ensemble members; the distinct ensemble members have been concatenated along the time dimension prior to calculating the quantiles'
-        quantile_vals_merged = xr.merge((gcm_quantile_vals,quantile_vals_ens))
-
-        #add singeton dimensions for visualization purposes
-        quantile_vals_merged = quantile_vals_merged.expand_dims(aggregation=[agg_labels[ag]])
-        quantile_vals_merged = quantile_vals_merged.expand_dims(model=[models[mm]])
-
-        #dimension attributes
-        quantile_vals_merged['x'].attrs = x_attrs
-        quantile_vals_merged['y'].attrs = y_attrs
-        quantile_vals_merged['detrended'].attrs['info'] = 'Linear de-trending was applied to the modelled and (quasi)observed time series prior to validation; yes or no'
-        quantile_vals_merged['variable'].attrs['info'] = 'Meteorological variable acronym according to ERA5 nomenclature followed by Copernicus Climate Data Store (CDS)'
-        #quantile_vals_merged['model'].attrs['info'] = 'Name and version of the model / prediction system'
-        quantile_vals_merged['quantile_threshold'].attrs['info'] = 'Quantile thresholds rounded to 2 decimals'
-        quantile_vals_merged['season'].attrs['info'] = 'Season the forecast is valid for'
-        quantile_vals_merged['lead'].attrs['info'] = 'Leadtime of the forecast; one per month'
-        #global attributes
-        quantile_vals_merged.attrs['model'] = models[mm]
-        quantile_vals_merged.attrs['reference_period'] = str(years_quantile[0])+' to '+str(years_quantile[-1])
-        quantile_vals_merged.attrs['version'] = vers
-        quantile_vals_merged.attrs['author'] = "Swen Brands (CSIC-UC, Instituto de Fisica de Cantabria), brandssf@ifca.unican.es or swen.brands@gmail.com"
-
-        # #save to netCDF, option to save various variables per file
-        # savename_quantiles = dir_netcdf_quantiles+'/quantiles_pticlima_'+agg_labels[ag]+'_'+models[mm]+'_'+domain+'_'+str(years_quantile[0])+'_'+str(years_quantile[-1])+'_'+vers+'.nc'
-        # encoding = {'quantile_memberwise': {'zlib': True, 'complevel': compression_level}, 'quantile_ensemble': {'zlib': True, 'complevel': compression_level}}
-        # quantile_vals_merged.to_netcdf(savename_quantiles,encoding=encoding)
-
-        # option to save one variable per file
-        for vvv in np.arange(len(variables_gcm)):
-            quantile_vals_merged_singlevar = quantile_vals_merged.sel(variable=variables_gcm[vvv]).drop_vars("variable")
-            quantile_vals_merged_singlevar.attrs['variable'] = variables_gcm[vvv]
-            savename_quantile_vals_merged_singlevar =  dir_netcdf_quantiles+'/quantiles_pticlima_'+agg_labels[ag]+'_'+models[mm]+'_'+variables_gcm[vvv]+'_'+domain+'_'+str(years_quantile[0])+'_'+str(years_quantile[-1])+'_'+vers+'.nc'
-            encoding = {'quantile_memberwise': {'zlib': True, 'complevel': compression_level}, 'quantile_ensemble': {'zlib': True, 'complevel': compression_level}}
-            quantile_vals_merged_singlevar.to_netcdf(savename_quantile_vals_merged_singlevar,encoding=encoding)
-            quantile_vals_merged_singlevar.close()
-            del(quantile_vals_merged_singlevar)
-            time.sleep(1)
-
-        #close and delete xarray objects that are specific to modulator[mo] = 'none'
-        gcm_quantile_vals.close()
-        quantile_vals_ens.close()
-        quantile_vals_merged.close()
-        del(gcm_quantile_vals,quantile_vals_ens,quantile_vals_merged)
-
-    #close remaining xarray objects
-    season2quan.close()
-    lead2quan.close()
-    y2quan.close()
-    x2quan.close()
-    del(season2quan,lead2quan,y2quan,x2quan)
-
-print('INFO: get_skill_season.py has been run successfully. A flag is written at '+FLAGDIR)
-flagfile = FLAGDIR+'/get_skill_season_'+str(vers)+'_'+domain+'_'+str(models)+'_model_'+str(variables_gcm)+'_'+str(agg_labels)+'_'+str(modulators)+'_'+str(phases)+'.flag'
+print('INFO: medcof2hr.py has been run successfully. A flag is written at '+FLAGDIR)
+flagfile = FLAGDIR+'/medcof2hr_'+str(vers)+'_'+domain+'_'+str(models)+'_model_'+str(variables_mod)+'_'+str(agg_labels)+'_'+str(modulators)+'_'+str(phases)+'.flag'
 flagfile = flagfile.replace("[","").replace("]","").replace("'","").replace(",","_")
 file = open(flagfile,'w')
-file.write('get_skill_season.py has been run successfully for '+str(vers)+', '+str(models)+', '+str(variables_obs)+', '+str(variables_gcm)+', '+str(agg_labels)+', '+str(modulators)+', '+str(phases))
+file.write('medcof2hr.py has been run successfully for '+str(vers)+', '+str(models)+', '+str(variables_obs)+', '+str(variables_mod)+', '+str(agg_labels)+', '+str(modulators)+', '+str(phases))
 file.close()
 #print the elapsed time and close
 end_time = time.time()

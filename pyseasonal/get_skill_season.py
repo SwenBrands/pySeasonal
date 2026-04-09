@@ -144,7 +144,7 @@ if domain_from_config == domain:
 else:
     raise ValueError('<domain_from_config> set in '+configuration_file+' does not match '+domain+' passed via bash or set above in get_skill_season.py !!')
 
-#load custom functions and configuraiton files
+#load custom functions and configuration files
 
 #load the season configurations depending on the aggregation periods specified in <agg_labels>
 season_label = []
