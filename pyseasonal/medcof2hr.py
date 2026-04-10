@@ -303,7 +303,7 @@ for ag in np.arange(len(agg_labels)):
             ds_mask_plus_cont.attrs['variable'] = variables_obs[mm][vv]+'-'+variable_out_label
             ds_mask_plus_cont.attrs['model'] = models[mm]
             ds_mask_plus_cont.attrs['accumulation_period'] = agg_labels[ag]
-            ds_mask_plus_cont.attrs['AUC_probability_thresholds'] = str(prob_thresholds)
+            ds_mask_plus_cont.attrs['AUC_probability_thresholds'] = str(nr_prob_thesholds)
             ds_mask_plus_cont.attrs['nan_criterion'] = 'A nan is set at a given grid-box if it is returned by xskillscore, e.g. due to a division by zero. It has been confirmed that this occcurs, e.g., if it does not rain at all either in the modelled or quasi-observed time-series. Grid boxes over the sea are also set to nan.'
             ds_mask_plus_cont.attrs['nan_over_sea'] = 'yes'
             ds_mask_plus_cont.attrs['validation_period'] = str(years_mod[mm]).replace('[','').replace(']','').replace(', ',' to ')+', grouped by subperiods as indicated by the <subperiod> coordinate'

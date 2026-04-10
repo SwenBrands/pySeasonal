@@ -1,7 +1,7 @@
 from datetime import date
 from pathlib import Path
 
-from pyseasonal.products.seas2ipe import swen_seas2ipe
+from pyseasonal.products.seas2ipe_singlevars import swen_seas2ipe
 from pyseasonal.utils.config import load_config
 
 
