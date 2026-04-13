@@ -260,7 +260,8 @@ for mo in np.arange(len(modulators)):
                         elif grid_name in ('PTI-grid-v2','PTI-grid-v4') and domain == 'Iberia':
                             mask_file_indir = 'PTI-grid_Iberia_010_descending_lat_reformatted.nc'
                         elif grid_name in ('PTI-grid-v2','PTI-grid-v4') and domain == 'Canarias':
-                            mask_file_indir = 'PTI-grid_Canarias_descending_lat_reformatted.nc'
+                            # mask_file_indir = 'PTI-grid_Canarias_descending_lat_reformatted.nc' # 0.05 degrees resolution
+                            mask_file_indir = 'PTI-grid_Canarias_0025_descending_lat_reformatted.nc' # 0.025 degrees resolution
                         else:
                             raise ValueError('Check entry for <grid_name> and/or <domain> input variables !')
 
@@ -993,7 +994,8 @@ for mo in np.arange(len(modulators)):
                     elif grid_name in ('PTI-grid-v2', 'PTI-grid-v4') and domain == 'Iberia':
                         mask_file_indir = 'PTI-grid_Iberia_010_descending_lat_reformatted.nc'
                     elif grid_name in ('PTI-grid-v2', 'PTI-grid-v4') and domain == 'Canarias':
-                        mask_file_indir = 'PTI-grid_Canarias_descending_lat_reformatted.nc'
+                        # mask_file_indir = 'PTI-grid_Canarias_descending_lat_reformatted.nc' # 0.05 degrees resolution
+                        mask_file_indir = 'PTI-grid_Canarias_0025_descending_lat_reformatted.nc' # 0.025 degrees resolution
                     else:
                         raise ValueError('Check entry for <grid_name> and/or <domain> input variables !')
 

@@ -140,7 +140,8 @@ indices = xr.open_dataset(dir_telcon+'/'+filename_telcon).astype(precision)
 if target_domain == 'Iberia':
     mask_file_indir = 'PTI-grid_Iberia_010_descending_lat_reformatted.nc'
 elif target_domain == 'Canarias':
-    mask_file_indir = 'PTI-grid_Canarias_descending_lat_reformatted.nc'
+    # mask_file_indir = 'PTI-grid_Canarias_descending_lat_reformatted.nc' # 0.05 degree resolution
+    mask_file_indir = 'PTI-grid_Canarias_0025_descending_lat_reformatted.nc' # 0.025 degree resolution
 else:
     raise ValueError('Check entry for <domain> input parameter !')
 mask_file = mask_dir+'/'+mask_file_indir #here, descending lats are needed (check why the DataArrays behave distinct concerning ascending or descending lats in pySeasonal)

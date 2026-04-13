@@ -118,7 +118,8 @@ def swen_pred2tercile_operational(config: dict, year_init: str, month_init: str)
     elif domain == 'Iberia':
         mask_file_indir = 'PTI-grid_Iberia_010_descending_lat_reformatted.nc'
     elif domain == 'Canarias':
-        mask_file_indir = 'PTI-grid_Canarias_descending_lat_reformatted.nc'
+        # mask_file_indir = 'PTI-grid_Canarias_descending_lat_reformatted.nc' # 0.05 degree resolution
+        mask_file_indir = 'PTI-grid_Canarias_0025_descending_lat_reformatted.nc' # 0.025 degree resolution
     else:
         raise ValueError('Check entry for <domain> input parameter !')
     mask_file = mask_dir+'/'+mask_file_indir #here, descending lats are needed (check why the DataArrays behave distinct concerning ascending or descending lats in pySeasonal)
@@ -128,7 +129,8 @@ def swen_pred2tercile_operational(config: dict, year_init: str, month_init: str)
         if medcof2hr == 'Iberia':
             mask_file_hr_indir = 'PTI-grid_Iberia_010_descending_lat_reformatted.nc'
         elif medcof2hr == 'Canarias':
-            mask_file_hr_indir = 'PTI-grid_Canarias_descending_lat_reformatted.nc'
+            # mask_file_hr_indir = 'PTI-grid_Canarias_descending_lat_reformatted.nc' # 0.05 degree resolution
+            mask_file_hr_indir = 'PTI-grid_Canarias_0025_descending_lat_reformatted.nc' # 0.025 degree resolution
         else:
             ValueError('Unexpected entry for <medcof2hr> !')
         mask_file_hr = mask_dir+'/'+mask_file_hr_indir
