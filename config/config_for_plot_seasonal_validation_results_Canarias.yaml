@@ -5,13 +5,12 @@
 
 #set path to input gcm files
 paths:
-  lustre:
-    home: '/lustre/gmeteo/PTICLIMA'
-    rundir: '/lustre/gmeteo/PTICLIMA/Scripts/SBrands/pyPTIclima/pySeasonal'
-    dir_flag: '/lustre/gmeteo/PTICLIMA/Scripts/SBrands/pyPTIclima/pySeasonal/FLAG/plot'
-    auxdir: '/lustre/gmeteo/PTICLIMA/Inventory/Scripts/pyPTIclima/pySolar'
-    dir_netcdf: '/lustre/gmeteo/PTICLIMA/Results/seasonal/validation/' #path to outupt netcdf files produced with this script, containing an xarray dataset with all verification results
-    mask_dir: '/lustre/gmeteo/PTICLIMA/Auxiliary-material/Masks' #path to the land-sea masks
+  home: '/lustre/gmeteo/PTICLIMA'
+  rundir: 'Scripts/SBrands/pyPTIclima/pySeasonal'
+  dir_flag: 'Scripts/SBrands/pyPTIclima/pySeasonal/FLAG/plot'
+  auxdir: 'Inventory/Scripts/pyPTIclima/pySolar'
+  dir_netcdf: 'Results/seasonal/validation/' #path to outupt netcdf files produced with this script, containing an xarray dataset with all verification results
+  mask_dir: 'PTICLIMA/Auxiliary-material/Masks' #path to the land-sea masks
 
 # models: ['cmcc4', 'eccc5', 'ecmwf51'] # list of models to be evaluated
 models: ['ecmwf51'] # list of models to be evaluated

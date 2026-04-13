@@ -265,10 +265,15 @@ for ag in np.arange(len(agg_labels)):
                     elapsed_time_roc = (end_time_roc - start_time_roc)/60
                     print('The execution time for caclulating the ROC-AUC for the 3 terciles was: '+str(elapsed_time_roc)+' minutes')
         
-            #calculate ROC AUC
-            roc_lower = xr.DataArray(roc_lower_np, coords=[subperiods,nc_mod_hr.detrended,nc_mod_hr.season,nc_mod_hr.lead,nc_mod_hr.y,nc_mod_hr.x], dims=['subperiod','detrended','season','lead','y','x'], name='roc_auc_lower_tercile').astype(precision)
-            roc_center = xr.DataArray(roc_center_np, coords=[subperiods,nc_mod_hr.detrended,nc_mod_hr.season,nc_mod_hr.lead,nc_mod_hr.y,nc_mod_hr.x], dims=['subperiod','detrended','season','lead','y','x'], name='roc_auc_center_tercile').astype(precision)
-            roc_upper = xr.DataArray(roc_upper_np, coords=[subperiods,nc_mod_hr.detrended,nc_mod_hr.season,nc_mod_hr.lead,nc_mod_hr.y,nc_mod_hr.x], dims=['subperiod','detrended','season','lead','y','x'], name='roc_auc_upper_tercile').astype(precision)
+            #add singleton dimensions to numpy arrays as requested by Dani García
+            roc_lower_np = np.expand_dims(roc_lower_np, axis=0)
+            roc_center_np = np.expand_dims(roc_center_np, axis=0)
+            roc_upper_np = np.expand_dims(roc_upper_np, axis=0)
+            
+            #transform numpy arrays with singleton dimension to xarray Data Array
+            roc_lower = xr.DataArray(roc_lower_np, coords=[[variables_mod[mm][vv]], subperiods, nc_mod_hr.detrended, nc_mod_hr.season, nc_mod_hr.lead, nc_mod_hr.y, nc_mod_hr.x], dims=['variable', 'subperiod','detrended','season','lead','y','x'], name='roc_auc_lower_tercile').astype(precision)
+            roc_center = xr.DataArray(roc_center_np, coords=[[variables_mod[mm][vv]], subperiods, nc_mod_hr.detrended, nc_mod_hr.season, nc_mod_hr.lead, nc_mod_hr.y, nc_mod_hr.x], dims=['variable', 'subperiod','detrended','season','lead','y','x'], name='roc_auc_center_tercile').astype(precision)
+            roc_upper = xr.DataArray(roc_upper_np, coords=[[variables_mod[mm][vv]], subperiods, nc_mod_hr.detrended, nc_mod_hr.season, nc_mod_hr.lead, nc_mod_hr.y, nc_mod_hr.x], dims=['variable', 'subperiod','detrended','season','lead','y','x'], name='roc_auc_upper_tercile').astype(precision)
             
             #merge the roc of the 3 tericles into a single file
             roc = xr.merge((roc_lower,roc_center,roc_upper)).astype(precision)
@@ -284,7 +289,7 @@ for ag in np.arange(len(agg_labels)):
             roc_ss_bin = (roc_ss > 0).astype(int)
             roc_ss_bin = roc_ss_bin.rename({'roc_auc_lower_tercile_skillscore_continuous' : 'roc_auc_lower_tercile_skillscore_binary', 'roc_auc_center_tercile_skillscore_continuous' : 'roc_auc_center_tercile_skillscore_binary', 'roc_auc_upper_tercile_skillscore_continuous' : 'roc_auc_upper_tercile_skillscore_binary'})
             
-            #load previously stored skill masks for the other scores for this model and aggregation window
+            #merge continuous and binary skill scores. Then add the "variable" dimension requested by Dani García as well as the corresponding metadata
             ds_mask_plus_cont = xr.merge((roc_ss,roc_ss_bin)).astype(precision)
 
             #clean
