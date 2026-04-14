@@ -21,8 +21,7 @@ grid_name: 'PTI-grid-v2' #here used as label to save the output netcdf file: ecm
 int_method: 'upscaled' #here used as label to save the output netcdf file, ask Adri if this method was used, 'conservative_normed' or 'upscaled'
 
 paths:
-  lustre:
-    home: '/lustre/gmeteo/PTICLIMA'
-    path_obs_base: '/lustre/gmeteo/PTICLIMA/DATA/OBSERVATIONS' #base path upon which the final path to the obs data is constructed
-    savepath_base: '/lustre/gmeteo/PTICLIMA/Results/seasonal/obs/regridded' #This is the common directory for regridded monthly observations; what is placed here will be processed by get_skill_season.py
-    rundir: '/lustre/gmeteo/PTICLIMA/Scripts/SBrands/pyPTIclima/pySeasonal' #The run directory
+  home: '/lustre/gmeteo/PTICLIMA'
+  path_obs_base: 'DATA/OBSERVATIONS' #base path upon which the final path to the obs data is constructed
+  savepath_base: 'Results/seasonal/obs/regridded' #This is the common directory for regridded monthly observations; what is placed here will be processed by get_skill_season.py
+  rundir: 'Scripts/SBrands/pyPTIclima/pySeasonal' #The run directory

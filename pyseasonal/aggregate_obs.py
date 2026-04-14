@@ -14,8 +14,8 @@ from pyseasonal.utils.config import load_config
 # INDICATE CONFIGURATION FILE ######################################
 
 # configuration_file = 'config/config_for_aggregate_obs_Canarias.yaml'
-configuration_file = 'config/config_for_aggregate_obs_Iberia.yaml'
-# configuration_file = 'config/config_for_aggregate_obs_medcof.yaml'
+# configuration_file = 'config/config_for_aggregate_obs_Iberia.yaml'
+configuration_file = 'config/config_for_aggregate_obs_medcof.yaml'
 
 ####################################################################
 
@@ -25,8 +25,8 @@ config = load_config(configuration_file)
 #set input parameters for observational datasets to be regridded:
 obs = config['obs'] #name of the observational / reanalysis dataset that will be regridded: 'era5', 'PTI-grid-v2'
 agg_src = config['agg_src'] #'day' or 'mon': temporal aggregation of the observational input files, pertains to the <obs> loop indicated with <oo> below
-startyear_file = config['startyear_file'] #start year of the obs file as indicated in filename
-endyear_file = config['endyear_file'] #corresponding end year
+startyears_file = config['startyear_file'] # list of start years of the obs file as indicated in filename
+endyears_file = config['endyear_file'] #list of corresponding end years
 variables = config['variables'] #variables to be regridded
 variables_nc = config['variables_nc'] #variable names with the netCDF file
 years = [1981,2022] #years to be regridded
@@ -64,7 +64,7 @@ for vv in np.arange(len(variables)):
             nc = xr.open_dataset(path_obs_data, decode_timedelta=False)
         elif variables[vv] in ('SPEI-3','GDD_S','GDD_W','CGDD_S','CGDD_W'):
             #path_obs_data = path_obs_base+'/'+obs+'/'+agg_src+'/'+domain+'_'+resolution+'/'+variables[vv]+'/'+variables[vv]+'_'+obs.upper()+'_'+agg_src+'_*.nc' #SPEI-3_ERA5_day_2021.nc
-            path_obs_data = path_obs_base+'/'+obs.upper()+'/data_derived/'+domain+'_'+resolution+'/mon/'+variables[vv] #SPEI-3_ERA5_day_2021.nc
+            path_obs_data = path_obs_base+'/'+obs.upper()+'_deprecated/data_derived/'+domain+'_'+resolution+'/'+agg_src+'/'+variables[vv] #SPEI-3_ERA5_day_2021.nc
             #get list of input files
             inputfiles_list = []
             for yy in np.arange(years[0],years[1]+1):
@@ -75,6 +75,9 @@ for vv in np.arange(len(variables)):
             print('The following input files will be loaded and concatenated:')
             print(inputfiles_list)
             nc = xr.open_mfdataset(inputfiles_list, combine="by_coords")
+        elif variables[vv] in ('SU','FD','ID','pet-hargreaves','PRm','Rx1day','Rx5day','SSRDm','TNm','TR','TXm','UAI','WSm'):
+            path_obs_data = path_obs_base+'/'+obs.upper()+'/data_derived/'+domain+'_'+resolution+'/'+agg_src+'/'+variables[vv]+'/'+variables[vv]+'_'+obs.upper()+'_'+domain_label+'_'+resolution+'_'+agg_src+'_'+str(startyears_file[vv])+'-'+str(endyears_file[vv])+'.nc'
+            nc = xr.open_dataset(path_obs_data)
         else:
             raise ValueError('Variable '+variables[vv]+' is not yet supported by this script !')
     elif domain in ('Canarias','Iberia'):
@@ -110,11 +113,27 @@ for vv in np.arange(len(variables)):
     try:
         units_content = nc[variables[vv]].units
     except:
-        pdb.set_trace()
         print('WARNING: Units for '+variables[vv]+' are missing and will be added now !')
         if variables[vv] == 'pvpot':
             units_content = 'index value ranging from 0 to 1'
-            print('WARNING: Setting unit for '+variables[vv]+' to '+units_content)
+        elif variables[vv] in ('SU', 'FD', 'ID', 'TR'):
+            units_content = 'number of days per month'
+        elif variables[vv] in ('TXm', 'TNm', 'CGDD_W', 'CGDD_s'):
+            units_content = 'degrees Celsius'
+        elif variables[vv] in ('PRm','Rx1day','Rx5day'):
+            units_content = 'mm'
+        elif variables[vv] in ('SSRDm'):
+            units_content = 'W/m2'
+        elif variables[vv] in ('pet_hargreaves'):
+            units_content = 'mm/day'
+        elif variables[vv] in ('UAI'):
+            units_content = 'dimensionless'
+        elif variables[vv] in ('WSm'):
+            units_content = 'm/s'
+        else:
+            pdb.set_trace()
+
+        print('WARNING: Setting unit for '+variables[vv]+' to '+units_content)
 
     nc[variables[vv]].attrs['units'] = units_content
 
