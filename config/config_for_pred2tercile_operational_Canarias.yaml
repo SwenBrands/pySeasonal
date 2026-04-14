@@ -16,7 +16,11 @@ smooth_prob: 'no' #smooth the tercile probabilities with a Gaussian filter
 
 precip_threshold_quotient: 30 #quotient to calculate seasonal mean daily precipitation threshold in mm below which the modelled and quasi-observed monthly precipitation amount is set to 0. Bring this in exact agreement with get_skill_season.py in future versions
 datatype: 'float32' #data type of the variables in the output netcdf files
+
+#domain and interpolation options
 domain: 'Canarias' #spatial domain
+medcof2hr: 'no' #no, Iberia or Canarias. Option to interpolate the forecasted values on the medcof grid to the high resoulution (hr) observational grids developed in the PTI Clima project; in pred2tercile.py, this parameter is only loaded in case domain == 'medcof'
+
 masked_variables_std: ['CGDDS-C4', 'FWI-C4', 'SPEI-3-M-C4', 'Rx1day-C4', 'Rx5day-C4', 'TNm-C4', 'PRtot-C4', 'PRm-C4', 'TXm-C4', 'FD-C4', 'SU-C4', 'TR-C4'] #list of variables on which a land-sea mask will be applied, setting values over sea to nan
 detrended: 'no' #yes or no, linear detrending of the gcm and obs time series prior to validation
 nr_mem: [25] #considered ensemble members, not yet in use !

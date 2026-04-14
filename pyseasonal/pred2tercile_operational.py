@@ -32,10 +32,18 @@ def swen_pred2tercile_operational(config: dict, year_init: str, month_init: str)
     precip_threshold_quotient = config['precip_threshold_quotient']
     datatype = config['datatype']
     domain = config['domain']
-    if domain == 'medcof':
-        medcof2hr = config['medcof2hr']
+    
+    #optionally interpolate the tercile probabilies on the medcof domain to the Iberia or Canarias grid
+    medcof2hr = config['medcof2hr'] # "Iberia", "Canarias" or "no"; interpolate to high resoultion grids
+    if domain == 'medcof' and medcof2hr in ('Iberia', 'Canarias'):
         interp_method = config['interp_method']
         variable_out_label = config['variable_out_label']
+    elif domain == 'medcof' and medcof2hr == 'no':
+        print('Upon user request (medcof2hr = '+medcof2hr+'+), the tercile probabilities on the '+domain+' domain will not be interpreted to any high resolution grid !')
+    elif domain in ('Iberia', 'Canarias') and medcof2hr == 'no':
+        print('Interpolation is not available for '+domain+' domain !')
+    else:
+        raise ValueError('Unknown entry for <domain> and/or <medcof2hr> input parameter !')
     
     masked_variables_std = config['masked_variables_std']
     detrended = config['detrended']
@@ -67,8 +75,8 @@ def swen_pred2tercile_operational(config: dict, year_init: str, month_init: str)
     print('precip_threshold_quotient: '+str(precip_threshold_quotient))
     print('datatype: '+str(datatype))
     print('domain: '+str(domain))
-    if domain == 'medcof':
-        print('medcof2hr: '+str(medcof2hr))
+    print('medcof2hr: '+str(medcof2hr))
+    if domain == 'medcof' and medcof2hr in ('Canarias', 'Iberia'):        
         print('interp_method: '+str(interp_method))
         print('variable_out_label: '+str(variable_out_label))
     print('masked_variables_std: '+str(masked_variables_std))
@@ -118,11 +126,12 @@ def swen_pred2tercile_operational(config: dict, year_init: str, month_init: str)
     elif domain == 'Iberia':
         mask_file_indir = 'PTI-grid_Iberia_010_descending_lat_reformatted.nc'
     elif domain == 'Canarias':
-        # mask_file_indir = 'PTI-grid_Canarias_descending_lat_reformatted.nc' # 0.05 degree resolution
-        mask_file_indir = 'PTI-grid_Canarias_0025_descending_lat_reformatted.nc' # 0.025 degree resolution
+        mask_file_indir = 'PTI-grid_Canarias_descending_lat_reformatted.nc' # 0.05 degree resolution
     else:
-        raise ValueError('Check entry for <domain> input parameter !')
+        raise ValueError('No mask file has been assigned for domain = '+domain+' !')
+
     mask_file = mask_dir+'/'+mask_file_indir #here, descending lats are needed (check why the DataArrays behave distinct concerning ascending or descending lats in pySeasonal)
+    print('The mask file to be loaded is: '+mask_file)
 
     #optionally load the high resultion grid to which the medcof forecasts are to be interpolated; this grid is also used to mask the interpolated high-resolution data, if requested by the user
     if domain == 'medcof' and medcof2hr in ('Iberia','Canarias'):
@@ -134,7 +143,10 @@ def swen_pred2tercile_operational(config: dict, year_init: str, month_init: str)
         else:
             ValueError('Unexpected entry for <medcof2hr> !')
         mask_file_hr = mask_dir+'/'+mask_file_hr_indir
+        print('The additionala high resolution mask file, also used for interpolation from '+domain+' to '+medcof2hr+', is: '+mask_file)
         nc_hr = xr.open_dataset(mask_file_hr)
+    else:
+        print('No high resolution mask file is needed for domain = '+domain+' and medcof2hr = '+medcof2hr)
 
     #make forecast for each aggregation window, model and variable
     for ag in np.arange(len(agg_label)):
@@ -439,19 +451,22 @@ def swen_pred2tercile_operational(config: dict, year_init: str, month_init: str)
 
             # option to save one variable per file
             for vvv in np.arange(len(variable_std[mm])):
-                out_arr_singlevar = out_arr.sel(variable=variable_std[mm][vvv]).drop_vars("variable")
-                out_arr_singlevar.attrs = attrs_from_infile[vvv] # pass all attributes from input file containing the forecast
-                out_arr_singlevar.attrs['variable'] = variable_std[mm][vvv] #define new attribute "variable" containing the standard variable names defined in variable_std
-                # out_arr_singlevar.attrs['info'] = 'global attributes are from the input file containing '+variable_std[mm][vvv]
+                #save variable on mother domain
+                if medcof2hr == 'no':
+                    out_arr_singlevar = out_arr.sel(variable=variable_std[mm][vvv]).drop_vars("variable")
+                    out_arr_singlevar.attrs = attrs_from_infile[vvv] # pass all attributes from input file containing the forecast
+                    out_arr_singlevar.attrs['variable'] = variable_std[mm][vvv] #define new attribute "variable" containing the standard variable names defined in variable_std
+                    # out_arr_singlevar.attrs['info'] = 'global attributes are from the input file containing '+variable_std[mm][vvv]
 
-                encoding = dict(probability=dict(chunksizes=(1, 1, 1, 1, 1, len(out_arr[lat_name_out]), len(out_arr[lon_name_out])))) #https://docs.xarray.dev/en/stable/user-guide/io.html#writing-encoded-data
-                savename_out_arr_singlevar = dir_forecast+'/'+domain+'/probability_'+agg_label[ag]+'_'+models[mm]+version[mm]+'_'+variable_std[mm][vvv]+'_'+domain+'_init_'+str(year_init)+str(month_init).zfill(2)+'_dtr_'+detrended+'_refyears_'+str(years_quantile[mm][0])+'_'+str(years_quantile[mm][1])+'_'+quantile_version+'.nc'
-                out_arr_singlevar.to_netcdf(savename_out_arr_singlevar,encoding=encoding)
-                out_arr_singlevar.close()
-                del(out_arr_singlevar)
-                time.sleep(1)
+                    encoding = dict(probability=dict(chunksizes=(1, 1, 1, 1, 1, len(out_arr[lat_name_out]), len(out_arr[lon_name_out])))) #https://docs.xarray.dev/en/stable/user-guide/io.html#writing-encoded-data
+                    savename_out_arr_singlevar = dir_forecast+'/'+domain+'/probability_'+agg_label[ag]+'_'+models[mm]+version[mm]+'_'+variable_std[mm][vvv]+'_'+domain+'_init_'+str(year_init)+str(month_init).zfill(2)+'_dtr_'+detrended+'_refyears_'+str(years_quantile[mm][0])+'_'+str(years_quantile[mm][1])+'_'+quantile_version+'.nc'
+                    out_arr_singlevar.to_netcdf(savename_out_arr_singlevar,encoding=encoding)
+                    out_arr_singlevar.close()
+                    del(out_arr_singlevar)
+                    time.sleep(1)
 
-                if domain == 'medcof' and medcof2hr in ('Iberia, Canarias'):
+                #save variable interpolated from medcof domain to Iberia or Canarias
+                elif domain == 'medcof' and medcof2hr in ('Iberia, Canarias'):
                     out_arr_singlevar_hr = out_arr_hr.sel(variable=variable_std[mm][vvv]).drop_vars("variable")
                     out_arr_singlevar_hr.attrs = attrs_from_infile[vvv] # pass all attributes from input file containing the forecast
                     out_arr_singlevar_hr.attrs['variable'] = variable_std[mm][vvv]+'-'+variable_out_label #define new attribute "variable" containing the standard variable names defined in variable_std
@@ -467,18 +482,16 @@ def swen_pred2tercile_operational(config: dict, year_init: str, month_init: str)
                     out_arr_singlevar_hr.close()
                     del(out_arr_singlevar_hr)
                     time.sleep(1)
+                else:
+                    raise ValueError('Check entry for <domain> and/or <medcof2hr> input variable !')
+            
+            if domain == 'medcof' and medcof2hr in ('Iberia', 'Canarias'):
+                out_arr_hr.close()
+                del(out_arr_hr)
 
             # close all xarray objects
-            lower_xr.close()
-            upper_xr.close()
-            seas_mean.close()
-            nc_fc.close()
-            out_arr.close()
-            out_arr_hr.close()
-            del(lower_xr,upper_xr,seas_mean,nc_fc,out_arr,out_arr_hr)
-
-            nc_quantile.close()
-            del(nc_quantile)
+            lower_xr.close(); upper_xr.close(); seas_mean.close(); nc_fc.close(); out_arr.close(); nc_quantile.close()
+            del(lower_xr,upper_xr,seas_mean,nc_fc,out_arr,nc_quantile)
     
     #close conditional xarray objects
     if domain == 'medcof' and medcof2hr in ('Iberia','Canarias'):
