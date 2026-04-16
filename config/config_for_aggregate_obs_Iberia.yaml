@@ -10,8 +10,10 @@ endyear_file: 2022 #corresponding end year
 # variables_nc: ['TXm', 'FWI', 'SU', 'TR', 'Rx1day', 'Rx5day', 'PRm', 'TNm', 'FD', 'CDDX', 'DD', 'ID'] #variable names with the netCDF file
 variables: ['TXm'] #variables to be regridded
 variables_nc: ['TXm'] #variable names with the netCDF file
-
-years: [1981,2022] #years to be regridded
+startyears_file: [1981] #start year of the obs file as indicated in filename
+endyears_file: [2022] #corresponding end year as indicated in filename
+startyears_aggregation: [1981] #start years to be aggregated
+endyears_aggregation: [2022] #end years to be aggregated
 
 domain: 'Iberia' #spatial domain the model data is available on. So far, this is just a label used in the output filename
 domain_label: 'pen' #domain label used in file name

@@ -14,7 +14,7 @@ from pyseasonal.utils.config import load_config
 # INDICATE CONFIGURATION FILE ######################################
 
 # configuration_file = 'config/config_for_aggregate_obs_Canarias.yaml'
-# configuration_file = 'config/config_for_aggregate_obs_Iberia.yaml'
+# configuration_file = 'config/config_for_aggregate_obs_Canarias.yaml'
 configuration_file = 'config/config_for_aggregate_obs_medcof.yaml'
 
 ####################################################################
@@ -25,11 +25,12 @@ config = load_config(configuration_file)
 #set input parameters for observational datasets to be regridded:
 obs = config['obs'] #name of the observational / reanalysis dataset that will be regridded: 'era5', 'PTI-grid-v2'
 agg_src = config['agg_src'] #'day' or 'mon': temporal aggregation of the observational input files, pertains to the <obs> loop indicated with <oo> below
-startyears_file = config['startyear_file'] # list of start years of the obs file as indicated in filename
-endyears_file = config['endyear_file'] #list of corresponding end years
 variables = config['variables'] #variables to be regridded
 variables_nc = config['variables_nc'] #variable names with the netCDF file
-years = [1981,2022] #years to be regridded
+startyears_file = config['startyears_file'] # list of start years of the obs file as indicated in filename
+endyears_file = config['endyears_file'] #list of corresponding end years
+startyears_aggregation = config['startyears_aggregation'] #list of start years per variable to be regridded
+endyears_aggregation = config['endyears_aggregation'] #list of start years per variable to be regridded
 domain = config['domain'] #spatial domain the model data is available on. So far, this is just a label used in the output filename.
 domain_label = config['domain_label'] #domain label used in file name
 resolution = config['resolution'] #resolution shortcut used in the input variable names
@@ -50,7 +51,7 @@ if os.path.isdir(savepath_base+'/'+obs) != True:
 
 #Load observations, cut out years indicated in <years> and aggregate to monthly mean value. Then save to netcdf
 for vv in np.arange(len(variables)):
-    print('Processing '+variables[vv]+' from '+obs+' for the years '+str(years))
+    print('Processing '+variables[vv]+' from '+obs+' from '+str(startyears_aggregation[vv])+' to '+str(endyears_aggregation[vv]))
     if variables[vv] in ('t2m','tp','sst','z500','si10','ssrd','msl'):
         raise ValueError(variables[vv]+' are already available on monthly timescale in '+path_obs_base+' because they have been already donwloaded from CDS!')
 
@@ -67,7 +68,7 @@ for vv in np.arange(len(variables)):
             path_obs_data = path_obs_base+'/'+obs.upper()+'_deprecated/data_derived/'+domain+'_'+resolution+'/'+agg_src+'/'+variables[vv] #SPEI-3_ERA5_day_2021.nc
             #get list of input files
             inputfiles_list = []
-            for yy in np.arange(years[0],years[1]+1):
+            for yy in np.arange(startyears_aggregation[vv],endyears_aggregation[vv]+1):
                 dir_content = os.listdir(path_obs_data+'/'+str(yy))
                 for fi in np.arange(len(dir_content)):
                     inputfiles_list.append(path_obs_data+'/'+str(yy)+'/'+dir_content[fi])
@@ -95,7 +96,7 @@ for vv in np.arange(len(variables)):
 
     #cut out target period
     dates = pd.DatetimeIndex(nc.time.values)
-    years_ind = np.where((dates.year >= years[0]) * (dates.year <= years[-1]))[0]
+    years_ind = np.where((dates.year >= startyears_aggregation[vv]) * (dates.year <= endyears_aggregation[vv]))[0]
     nc = nc.isel(time=years_ind)
     dates = pd.DatetimeIndex(nc.time.values) #retrieve dates form the time-reduced xr dataset
     #calculate monthly mean values
@@ -143,7 +144,7 @@ for vv in np.arange(len(variables)):
     # nc.y.attrs('standard_name') = 'latitude'
     # nc.y.attrs('long_name') = 'latitude'
     # nc.y.attrs('units') = 'degrees_north'
-    savepath = savepath_base+'/'+obs+'/'+variables[vv]+'_mon_'+obs+'_on_'+grid_name+'_grid_'+int_method+'_'+domain+'_'+str(years[0])+'_'+str(years[1])+'.nc'
+    savepath = savepath_base+'/'+obs+'/'+variables[vv]+'_mon_'+obs+'_on_'+grid_name+'_grid_'+int_method+'_'+domain+'_'+str(startyears_aggregation[vv])+'_'+str(endyears_aggregation[vv])+'.nc'
     nc.astype('float32').to_netcdf(savepath)
     nc.close()
     del(nc)

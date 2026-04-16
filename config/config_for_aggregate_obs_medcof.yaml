@@ -2,11 +2,12 @@
 
 obs: 'era5' #name of the observational / reanalysis dataset that will be regridded: 'era5', 'PTI-grid-v2'
 agg_src: 'mon' #'day' or 'mon': temporal aggregation of the observational input files, pertains to the <obs> loop indicated with <oo> below
-startyear_file: [1981, 1940, 1940, 1940, 1940, 1940, 1940, 1940, 1940, 1940, 1940, 1940, 1940, 1940] #start year of the obs file as indicated in filename
-endyear_file: [2022, 2024, 2024, 2024, 2024, 2024, 2024, 2024, 2024, 2024, 2024, 2024, 2024, 2024] #corresponding end year as indicated in filename
-variables: ['CGDD_W','SU','FD','ID','pet-hargreaves','PRm','Rx1day','Rx5day','SSRDm','TNm','TR','TXm','UAI','WSm'] #variables to be regridded
-variables_nc: ['CGDD_W','SU','FD','ID','pet-hargreaves','PRm','Rx1day','Rx5day','SSRDm','TNm','TR','TXm','uai','WSm'] #variable names with the netCDF file
-years: [1981, 2022] #years to be regridded
+startyears_file: [1981, 1981, 1940, 1940, 1940, 1940, 1940, 1940, 1940, 1940, 1940, 1940, 1940, 1940, 1940] #start year of the obs file as indicated in filename
+endyears_file: [2022, 2022, 2024, 2024, 2024, 2024, 2024, 2024, 2024, 2024, 2024, 2024, 2024, 2024, 2024] #corresponding end year as indicated in filename
+startyears_aggregation: [1981, 1981, 1981, 1981, 1981, 1981, 1981, 1981, 1981, 1981, 1981, 1981, 1981, 1981, 1981] #start years to be aggregated
+endyears_aggregation: [2022, 2022, 2022, 2022, 2022, 2022, 2022, 2022, 2022, 2022, 2022, 2022, 2022, 2022, 2022] #end years to be aggregated
+variables: ['CGDD_S','CGDD_W','SU','FD','ID','pet-hargreaves','PRm','Rx1day','Rx5day','SSRDm','TNm','TR','TXm','UAI','WSm'] #variables to be regridded
+variables_nc: ['CGDD_S','CGDD_W','SU','FD','ID','pet-hargreaves','PRm','Rx1day','Rx5day','SSRDm','TNm','TR','TXm','uai','WSm'] #variable names with the netCDF file
 
 domain: 'medcof' #spatial domain the model data is available on. So far, this is just a label used in the output filename
 domain_label: 'medcof' #domain label used in file name; <domain_label> is added for consistency with the config files for Iberia and Canarias, whose domain label within the file name is not consistent with the folder the file has been stored in ("pen" for "Iberia" and "can" for "Canarias") 
