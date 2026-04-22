@@ -32,14 +32,15 @@ FLAGDIR=/lustre/gmeteo/PTICLIMA/Scripts/SBrands/pyPTIclima/pySeasonal/FLAG/get_s
 # modulator_plus_phase_list=('none' 'enso0' 'enso1' 'enso2') #bash array containing all modulators and phases thereof
 # variable_list=('pvpot' 'fwi' 't2m' 'tp' 'msl' 'si10' 'ssrd') #bash array of variables to be processed; must coincide with <variables_gcm> in aggregate_hindcast.py
 
+# # input variables that will be passed to the python script get_skill_season.py
+vers='v1s' #string format
+model_list=('eccc5' 'cmcc4' 'dwd22') #bash array containing the model names and versions thereof
+agg_label_list=('1mon' '2mon' '3mon' '4mon' '5mon') #bash array containing the temporal aggregation windows to be considered
+modulator_plus_phase_list=('none' 'enso0' 'enso1' 'enso2') #bash array containing all modulators and phases thereof
+variable_list=('t2m' 'tp' 'msl' 'si10' 'ssrd') #bash array of variables to be processed; must coincide with <variables_gcm> in aggregate_hindcast.py
+
 # vers='v1s' #string format
 # model_list=('ecmwf51') #bash array containing the model names and versions thereof
 # agg_label_list=('1mon' '2mon' '3mon' '4mon' '5mon') #bash array containing the temporal aggregation windows to be considered
 # modulator_plus_phase_list=('none' 'enso0' 'enso1' 'enso2') #bash array containing all modulators and phases thereof
-# variable_list=('GDD_S' 'GDD_W') #bash array of variables to be processed; must coincide with <variables_gcm> in aggregate_hindcast.py
-
-vers='v1s' #string format
-model_list=('ecmwf51') #bash array containing the model names and versions thereof
-agg_label_list=('1mon' '2mon' '3mon' '4mon' '5mon') #bash array containing the temporal aggregation windows to be considered
-modulator_plus_phase_list=('none' 'enso0' 'enso1' 'enso2') #bash array containing all modulators and phases thereof
-variable_list=('Tm' 'pvpot' 'TR' 'FD' 'ID' 'pet-hargreaves' 'PRm' 'Rx1day' 'Rx5day' 'SSRDm' 'TNm' 'TXm' 'WSm' 'GDD_S' 'GDD_W' 'CGDD_S' 'CGDD_W' 'fwi' 'SPEI-3-M' 'tp' 't2m' 'msl' 'si10' 'ssrd') #bash array of variables to be processed; must coincide with <variables_gcm> in aggregate_hindcast.py
+# variable_list=('UAI' 'WSm' 'Tm' 'PVPOTm' 'pvpot' 'SU' 'DD' 'TR' 'FD' 'ID' 'pet-hargreaves' 'PRm' 'Rx1day' 'Rx5day' 'SSRDm' 'TNm' 'TXm' 'WSm' 'GDD_S' 'GDD_W' 'CGDD_S' 'CGDD_W' 'fwi' 'FWIm' 'SPEI-3-M' 'tp' 't2m' 'msl' 'si10' 'ssrd') #bash array of variables to be processed; must coincide with <variables_gcm> in aggregate_hindcast.py

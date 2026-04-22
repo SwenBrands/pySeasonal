@@ -127,7 +127,7 @@ for mm in np.arange(len(model)):
         #     pdb.set_trace()
             
         #construct path to input GCM files as a function of the variable set in variables[mm][vv]
-        if variables[mm][vv] in ('SU','FD','ID','TR','pet-hargreaves','PRm','Rx1day','Rx5day','SSRDm','Tm','TXm','TNm','UAI','WSm','fwi','pvpot','GDD_S','GDD_W','CGDD_S','CGDD_W','CGDDS-C4','FWI-C4','Rx1day-C4','Rx5day-C4','TNm-C4','PRtot-C4','PRm-C4','TXm-C4','TXm-C6','tasmax-C6','FD-C4','SU-C4','TR-C4','CGDDS-C4_up010','FWI-C4_up010','PRtot-C4_up010','PRm-C4_up010','TNm-C4_up010','TXm-C4_up010','FD-C4_up010','SU-C4_up010','TR-C4_up010','Rx1day-C4_up010','Rx5day-C4_up010'):
+        if variables[mm][vv] in ('UAI','WSm','fwi','FWIm','pvpot','PVPOTm','DD','SU','FD','ID','TR','pet-hargreaves','PRm','Rx1day','Rx5day','SSRDm','Tm','TXm','TNm','UAI','WSm','GDD_S','GDD_W','CGDD_S','CGDD_W','CGDDS-C4','FWI-C4','Rx1day-C4','Rx5day-C4','TNm-C4','PRtot-C4','PRm-C4','TXm-C4','TXm-C6','tasmax-C6','FD-C4','SU-C4','TR-C4','CGDDS-C4_up010','FWI-C4_up010','PRtot-C4_up010','PRm-C4_up010','TNm-C4_up010','TXm-C4_up010','FD-C4_up010','SU-C4_up010','TR-C4_up010','Rx1day-C4_up010','Rx5day-C4_up010'):
             path_gcm_base_var = path_gcm_base_derived
         elif variables[mm][vv] in ('SPEI-3-M-C4_up010','SPEI-3-M-C4','SPEI-3','SPEI-3-M','SPEI-3-R','SPEI-3-R_eqm_pullLMs-TRUE'):
             path_gcm_base_var = path_gcm_base_derived
@@ -158,7 +158,7 @@ for mm in np.arange(len(model)):
                     path_gcm_data = path_gcm_base_var+'/'+domain+'/'+product+'/'+variables[mm][vv]+'/'+model[mm]+'/'+version[mm]+'/coefs_pool_members/'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'/'+file_start[mm][vv]+'_'+domain+'_'+product+'_'+variables[mm][vv]+'_'+model[mm]+'_'+version[mm]+'_'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'.nc'
                 # elif variables[mm][vv] in ('SPEI-3-R_eqm_pullLMs-TRUE'):
                 #     path_gcm_data = path_gcm_base_var+'/'+domain+'/'+product+'/'+variables[mm][vv]+'/'+model[mm]+'/'+version[mm]+'/coefs_of_reanalysis/'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'/'+file_start[mm][vv]+'_'+domain+'_'+product+'_SPEI-3-R_'+model[mm]+'_'+version[mm]+'_'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'.nc'
-                elif variables[mm][vv] in ('SU','FD','ID','TR','pet-hargreaves','PRm','Rx1day','Rx5day','SSRDm','Tm','TXm','TNm','UAI','WSm','fwi','pvpot','GDD_S','GDD_W','CGDD_S','CGDD_W','CGDDS-C4','FWI-C4','Rx1day-C4','Rx5day-C4','TNm-C4','PRtot-C4','PRm-C4','TXm-C4','TXm-C6','tasmax-C6','FD-C4','SU-C4','TR-C4','CGDDS-C4_up010','FWI-C4_up010','PRtot-C4_up010','PRm-C4_up010','TNm-C4_up010','TXm-C4_up010','FD-C4_up010','SU-C4_up010','TR-C4_up010','Rx1day-C4_up010','Rx5day-C4_up010'):
+                elif variables[mm][vv] in ('UAI','WSm','fwi','FWIm','pvpot','PVPOTm','DD','SU','FD','ID','TR','pet-hargreaves','PRm','Rx1day','Rx5day','SSRDm','Tm','TXm','TNm','UAI','WSm','GDD_S','GDD_W','CGDD_S','CGDD_W','CGDDS-C4','FWI-C4','Rx1day-C4','Rx5day-C4','TNm-C4','PRtot-C4','PRm-C4','TXm-C4','TXm-C6','tasmax-C6','FD-C4','SU-C4','TR-C4','CGDDS-C4_up010','FWI-C4_up010','PRtot-C4_up010','PRm-C4_up010','TNm-C4_up010','TXm-C4_up010','FD-C4_up010','SU-C4_up010','TR-C4_up010','Rx1day-C4_up010','Rx5day-C4_up010'):
                     path_gcm_data = path_gcm_base_var+'/'+domain+'/'+product+'/'+variables[mm][vv]+'/'+model[mm]+'/'+version[mm]+'/'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'/'+file_start[mm][vv]+'_'+domain+'_'+product+'_'+variables[mm][vv]+'_'+model[mm]+'_'+version[mm]+'_'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'.nc'
                 elif variables[mm][vv] in ('psl','sfcWind','tas','pr','rsds'):
                     path_gcm_data = path_gcm_base_var+'/'+domain+'/'+product+'/'+variables[mm][vv]+'/'+model[mm]+'/'+version[mm]+'/'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'/'+file_start[mm][vv]+'_'+domain+'_'+product+'_'+variables[mm][vv]+'_'+model[mm]+'_'+version[mm]+'_'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'.nc'
@@ -201,25 +201,36 @@ for mm in np.arange(len(model)):
                     var_units = nc[variables_nc[mm][vv]].units
                 except:
                     print('WARNING: Units for '+variables[mm][vv]+' are missing and will be added now !')
-                    if variables[mm][vv] == 'pvpot':
-                        var_units = 'zero-bound index'
-                    elif variables[vv][mm] in ('SU', 'FD', 'ID', 'TR'):
-                        var_units = 'number of days per month'
+                    if variables[mm][vv] in ('SU', 'FD', 'ID', 'TR', 'DD'):
+                        pdb.set_trace()
+                        var_units = 'day'
                     elif variables[mm][vv] in ('TXm', 'TNm', 'CGDD_W', 'CGDD_s'):
-                        var_units = 'degrees Celsius'
+                        pdb.set_trace()
+                        var_units = 'degC'
                     elif variables[mm][vv] in ('PRm','Rx1day','Rx5day'):
-                        var_units = 'mm'
+                        pdb.set_trace()
+                        var_units = 'kg m-2'
                     elif variables[mm][vv] in ('SSRDm'):
-                        var_units = 'W/m2'
+                        pdb.set_trace()
+                        var_units = 'W m-2'
                     elif variables[mm][vv] in ('pet_hargreaves'):
-                        var_units = 'mm/day'
-                    elif variables[mm][vv] in ('UAI'):
-                        var_units = 'dimensionless'
+                        pdb.set_trace()
+                        var_units = 'kg m-2 s-1'
+                    elif variables[mm][vv] in ('UAI','FWIm','fwi'):
+                        var_units = 1
                     elif variables[mm][vv] in ('WSm'):
-                        var_units = 'm/s'
+                        pdb.set_trace()
+                        var_units = 'm s-1'
+                    elif variables[mm][vv] in ('SPEI-3-M','SPEI-3-R'):
+                        pdb.set_trace()
+                        var_units = 1
+                    elif variables[mm][vv] in ('PVPOTm','pvpot'):
+                        # pdb.set_trace()
+                        var_units = 1
                     else:
-                        pdb.set_trace()                    
-                    print('WARNING: Setting unit for '+variables[mm][vv]+' to '+var_units)
+                        pdb.set_trace()
+
+                    print('WARNING: Setting unit for '+variables[mm][vv]+' to '+str(var_units))
 
                 #try to retrieve region defintion (i.e. the domain) from the input netCDF file. The region is provided by the files from Predictia but not so by fwi files. If not provided, the value in the <domain> input parameter is set.
                 try:

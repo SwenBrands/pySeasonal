@@ -338,10 +338,10 @@ for ag in np.arange(len(agg_labels)):
             del(ds_mask_plus_cont)
             
 print('INFO: medcof2hr.py has been run successfully. A flag is written at '+FLAGDIR)
-flagfile = FLAGDIR+'/medcof2hr_'+str(vers)+'_'+domain+'_'+str(models)+'_model_'+str(variables_mod)+'_'+str(agg_labels)+'_'+str(modulators)+'_'+str(phases)+'.flag'
-flagfile = flagfile.replace("[","").replace("]","").replace("'","").replace(",","_")
+flagfile = FLAGDIR+'/medcof2hr_'+str(vers)+'_'+target_domain+'_'+str(models)+'_'+str(variables_mod)+'_'+str(agg_labels)+'_'+str(modulators)+'_'+str(phases)+'.flag'
+flagfile = flagfile.replace("[","").replace("]","").replace("'","").replace(",","_").replace(" ","")
 file = open(flagfile,'w')
-file.write('medcof2hr.py has been run successfully for '+str(vers)+', '+str(models)+', '+str(variables_obs)+', '+str(variables_mod)+', '+str(agg_labels)+', '+str(modulators)+', '+str(phases))
+file.write('medcof2hr.py has been run successfully for '+str(vers)+', '+target_domain+', '+str(models)+', '+str(variables_obs)+', '+str(variables_mod)+', '+str(agg_labels)+', '+str(modulators)+', '+str(phases))
 file.close()
 #print the elapsed time and close
 end_time = time.time()

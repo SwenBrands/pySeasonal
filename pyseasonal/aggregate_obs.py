@@ -112,41 +112,41 @@ for vv in np.arange(len(variables)):
     # add units
     # add exception for pvpot, which currently comes without units
     try:
-        units_content = nc[variables[vv]].units
+        var_units = nc[variables[vv]].units
     except:
         print('WARNING: Units for '+variables[vv]+' are missing and will be added now !')
         if variables[vv] in ('SU', 'FD', 'ID', 'TR', 'DD'):
             pdb.set_trace()
-            units_content = 'day'
+            var_units = 'day'
         elif variables[vv] in ('TXm', 'TNm', 'CGDD_W', 'CGDD_s'):
             pdb.set_trace()
-            units_content = 'degC'
+            var_units = 'degC'
         elif variables[vv] in ('PRm','Rx1day','Rx5day'):
             pdb.set_trace()
-            units_content = 'kg m-2'
+            var_units = 'kg m-2'
         elif variables[vv] in ('SSRDm'):
             pdb.set_trace()
-            units_content = 'W m-2'
+            var_units = 'W m-2'
         elif variables[vv] in ('pet_hargreaves'):
             pdb.set_trace()
-            units_content = 'kg m-2 s-1'
+            var_units = 'kg m-2 s-1'
         elif variables[vv] in ('UAI','FWIm','fwi'):
-            units_content = 1
+            var_units = 1
         elif variables[vv] in ('WSm'):
             pdb.set_trace()
-            units_content = 'm s-1'
+            var_units = 'm s-1'
         elif variables[vv] in ('SPEI-3'):
             pdb.set_trace()
-            units_content = 1
+            var_units = 1
         elif variables[vv] in ('PVPOTm','pvpot'):
             # pdb.set_trace()
-            units_content = 1
+            var_units = 1
         else:
             pdb.set_trace()
 
-        print('WARNING: Setting unit for '+variables[vv]+' to '+str(units_content))
+        print('WARNING: Setting unit for '+variables[vv]+' to '+str(var_units))
 
-    nc[variables[vv]].attrs['units'] = units_content
+    nc[variables[vv]].attrs['units'] = var_units
 
     # nc.x.attrs('standard_name') = 'longitude'
     # nc.x.attrs('long_name') = 'longitude'

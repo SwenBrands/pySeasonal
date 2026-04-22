@@ -3,22 +3,20 @@
 # Configuration file for seas2ipe.py script
 
 # Version and model configuration
-version: 'v1r'  # version number of the validation results
+version: 'v1s'  # version number of the validation results
 model: ['ecmwf']  # list containing the acronyms of the models to be assessed
 model_version: ['51']  # list containing the versions of these models
-obs: 'PTI-grid-v2'  # string containing the observational reference
 
 # Quantile and validation configuration
 years_quantile: [[1993, 2022]]  # list containing the years used to calculate quantiles, one sub-list per model
 subperiod: 'none'  # climate oscillation: "enso" or "none"
-score: 'pearson_r_binary'  # score of the binary skill mask
+scores: ['roc_auc_lower_tercile_skillscore_binary','roc_auc_center_tercile_skillscore_binary','roc_auc_upper_tercile_skillscore_binary']  # list containing the binary skill masks for the ROC AUC Skill Score fore each tercile
 agg_labels: ['3mon']  # considered aggregation windows
 nan_placeholder: 0
 
 # Variable mapping to PTI format
-variables_std: ['CGDDS-C4', 'FWI-C4', 'SPEI-3-M-C4', 'Rx1day-C4', 'TNm-C4', 'PRtot-C4', 'TXm-C4', 'FD-C4', 'SU-C4', 'TR-C4']  # standardized variable names
-variables_out: ['cgdd_s', 'fwi', 'spei3', 'rx1day', 'gtn', 'rti', 'gtx', 'fd', 'su', 'tr']  # output variable names, as defined in PTI-Clima variable table: https://docs.google.com/spreadsheets/d/1K5n3aM0vGgnJEwlghjK1BtqJr0Ug0mQYlzZKQxB2wJU/edit?gid=0#gid=0
-masked_variables_std: ['none']  # list of variables on which land-sea mask will be applied
+variables_std: ['SPEI-3-M-i1','UAI-i1','FD-i1','SU-i1','ID-i1','DD-i1','TR-i1','pet-hargreaves-i1','PRm-i1','Rx1day-i1','SSRDm-i1','Tm-i1','TNm-i1','TXm-i1','WSm-i1','GDD_S-i1','GDD_W-i1','CGDD_S-i1','CGDD_W-i1','FWIm-i1','PVPOTm-i1']  # standardized variable names
+variables_out: ['spei3', 'uai', 'fd', 'su', 'id', 'dd', 'tr', 'eto', 'rti', 'rx1day', 'ssrd', 'gtg', 'gtn', 'gtx', 'fg', 'gdd_s', 'gdd_w', 'cgdd_s', 'cgdd_w', 'fwi', 'pvpot']  # output variable names, as defined in PTI-Clima variable table: https://docs.google.com/spreadsheets/d/1K5n3aM0vGgnJEwlghjK1BtqJr0Ug0mQYlzZKQxB2wJU/edit?gid=0#gid=0
 
 # Data type and domain configuration
 datatype: 'float32'  # data type of variables in output netcdf files
@@ -28,14 +26,16 @@ detrended: 'no'  # yes or no, linear detrending
 # Path configuration
 # These paths will be set based on GCM_STORE environment variable
 paths:
-  home: '/lustre/gmeteo'
+  home: '/lustre/gmeteo/'
   server: 'WORK/WWW/PTICLIMA/PRODUCTS'
   path_gcm_base: 'PTICLIMA/DATA/SEASONAL/seasonal-original-single-levels'
   path_gcm_base_derived: 'PTICLIMA/DATA/SEASONAL/seasonal-original-single-levels_derived'
   path_gcm_base_masked: 'PTICLIMA/DATA/SEASONAL/seasonal-original-single-levels_masked'
+  rundir: 'PTICLIMA/Scripts/SBrands/pyPTIclima/pySeasonal'
   dir_validation: 'PTICLIMA/Results/seasonal/validation'
   dir_forecast: 'PTICLIMA/Results/seasonal/forecast'
   dir_output: 'WORK/WWW/PTICLIMA/PRODUCTS/seas2ipe'
+  mask_dir: 'PTICLIMA/Auxiliary-material/Masks'
 
 # Quantile thresholds
 quantile_threshold: [0.33, 0.67]

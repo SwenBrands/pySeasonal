@@ -91,7 +91,7 @@ def apply_sea_mask(arr_f,mask_file_f,lat_name_f,lon_name_f):
         elif target_dims_f == ('time', lat_name_f, lon_name_f): # for xr Datasets with 3 dimensions
             print('The dimensions of <first_arr_f> data array in <arr_f> dataset are as expected: '+str(target_dims_f))
             mask_appended_f = np.tile(nc_mask_f.mask.values,(first_arr_f.shape[0],1,1))
-        elif target_dims_f == ('season', 'lead', lat_name_f, lon_name_f) or target_dims_f == ('time', 'member', lat_name_f, lon_name_f) or target_dims_f == ('forecast_time', 'member', lat_name_f, lon_name_f): # for xr Datasets with 4 dimensions
+        elif target_dims_f == ('season', 'lead', lat_name_f, lon_name_f) or target_dims_f == ('time', 'member', lat_name_f, lon_name_f) or target_dims_f == ('forecast_time', 'member', lat_name_f, lon_name_f) or target_dims_f == ('season', 'lead', 'y', 'x'): # for xr Datasets with 4 dimensions
             print('The dimensions of <first_arr_f> data array in <arr_f> dataset are as expected: '+str(target_dims_f))
             mask_appended_f = np.tile(nc_mask_f.mask.values,(first_arr_f.shape[0],first_arr_f.shape[1],1,1))
         elif target_dims_f == ('time', 'lead', 'member', lat_name_f, lon_name_f): # for xr Datasets with 5 dimensions
@@ -100,7 +100,7 @@ def apply_sea_mask(arr_f,mask_file_f,lat_name_f,lon_name_f):
         elif target_dims_f == ('detrended', 'time', 'season', 'lead', lat_name_f, lon_name_f) or target_dims_f == ('subperiod', 'detrended', 'season', 'lead', lat_name_f, lon_name_f): # for xr Datasets with 6 dimensions
             print('The dimensions of <first_arr_f> data array in <arr_f> dataset are as expected: '+str(target_dims_f))
             mask_appended_f = np.tile(nc_mask_f.mask.values,(first_arr_f.shape[0],first_arr_f.shape[1],first_arr_f.shape[2],first_arr_f.shape[3],1,1))
-        elif target_dims_f == ('subperiod', 'detrended', 'variable', 'season', 'lead', lat_name_f, lon_name_f) or target_dims_f == ('variable', 'subperiod', 'detrended', 'season', 'lead', lat_name_f, lon_name_f): # for xr Datasets with 7 dimensions
+        elif target_dims_f == ('subperiod', 'detrended', 'variable', 'season', 'lead', lat_name_f, lon_name_f) or target_dims_f == ('variable', 'subperiod', 'detrended', 'season', 'lead', lat_name_f, lon_name_f) or target_dims_f == ('detrended', 'variable', 'time', 'season', 'lead', lat_name_f, lon_name_f): # for xr Datasets with 7 dimensions
             print('The dimensions of <first_arr_f> data array in <arr_f> dataset are as expected: '+str(target_dims_f))
             mask_appended_f = np.tile(nc_mask_f.mask.values,(first_arr_f.shape[0],first_arr_f.shape[1],first_arr_f.shape[2],first_arr_f.shape[3],first_arr_f.shape[4],1,1))
         else:
@@ -412,7 +412,7 @@ def plot_pcolormesh_seasonal(xr_ar_f,minval_f,maxval_f,savename_f,colormap_f,dpi
     #plt.ylabel(xr_ar_f.lead.name)
     plt.xlabel('Month the forecast valid for')
     plt.ylabel('Lead time (months)')
-    cbar = plt.colorbar(ax,shrink=0.5,label=xr_ar_f.name + ' ('+xr_ar_f.units+')', orientation = 'horizontal')
+    cbar = plt.colorbar(ax,shrink=0.5,label=xr_ar_f.name + ' ('+str(xr_ar_f.units)+')', orientation = 'horizontal')
     cbar.ax.tick_params(labelsize=8,size=8)
     fig.tight_layout()
     plt.savefig(savename_f,dpi=dpival_f)
@@ -580,7 +580,7 @@ def get_reliability_or_roc(obs_f,gcm_f,obs_quantile_f,gcm_quantile_f,dist_part_f
         out_score = reliability
     elif score_f == 'roc_auc': #caclulate roc area under the curve
         print('As requested by the user, the ROC area under the curve is calculated by the get_reliability_or_roc() function.')
-        roc = xs.roc(obs_bin, gcm_bin.mean("member"), dim='time',  bin_edges='continuous', drop_intermediate=False, return_results='area')
+        roc = xs.roc(obs_bin, gcm_bin.mean("member"), dim='time',  bin_edges=bin_edges_f, drop_intermediate=False, return_results='area')
         out_score = roc
     else:
         raise Exception('ERROR: unknown entry for <score_f> input parameter in get_reliability_or_roc() function !')

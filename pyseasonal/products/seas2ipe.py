@@ -8,6 +8,10 @@ import os
 import pdb
 import warnings
 
+from pyseasonal.utils.functions_seasonal import (
+    apply_sea_mask
+)
+
 def swen_seas2ipe(config: dict, year_init: str, month_init: str):
     # # Example year and run to run without passing any input arguments; comment or delete the next two lines in operative use
     # year_init = 2024 #a list containing the years the forecast are initialized on, will be looped through with yy
@@ -17,16 +21,14 @@ def swen_seas2ipe(config: dict, year_init: str, month_init: str):
     vers = config['version']
     model = config['model']
     version = config['model_version']
-    obs = config['obs']
     years_quantile = config['years_quantile']
     subperiod = config['subperiod']
-    score = config['score']
+    scores = config['scores'] #pointing to the names of the binary skill masks for ROC-AUC skill scores of each tercile
     agg_labels = config['agg_labels']
     nan_placeholder = config['nan_placeholder']
 
     variables_std = config['variables_std']
     variables_out = config['variables_out']
-    masked_variables_std = config['masked_variables_std']
 
     datatype = config['datatype']
     domain = config['domain']
@@ -51,25 +53,42 @@ def swen_seas2ipe(config: dict, year_init: str, month_init: str):
     dir_validation = paths['dir_validation'] + '/' + vers
     dir_forecast = paths['dir_forecast']
     dir_output = paths['dir_output']
+    mask_dir = paths['mask_dir']
 
     print('The GCM files will be loaded from the base directory '+path_gcm_base+'...')
 
     #create output directory of the forecasts generated here, if it does not exist.
     if os.path.isdir(dir_output) != True:
         os.makedirs(dir_output)
+    
+    #get path to mask file as a function of the requested domain
+    if domain == 'medcof':
+        mask_file_indir = 'ECMWF_Land_Medcof_descending_lat_reformatted.nc' # mask file as it appears in its directory
+    elif domain == 'Iberia':
+        mask_file_indir = 'PTI-grid_Iberia_010_descending_lat_reformatted.nc'
+    elif domain == 'Canarias':
+        # mask_file_indir = 'PTI-grid_Canarias_descending_lat_reformatted.nc'
+        mask_file_indir = 'PTI-grid_Canarias_0025_descending_lat_reformatted.nc'
+    else:
+        raise ValueError('Check entry for <domain> input parameter !')
+    mask_file = mask_dir+'/'+mask_file_indir #here, descending lats are needed (check why the DataArrays behave distinct concerning ascending or descending lats in pySeasonal)
 
+    
+    #loop through aggregation windows, models, and variables
     for ag in np.arange(len(agg_labels)):
         for mm in np.arange(len(model)):
-            #load the skill masks for a given aggregation window; multiple variables are and models located within the same file.
-            filename_validation = dir_validation+'/skill_masks/'+domain+'/'+agg_labels[ag]+'/skill_masks_pticlima_'+domain+'_'+agg_labels[ag]+'_'+model[mm]+version[mm]+'_'+vers+'.nc'
-            nc_val = xr.open_dataset(filename_validation)
-
-            #check if model name in skill mask file matches the requested model name
-            if nc_val.model != model[mm]+version[mm]:
-                raise ValueError('The model name requested by <model[mm]> does not match the model name stored in <nc_val> !')
 
             nc_forecast = xr.Dataset() #create empty xarray dataset to be filled with xr data arrays in the next loop
             for vv in np.arange(len(variables_std)):
+
+                #load the skill masks for a given aggregation window; multiple variables are and models located within the same file.
+                filename_validation = dir_validation+'/skill_masks/'+domain+'/'+agg_labels[ag]+'/skill_masks_pticlima_'+domain+'_'+agg_labels[ag]+'_'+model[mm]+version[mm]+'_'+variables_std[vv]+'_'+vers+'.nc'
+                nc_val = xr.open_dataset(filename_validation)
+
+                #check if model name in skill mask file matches the requested model name
+                if nc_val.model != model[mm]+version[mm]:
+                    raise ValueError('The model name requested by <model[mm]> does not match the model name stored in <nc_val> !')
+
                 #load the forecast for a specific variable
                 filename_forecast = dir_forecast+'/'+domain+'/probability_'+agg_labels[ag]+'_'+model[mm]+version[mm]+'_'+variables_std[vv]+'_'+domain+'_init_'+str(year_init)+str(month_init).zfill(2)+'_dtr_'+detrended+'_refyears_'+str(years_quantile[mm][0])+'_'+str(years_quantile[mm][1])+'_'+vers+'.nc'
                 nc_forecast_in = xr.open_dataset(filename_forecast) #get the xr data array containing the tercile probabilities for a specific variable
@@ -122,32 +141,46 @@ def swen_seas2ipe(config: dict, year_init: str, month_init: str):
                     raise ValueError('<fc_season_length> must equal <agg_labels[ag]> ! ')
 
                 fc_seasons = nc_forecast.season.values
-                nc_val_sub = nc_val.sel(subperiod=subperiod,detrended=detrended,season=fc_seasons,variable=variables_std[vv])[score]
+                #get the binary skill mask for a given subperiod, detrending option and season
+                nc_val_sub = nc_val.sel(subperiod=subperiod,detrended=detrended,season=fc_seasons)[scores]
                 val_leads = nc_val_sub.lead.values
 
-                skill_mask = np.zeros((len(fc_seasons),len(nc_val.y),len(nc_val.x))) #a 3d array
-                for sea in np.arange(len(fc_seasons)):
-                    skill_mask_step = nc_val_sub.sel(season=fc_seasons[sea],lead=val_leads[sea])
-                    skill_mask[sea,:,:] = skill_mask_step.values
+                skill_mask = np.zeros((len(scores),len(fc_seasons),len(nc_val.y),len(nc_val.x))) #a 3d array
+                for sc in np.arange(len(scores)):
+                    for sea in np.arange(len(fc_seasons)):
+                        skill_mask_step = nc_val_sub[scores[sc]].sel(season=fc_seasons[sea],lead=val_leads[sea])
+                        skill_mask[sc,sea,:,:] = skill_mask_step.values
 
                 #bring numpy array into xarray data array format
-                skill_mask = xr.DataArray(skill_mask.astype('float32'),coords=[fc_seasons,nc_val.y,nc_val.x],dims=['season','y','x'], name=variables_std[vv]+'_skill_mask')
+                skill_mask = xr.DataArray(skill_mask.astype('float32'),coords=[scores,fc_seasons,nc_val.y,nc_val.x],dims=['scores','season','y','x'], name=variables_std[vv]+'_skill_mask')
 
-                #cut down the forecast domain to the skill domain indicated in the <domain> input variable
-                nc_forecast = nc_forecast.sel(y=skill_mask.y,x=skill_mask.x)
+                #check whether the x and y coordinates in the forecast and mask files are identical
+                if np.all(nc_forecast.y == nc_val.y) and np.all(nc_forecast.x == nc_val.x):
+                    print('The x and y values in <nc_forecast> and <nc_val> are identical ! Proceed to find the skill mask entry for each tercile and season....')
+                else:
+                    raise ValueError('The x and y values in <nc_forecast> and <nc_val> are NOT identical !')
+                
+                ## cut down the forecast domain to the skill domain indicated in the <domain> input variable
+                # nc_forecast = nc_forecast.sel(y=skill_mask.y,x=skill_mask.x)
+
+                #select the binary skill mask value of the most likely tercile; since the most likely tercile starts with 1, a 1 is subtracted to the index array prior to filtering out the binary skill values, nan are set to 0 and must be placed again to mark values over the sea
+                # # either (exact):
+                # mlt_index = nc_forecast.squeeze()['mlt_'+variables_out[vv]] #get like tercile in the forecasat (nan, 1, 2 or 3)
+                # nan_locs = np.where(np.isnan(mlt_index.values)) # get indices of the nan values
+                # skill_mask = skill_mask.isel(scores = mlt_index.fillna(1).astype(int)-1) # set nan values to 1 and subtract 1 to get index values (0, 1, or 2); take this index values to select the binary skill value for the most likely tercile in the forecast
+                # skill_mask[nan_locs[0]] = np.nan #place the original nan values again
+
+                # or (simpler but not exact since nan values can existe over land that would be set to 1):
+                skill_mask = skill_mask.isel(scores=nc_forecast.squeeze()['mlt_'+variables_out[vv]].fillna(1).astype(int)-1).drop_vars('scores') # note that the <rtime> coordinate is passed from <nc_forecast> to <skill_mask> in this line 
+                
+                # search the binary skill value for the specific forecasted tercile on each grid-box
 
                 # apply land-sea mask to skill mask
-                if variables_std[vv] in masked_variables_std:
-                    print('Upon user request, values for sea grid-boxes are set to nan in skill mask '+variables_std[vv]+' ! ')
-                    land_sea_3d = np.squeeze(land_sea_4d)
-                    skill_mask = skill_mask.where(land_sea_3d == 1, other=np.nan)
-                elif variables_std[vv] not in masked_variables_std:
-                    print('As requested by the user, the verification results are not filtered by a land-sea mask in skill mask for '+variables_std[vv]+' !')
-                else:
-                    raise ValueError('check whether <variables_std[vv]> is in <masked_variables_std> !')
+                skill_mask = apply_sea_mask(skill_mask, mask_file, 'y', 'x')
 
                 # add attributes to skill mask
-                skill_mask.attrs['long_name'] = 'binary_skill_mask_based_on_'+score+' for '+variables_out[vv]
+                scores_label = str(scores).replace("[","").replace("]","").replace("'","")
+                skill_mask.attrs['long_name'] = 'binary_skill_mask_based_on_'+scores_label+' for '+variables_out[vv]
                 skill_mask.attrs['standard_name'] = 'binary_skill_mask'
                 skill_mask.attrs['units'] = 'binary'
                 try:
@@ -159,11 +192,8 @@ def swen_seas2ipe(config: dict, year_init: str, month_init: str):
                 nc_forecast['skill_'+variables_out[vv]] = skill_mask #assign variable-specific skill mask to the newly generated xarray dataset produced by this script
                 
                 #clean
-                nc_forecast_in_argmax.close()
-                nc_forecast_in_maxprob.close()
-                nc_forecast_in.close()
-                skill_mask.close()
-                del(nc_forecast_in_argmax,nc_forecast_in_maxprob,nc_forecast_in,skill_mask)
+                nc_val.close(), nc_val_sub.close(); nc_forecast_in_argmax.close(); nc_forecast_in_maxprob.close(); nc_forecast_in.close(); skill_mask.close()
+                del(nc_val, nc_val_sub, nc_forecast_in_argmax,nc_forecast_in_maxprob,nc_forecast_in,skill_mask)
 
             #add global attributes
             nc_forecast.season.attrs['standard_name'] = 'season'
@@ -176,14 +206,9 @@ def swen_seas2ipe(config: dict, year_init: str, month_init: str):
             # chunks = (1, 1, 1, 1, len(nc_forecast.y), len(nc_forecast.y))
             # encoding = dict(tp=dict(chunksizes=chunks)) #https://docs.xarray.dev/en/stable/user-guide/io.html#writing-encoded-data
             # nc_forecast.to_netcdf(savename,encoding=encoding)
-
+            
             nc_forecast.to_netcdf(savename)
 
             #clean up
-            nc_val_sub.close()
             nc_forecast.close()
-            del(nc_forecast,nc_val_sub)
-
-        #clean up
-        nc_val.close()
-        del(nc_val)
+            del(nc_forecast)
