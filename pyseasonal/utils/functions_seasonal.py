@@ -562,9 +562,9 @@ def get_reliability_or_roc(obs_f,gcm_f,obs_quantile_f,gcm_quantile_f,dist_part_f
     if score_f == 'reliability': #calculate reliability as defined in Wilks (2006)
         print('As requested by the user, the RELIABILITY is calculated by the get_reliability_or_roc() function.')
         if bin_edges_f is None: #use default number of bins
-            o_cond_y = xs.reliability(obs_bin, gcm_bin.mean("member"), dim='time').drop('samples') #see Wilks 2006, returns the observed relative frequencies (o) conditional to 5 (= default values) forecast probability bins y (0.1, 0.3, 0.5, 0.7, 0.9), see https://xskillscore.readthedocs.io/en/stable/api/xskillscore.reliability.html#xskillscore.reliability
+            o_cond_y = xs.reliability(obs_bin, gcm_bin.mean("member"), dim='time').drop_vars('samples') #see Wilks 2006, returns the observed relative frequencies (o) conditional to 5 (= default values) forecast probability bins y (0.1, 0.3, 0.5, 0.7, 0.9), see https://xskillscore.readthedocs.io/en/stable/api/xskillscore.reliability.html#xskillscore.reliability
         else: #use bins whose edges are provided by the optional <bin_edges_f> input parameter
-            o_cond_y = xs.reliability(obs_bin, gcm_bin.mean("member"), dim='time',probability_bin_edges=bin_edges_f).drop('samples')
+            o_cond_y = xs.reliability(obs_bin, gcm_bin.mean("member"), dim='time',probability_bin_edges=bin_edges_f).drop_vars('samples')
 
         #process as a function of the number of dimension in obs_f, gcm_f, obs_quantile_f and gcm_quantile_f
         if len(obs_f.dims) == 4:

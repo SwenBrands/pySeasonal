@@ -63,20 +63,20 @@ for vv in np.arange(len(variables)):
         elif variables[vv] == 'pvpot':
             path_obs_data = path_obs_base+'/'+obs.upper()+'/data_derived/'+domain+'_'+resolution+'/day/'+variables[vv]+'/'+variables[vv]+'_'+domain_label+'_'+resolution+'_DM.nc'
             nc = xr.open_dataset(path_obs_data, decode_timedelta=False)
-        elif variables[vv] in ('SPEI-3','GDD_S','GDD_W','CGDD_S','CGDD_W'):
-            #path_obs_data = path_obs_base+'/'+obs+'/'+agg_src+'/'+domain+'_'+resolution+'/'+variables[vv]+'/'+variables[vv]+'_'+obs.upper()+'_'+agg_src+'_*.nc' #SPEI-3_ERA5_day_2021.nc
-            path_obs_data = path_obs_base+'/'+obs.upper()+'_deprecated/data_derived/'+domain+'_'+resolution+'/'+agg_src+'/'+variables[vv] #SPEI-3_ERA5_day_2021.nc
-            #get list of input files
-            inputfiles_list = []
-            for yy in np.arange(startyears_aggregation[vv],endyears_aggregation[vv]+1):
-                dir_content = os.listdir(path_obs_data+'/'+str(yy))
-                for fi in np.arange(len(dir_content)):
-                    inputfiles_list.append(path_obs_data+'/'+str(yy)+'/'+dir_content[fi])
-            inputfiles_list = sorted(inputfiles_list)
-            print('The following input files will be loaded and concatenated:')
-            print(inputfiles_list)
-            nc = xr.open_mfdataset(inputfiles_list, combine="by_coords")
-        elif variables[vv] in ('SPEI-3','PVPOTm','FWIm','DD','SU','FD','ID','TR','pet-hargreaves','PRm','Rx1day','Rx5day','SSRDm','Tm','TNm','TXm','UAI','WSm'):
+        # elif variables[vv] in ('SPEI-3','GDD_S','GDD_W','CGDD_S','CGDD_W'):
+        #     #path_obs_data = path_obs_base+'/'+obs+'/'+agg_src+'/'+domain+'_'+resolution+'/'+variables[vv]+'/'+variables[vv]+'_'+obs.upper()+'_'+agg_src+'_*.nc' #SPEI-3_ERA5_day_2021.nc
+        #     path_obs_data = path_obs_base+'/'+obs.upper()+'_deprecated/data_derived/'+domain+'_'+resolution+'/'+agg_src+'/'+variables[vv] #SPEI-3_ERA5_day_2021.nc
+        #     #get list of input files
+        #     inputfiles_list = []
+        #     for yy in np.arange(startyears_aggregation[vv],endyears_aggregation[vv]+1):
+        #         dir_content = os.listdir(path_obs_data+'/'+str(yy))
+        #         for fi in np.arange(len(dir_content)):
+        #             inputfiles_list.append(path_obs_data+'/'+str(yy)+'/'+dir_content[fi])
+        #     inputfiles_list = sorted(inputfiles_list)
+        #     print('The following input files will be loaded and concatenated:')
+        #     print(inputfiles_list)
+        #     nc = xr.open_mfdataset(inputfiles_list, combine="by_coords")
+        elif variables[vv] in ('SPEI-3','GDD_S','GDD_W','CGDD_S','CGDD_W','PVPOTm','FWIm','DD','SU','FD','ID','TR','pet-hargreaves','PRm','Rx1day','Rx5day','SSRDm','Tm','TNm','TXm','UAI','WSm'):
             path_obs_data = path_obs_base+'/'+obs.upper()+'/data_derived/'+domain+'_'+resolution+'/'+agg_src+'/'+variables[vv]+'/'+variables[vv]+'_'+obs.upper()+'_'+domain_label+'_'+resolution+'_'+agg_src+'_'+str(startyears_file[vv])+'-'+str(endyears_file[vv])+'.nc'
             nc = xr.open_dataset(path_obs_data, decode_timedelta=False)
         else:
