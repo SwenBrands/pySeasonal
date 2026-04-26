@@ -10,7 +10,7 @@ domain='Canarias' #character string specifying the spatial domain for which the 
 
 #environmental and job variables
 partition=meteo_long
-exclude_node=wn055
+exclude_node=wn055 #currently not active
 exectime=00:45:00 #00:12:00 for agg_label_list=('1mon') and modulator_plus_phase_list=('none') # 00:30:00 for agg_label_list=('1mon') and modulator_plus_phase_list=('none')
 memory=24gb
 RUNDIR=/lustre/gmeteo/PTICLIMA/Scripts/SBrands/pyPTIclima/pySeasonal

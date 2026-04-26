@@ -10,7 +10,7 @@ domain='Iberia' #character string specifying the spatial domain for which the ve
 
 #environmental and job variables
 partition=meteo_long
-exclude_node=wn055
+exclude_node=wn055 #currently not active
 exectime=01:55:00 #05:00:00 for agg_label_list=('1mon') and modulator_plus_phase_list=('none'); #04:00:00 for agg_label_list=('2mon') and modulator_plus_phase_list=('none')
 memory=48gb #agg_label_list=('2mon') and modulator_plus_phase_list=('none') successfully tested with 128gb; 64gb for agg_label_list=('1mon') and modulator_plus_phase_list=('enso0'), for agg_label_list=('1mon') and modulator_plus_phase_list=('none') tested sucessfully with 144 or 156gb
 RUNDIR=/lustre/gmeteo/PTICLIMA/Scripts/SBrands/pyPTIclima/pySeasonal

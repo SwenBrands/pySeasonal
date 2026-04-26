@@ -38,7 +38,7 @@ input_parameters:
   masked_variables_std: ['fwi','FWIm','SPEI-3-M']
   mask_probabilities: 'no' #mask tercile probability time-series if they are indicated in <masked_variables_std>; yes or no
   filename_telcon: 'oni2enso_195001_202505.nc' #name of the file located in <dir_telcon>
-  nr_prob_thresholds: 'continuous' # set to 'continuous' to use continuous probability thresholds to calcluate the ROC-AUC skill socre or an integer defining the number of probability thresholds to be used for this purpose
+  nr_prob_thresholds: 25 # set to 'continuous' to use continuous probability thresholds to calcluate the ROC-AUC skill socre or an integer defining the number of probability thresholds to be used for this purpose
 
 # Set the lead-times for each model and version thereof, as well as for each aggregation window (currently 1 and 3 months)
 

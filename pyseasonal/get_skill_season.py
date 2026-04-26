@@ -137,7 +137,7 @@ detrending = in_params['detrending']
 masked_variables_std = in_params['masked_variables_std'] #is currently only applied to mask the modelled tercile probability time-series and the corresponding observed binary occurrence-absence (1/0) values
 mask_probabilities = in_params['mask_probabilities'] #mask tercile probability time-series if they are indicated in <masked_variables_std>; yes or no
 filename_telcon = in_params['filename_telcon'] #name of the file located in <dir_telcon>
-nr_prob_thesholds = in_params['nr_prob_thresholds']
+nr_prob_thresholds = in_params['nr_prob_thresholds']
 
 ## EXECUTE #############################################################
 #test if the domain passed to this script or set above matches the domain set in the configuration file
@@ -147,10 +147,10 @@ else:
     raise ValueError('<domain_from_config> set in '+configuration_file+' does not match '+domain+' passed via bash or set above in get_skill_season.py !!')
 
 #get the probability thresholds used for calculating the ROC-AUC skill score
-if nr_prob_thesholds == 'continuous':
+if nr_prob_thresholds == 'continuous':
     prob_thresholds = 'continuous'
 elif isinstance(nr_prob_thresholds, int):
-    prob_thresholds = np.linspace(0, 1, nr_prob_thesholds) #threshold probability values used to calculated ROC AUC
+    prob_thresholds = np.linspace(0, 1, nr_prob_thresholds) #threshold probability values used to calculated ROC AUC
 else:
     raise ValueError('unknown entry for <nr_prob_thresholds !')
 
@@ -198,7 +198,8 @@ print('model variables: '+str(variables_gcm))
 print('obs. variables: '+str(variables_obs))
 print('masked_variables_std: '+str(masked_variables_std))
 print('mask_probabilities: '+str(mask_probabilities))
-print('nr_prob_thresholds: '+str(nr_prob_thesholds))
+print('nr_prob_thresholds: '+str(nr_prob_thresholds))
+print('compression_level: '+str(compression_level))
 print('------------------------------------------------')
 
 #check consistency of some input parameters
@@ -941,9 +942,12 @@ for mo in np.arange(len(modulators)):
                         results.attrs['outlier_correction'] = corr_outlier
                         results.attrs['version'] = vers
                         results.attrs['author'] = 'Swen Brands, brandssf@ifca.unican.es or swen.brands@gmail.com'
-
-                        #save the results
-                        results.to_netcdf(savename_results)
+                        
+                        # set chunking, compress and save to disk
+                        chunks = {"season": len(results.season), "lead": len(results.lead), "y": round(len(results.y)/2),"x": round(len(results.x)/2)}
+                        results.chunk(chunks)
+                        encoding = {var: {"zlib": True, "complevel": compression_level} for var in results.data_vars}
+                        results.to_netcdf(savename_results, encoding=encoding)
 
                         #retain dimensions used to store quantiles before deleting and closing the respective objects
                         print('retain dimension attributes for storing the quantiles....')
@@ -1060,8 +1064,12 @@ for mo in np.arange(len(modulators)):
                     tercile_prob_singlevar = tercile_prob.sel(variable=variables_gcm[vvv]).drop_vars("variable")
                     tercile_prob_singlevar.attrs['variable'] = variables_gcm[vvv]
                     savename_tercile_prob_singlevar = dir_netcdf_tercilprobs+'/tercile_prob_pticlima_'+agg_labels[ag]+'_'+models[mm]+'_'+variables_gcm[vvv]+'_'+domain+'_'+str(years_common2label[0])+'_'+str(years_common2label[-1])+'_'+vers+'.nc'
+                    
+                    # set chunking, compress and save to disk
+                    chunks = {"model": len(tercile_prob_singlevar.model), "aggregation": len(tercile_prob_singlevar.aggregation), "detrended": len(tercile_prob_singlevar.detrended), "time": len(tercile_prob_singlevar.time), "season" : len(tercile_prob_singlevar.season), "lead" : len(tercile_prob_singlevar.lead) ,"y": round(len(tercile_prob_singlevar.y)/2),"x": round(len(tercile_prob_singlevar.x)/2)}
+                    tercile_prob_singlevar.chunk(chunks)
                     encoding = {'upper_tercile_probability': {'zlib': True, 'complevel': compression_level}, 'center_tercile_probability': {'zlib': True, 'complevel': compression_level}, 'lower_tercile_probability': {'zlib': True, 'complevel': compression_level}}
-                    tercile_prob_singlevar.to_netcdf(savename_tercile_prob_singlevar,encoding=encoding)
+                    tercile_prob_singlevar.to_netcdf(savename_tercile_prob_singlevar, encoding=encoding)
                     tercile_prob_singlevar.close()
                     del(tercile_prob_singlevar)
 
@@ -1126,8 +1134,12 @@ for mo in np.arange(len(modulators)):
                     tercile_bin_obs_singlevar = tercile_bin_obs.sel(variable=variables_obs[vvv]).drop_vars("variable")
                     tercile_bin_obs_singlevar.attrs['variable'] = variables_obs[vvv]
                     savename_tercile_bin_obs_singlevar = dir_netcdf_tercilprobs+'/tercile_bin_pticlima_'+agg_labels[ag]+'_'+obs[oo]+'_'+variables_obs[vvv]+'_'+domain+'_'+str(years_common2label[0])+'_'+str(years_common2label[-1])+'_'+vers+'.nc'
+
+                    # set chunking, compress and save to disk               
+                    chunks = {"obs": len(tercile_bin_obs_singlevar.obs), "aggregation": len(tercile_bin_obs_singlevar.aggregation), "detrended": len(tercile_bin_obs_singlevar.detrended), "time": len(tercile_bin_obs_singlevar.time), "season" : len(tercile_bin_obs_singlevar.season), "lead" : len(tercile_bin_obs_singlevar.lead) ,"y": round(len(tercile_bin_obs_singlevar.y)/2),"x": round(len(tercile_bin_obs_singlevar.x)/2)}
+                    tercile_bin_obs_singlevar.chunk(chunks)
                     encoding = {'upper_tercile_binary': {'zlib': True, 'complevel': compression_level}, 'center_tercile_binary': {'zlib': True, 'complevel': compression_level}, 'lower_tercile_binary': {'zlib': True, 'complevel': compression_level}}
-                    tercile_bin_obs_singlevar.to_netcdf(savename_tercile_bin_obs_singlevar,encoding=encoding)
+                    tercile_bin_obs_singlevar.to_netcdf(savename_tercile_bin_obs_singlevar, encoding=encoding)
                     tercile_bin_obs_singlevar.close()
                     del(tercile_bin_obs_singlevar)
                     time.sleep(1)
@@ -1187,8 +1199,12 @@ for mo in np.arange(len(modulators)):
                     quantile_vals_merged_singlevar = quantile_vals_merged.sel(variable=variables_gcm[vvv]).drop_vars("variable")
                     quantile_vals_merged_singlevar.attrs['variable'] = variables_gcm[vvv]
                     savename_quantile_vals_merged_singlevar =  dir_netcdf_quantiles+'/quantiles_pticlima_'+agg_labels[ag]+'_'+models[mm]+'_'+variables_gcm[vvv]+'_'+domain+'_'+str(years_quantile[0])+'_'+str(years_quantile[-1])+'_'+vers+'.nc'
+                    
+                    # set chunking, compress and save to disk
+                    chunks = {"model": len(quantile_vals_merged_singlevar.model), "aggregation": len(quantile_vals_merged_singlevar.aggregation), "detrended": len(quantile_vals_merged_singlevar.detrended), "quantile_threshold": len(quantile_vals_merged_singlevar.quantile_threshold), "season" : len(quantile_vals_merged_singlevar.season), "lead" : len(quantile_vals_merged_singlevar.lead) , "member" : len(quantile_vals_merged_singlevar.member), "y": round(len(quantile_vals_merged_singlevar.y)/2),"x": round(len(quantile_vals_merged_singlevar.x)/2)}
+                    quantile_vals_merged_singlevar.chunk(chunks)
                     encoding = {'quantile_memberwise': {'zlib': True, 'complevel': compression_level}, 'quantile_ensemble': {'zlib': True, 'complevel': compression_level}}
-                    quantile_vals_merged_singlevar.to_netcdf(savename_quantile_vals_merged_singlevar,encoding=encoding)
+                    quantile_vals_merged_singlevar.to_netcdf(savename_quantile_vals_merged_singlevar, encoding=encoding)
                     quantile_vals_merged_singlevar.close()
                     del(quantile_vals_merged_singlevar)
                     time.sleep(1)

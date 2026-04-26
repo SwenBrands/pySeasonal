@@ -32,7 +32,7 @@ input_parameters:
   min_nr_events: 3 # the minimum number of events that must be reached for each modulator and events to permit the verification; if this threshold is not reached, the script returns a ValueError
   masked_variables_std: ['UAI','FD','SU','ID','DD','TR','pet-hargreaves','PRm','Rx1day','Rx5day','SSRDm','Tm','TNm','TXm','WSm','GDD_S','GDD_W','CGDD_S','CGDD_W','FWIm','PVPOTm','SPEI-3-M','fwi','pvpot','t2m','tp','ssrd','si10']
   filename_telcon: 'oni2enso_195001_202505.nc' #name of the file located in <dir_telcon>
-  nr_prob_thresholds: 50 #mumber of probability thresholds used to calculate ROC AUC
+  nr_prob_thresholds: 25 #mumber of probability thresholds used to calculate ROC AUC
 
 # Set the lead-times for each model and version thereof, as well as for each aggregation window (currently 1 and 3 months)
 ######################################################################################################################################

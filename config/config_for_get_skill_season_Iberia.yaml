@@ -33,11 +33,11 @@ input_parameters:
   skillscore_reference: 'rand' # 'clim' or 'rand'; use either the climatological mean or randomly reshuffled observed time series as reference forcast for calculating the CPRSS
   nr_pseudo_mem: 3 # number of times the climatological mean or randomly reshuffled observarions are replicated along the "member" dimension to mimic a model ensemble representing the naiv climatological forecasts used as reference for calculating the CRPS Skill Score. Results are insensitive to variations in this value; the script has been tested for value=2 and 4.
   testlevel: 0.05 # options for methods estimating hindcast skill
-  detrending: ['no', 'yes'] # yes or no, linear detrending of the gcm and obs time series prior to validation
+  detrending: ['yes', 'no'] # yes or no, linear detrending of the gcm and obs time series prior to validation
   masked_variables_std: ['CGDDS-C4_up010', 'FWI-C4_up010', 'SPEI-3-M-C4_up010', 'Rx1day-C4_up010', 'Rx5day-C4_up010', 'TNm-C4_up010', 'PRtot-C4_up010', 'PRm-C4_up010', 'TXm-C4_up010', 'TXm-C4', 'TXm-C6', 'FD-C4_up010', 'SU-C4_up010', 'TR-C4_up010'] # list of variables on which a land-sea mask will be applied, setting values over sea to nan
   mask_probabilities: 'no' #mask tercile probability time-series if they are indicated in <masked_variables_std>; yes or no  
   filename_telcon: 'oni2enso_195001_202505.nc' #name of the file located in <dir_telcon>
-  nr_prob_thresholds: 'continuous' # set to 'continuous' to use continuous probability thresholds to calcluate the ROC-AUC skill socre or an integer defining the number of probability thresholds to be used for this purpose
+  nr_prob_thresholds: 25 # set to 'continuous' to use continuous probability thresholds to calcluate the ROC-AUC skill socre or an integer defining the number of probability thresholds to be used for this purpose
 
 
 # Set the lead-times for each model and version thereof, as well as for each aggregation window (currently 1 and 3 months)

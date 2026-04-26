@@ -182,7 +182,7 @@ for ag in np.arange(len(agg_labels)):
 
             #and interpolate them to the high resolution grid defined in <target_domain>
             nc_mod_hr = nc_mod.interp(y=nc_hr.y, x=nc_hr.x, method=interp_method).astype(precision).clip(min=0, max=1)
-            nc_obs_hr = nc_obs.interp(y=nc_hr.y, x=nc_hr.x, method=interp_method).astype(precision)
+            nc_obs_hr = nc_obs.interp(y=nc_hr.y, x=nc_hr.x, method=interp_method).astype(precision).clip(min=0, max=1)
             
             # tranform continuous observed probabilities obtained from interpolation into binary values
             # nc_obs_hr = (nc_obs_hr >= 0.5).astype(precision)
@@ -204,14 +204,28 @@ for ag in np.arange(len(agg_labels)):
             nc_mod_hr.attrs['interpolation_method'] = interp_method
             nc_obs_hr.attrs['interpolation_method'] = interp_method
 
+            #add singeton dimensions for visualization purposes
+            nc_mod_hr = nc_mod_hr.expand_dims(aggregation=[agg_labels[ag]])
+            nc_mod_hr = nc_mod_hr.expand_dims(model=[models[mm]])
+
+            nc_obs_hr = nc_obs_hr.expand_dims(aggregation=[agg_labels[ag]])
+            nc_obs_hr = nc_obs_hr.expand_dims(obs=[obs])
+
             #save interpolated hr files to netcdf format
             # for the model
             savename_nc_mod_hr = dir_netcdf_tercilprobs_out+'/tercile_prob_pticlima_'+agg_labels[ag]+'_'+models[mm]+'_'+variables_mod[mm][vv]+'-'+variable_out_label+'_'+target_domain+'_'+str(years_mod[mm][0])+'_'+str(years_mod[mm][-1])+'_'+vers+'.nc'
-            encoding = {'upper_tercile_probability': {'zlib': True, 'complevel': compression_level}, 'center_tercile_probability': {'zlib': True, 'complevel': compression_level}, 'lower_tercile_probability': {'zlib': True, 'complevel': compression_level}}
+           
+            chunks = {"model": len(nc_mod_hr.model), "aggregation": len(nc_mod_hr.aggregation), "detrended": len(nc_mod_hr.detrended), "time": len(nc_mod_hr.time), "season" : len(nc_mod_hr.season), "lead" : len(nc_mod_hr.lead) ,"y": round(len(nc_mod_hr.y)/2),"x": round(len(nc_mod_hr.x)/2)}
+            nc_mod_hr.chunk(chunks)
+            encoding = {var: {"zlib": True, "complevel": compression_level} for var in nc_mod_hr.data_vars}
             nc_mod_hr.to_netcdf(savename_nc_mod_hr,encoding=encoding)
-            # of the observations
+            
+            # for the observations
             savename_nc_obs_hr = dir_netcdf_tercilprobs_out+'/tercile_bin_pticlima_'+agg_labels[ag]+'_'+obs+'_'+variables_obs[mm][vv]+'-'+variable_out_label+'_'+target_domain+'_'+str(years_obs[mm][0])+'_'+str(years_obs[mm][-1])+'_'+vers+'.nc'
-            encoding = {'upper_tercile_binary': {'zlib': True, 'complevel': compression_level}, 'center_tercile_binary': {'zlib': True, 'complevel': compression_level}, 'lower_tercile_binary': {'zlib': True, 'complevel': compression_level}}
+ 
+            chunks = {"obs": len(nc_obs_hr.obs), "aggregation": len(nc_obs_hr.aggregation), "detrended": len(nc_obs_hr.detrended), "time": len(nc_obs_hr.time), "season" : len(nc_obs_hr.season), "lead" : len(nc_obs_hr.lead) ,"y": round(len(nc_obs_hr.y)/2),"x": round(len(nc_obs_hr.x)/2)}
+            nc_obs_hr.chunk(chunks)
+            encoding = {var: {"zlib": True, "complevel": compression_level} for var in nc_obs_hr.data_vars}
             nc_obs_hr.to_netcdf(savename_nc_obs_hr,encoding=encoding)
             
             #create empty numpy array to be filled with ROC-AUC skill score values (dims = subperiod, detrended, variable, season, lead, y, x)
@@ -252,9 +266,9 @@ for ag in np.arange(len(agg_labels)):
                     start_time_roc = time.time()
 
                     #ROC-AUC
-                    roc_lower_np[mo,:,:,ll,:,:] = xs.roc(nc_obs_hr.lower_tercile_binary.isel(time=phase_ind).sel(lead=lead_label[ll]), nc_mod_hr.lower_tercile_probability.isel(time=phase_ind).sel(lead=lead_label[ll]), bin_edges=prob_thresholds, dim='time', drop_intermediate=False, return_results='area').values
-                    roc_center_np[mo,:,:,ll,:,:] = xs.roc(nc_obs_hr.center_tercile_binary.isel(time=phase_ind).sel(lead=lead_label[ll]), nc_mod_hr.center_tercile_probability.isel(time=phase_ind).sel(lead=lead_label[ll]), bin_edges=prob_thresholds, dim='time', drop_intermediate=False, return_results='area').values
-                    roc_upper_np[mo,:,:,ll,:,:] = xs.roc(nc_obs_hr.upper_tercile_binary.isel(time=phase_ind).sel(lead=lead_label[ll]), nc_mod_hr.upper_tercile_probability.isel(time=phase_ind).sel(lead=lead_label[ll]), bin_edges=prob_thresholds, dim='time', drop_intermediate=False, return_results='area').values
+                    roc_lower_np[mo,:,:,ll,:,:] = xs.roc(nc_obs_hr.lower_tercile_binary.sel(obs=obs).sel(aggregation=agg_labels[ag]).isel(time=phase_ind).sel(lead=lead_label[ll]), nc_mod_hr.lower_tercile_probability.sel(model=models[mm]).sel(aggregation=agg_labels[ag]).isel(time=phase_ind).sel(lead=lead_label[ll]), bin_edges=prob_thresholds, dim='time', drop_intermediate=False, return_results='area').drop_vars(['model','aggregation','lead']).values
+                    roc_center_np[mo,:,:,ll,:,:] = xs.roc(nc_obs_hr.center_tercile_binary.sel(obs=obs).sel(aggregation=agg_labels[ag]).isel(time=phase_ind).sel(lead=lead_label[ll]), nc_mod_hr.center_tercile_probability.sel(model=models[mm]).sel(aggregation=agg_labels[ag]).isel(time=phase_ind).sel(lead=lead_label[ll]), bin_edges=prob_thresholds, dim='time', drop_intermediate=False, return_results='area').drop_vars(['model','aggregation','lead']).values
+                    roc_upper_np[mo,:,:,ll,:,:] = xs.roc(nc_obs_hr.upper_tercile_binary.sel(obs=obs).sel(aggregation=agg_labels[ag]).isel(time=phase_ind).sel(lead=lead_label[ll]), nc_mod_hr.upper_tercile_probability.sel(model=models[mm]).sel(aggregation=agg_labels[ag]).isel(time=phase_ind).sel(lead=lead_label[ll]), bin_edges=prob_thresholds, dim='time', drop_intermediate=False, return_results='area').drop_vars(['model','aggregation','lead']).values
 
                     del(phase_ind)
 
