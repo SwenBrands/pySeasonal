@@ -19,6 +19,7 @@ from pyseasonal.utils.functions_seasonal import (
     get_spatial_aggregation,
     plot_pcolormesh_seasonal,
     get_map_lowfreq_var,
+    all_sublists_identical,
 )
 
 start_time = time.time()
@@ -93,6 +94,13 @@ dir_netcdf = paths['dir_netcdf']+'/'+vers #path to outupt netcdf files produced 
 mask_dir = paths['mask_dir'] #path to the land-sea masks
 
 ##EXECUTE ##############################################################
+#check whether all sublists within the <variable> list are identical
+if all_sublists_identical(variables) == True:
+    print('The sublists contained in <variables> are identical ! Proceed with the plotting and skill mask generation...')
+elif all_sublists_identical(variables) == False:
+    raise ValueError('The sublists contained in <variables> are not identical !')
+else:
+    raise ValueError('Unexpected output returned by <all_sublists_identical()> function !')
 
 print('INFO: Verfying '+str(models)+' against for '+str(variables)+' from '+str(ref_dataset)+' domain '+domain+' and sub-domain '+sub_domain+', detrending '+str(detrending)+' and outlier correction '+corr_outlier)
 ## check consistency of input parameters
@@ -136,8 +144,8 @@ lead_arr = xr.DataArray(lead_arr,coords=[agg_label,models],dims=['aggregation','
 #get minimium and maximum values of the colormaps for 1) maps, 2) pcolors displaying areal fractions in percent and 3) pcolors displaying areal mean values
 for ag in np.arange(len(agg_label)):
     dir_netcdf_scores = dir_netcdf+'/scores/'+sub_domain+'/'+agg_label[ag] #set path to the directory containing the validation results
-    for vv in np.arange(len(variables[mm])):
-        for mm in range(len(models)):
+    for mm in range(len(models)):
+        for vv in np.arange(len(variables[mm])):        
             for su in np.arange(len(subperiods)):
                 for det in np.arange(len(detrending)):
                 

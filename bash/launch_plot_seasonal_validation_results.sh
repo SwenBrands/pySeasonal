@@ -22,7 +22,6 @@ PYDIR=/lustre/gmeteo/PTICLIMA/Scripts/SBrands/pyPTIclima/pySeasonal/pyseasonal
 
 ## input variables that will be passed to the python script get_skill_season.py
 agg_label_list=('1mon' '2mon' '3mon' '4mon' '5mon') #bash array containing the temporal aggregation windows to be considered
-# agg_label_list=('1mon') #bash array containing the temporal aggregation windows to be considered
 vers='v1s'
 domain='medcof' #character string: 'medcof', 'Iberia' or 'Canarias'
 

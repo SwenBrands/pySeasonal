@@ -14,6 +14,11 @@ import pdb
 
 from pyseasonal.utils.mapping import subperiod_years
 
+
+def all_sublists_identical(lst_f):
+    ''' check wheter all items in lst are identical'''
+    return not lst_f or all(sublist_f == lst_f[0] for sublist_f in lst_f)
+
 def flip_latitudes_and_data(xr_ds_f,lat_name):
     ''' flips latitudes and data variables in xr_ds_f; input: xr_df_f is an xarray dataseet and lat_name a string containing the placeholder name for the latitude in that dataset;
     output: flipped xr_ds_f '''
