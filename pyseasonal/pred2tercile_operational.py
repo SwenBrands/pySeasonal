@@ -184,6 +184,8 @@ def swen_pred2tercile_operational(config: dict, year_init: str, month_init: str)
                 #load forecast file
                 if domain == 'medcof' and medcof2hr == 'no' and variable_fc[mm][vv] in ('psl','sfcWind','tas','pr','rsds'): #raw model variables
                     filename_forecast = path_gcm_base+'/'+domain+'/'+product+'/'+variable_fc[mm][vv]+'/'+models[mm]+'/'+version[mm]+'/'+str(year_init)+str(month_init).zfill(2)+'/'+file_start[mm][vv]+'_'+domain+'_'+product+'_'+variable_fc[mm][vv]+'_'+models[mm]+'_'+version[mm]+'_'+str(year_init)+str(month_init).zfill(2)+'.nc'
+                elif domain == 'medcof' and medcof2hr == 'no' and variable_fc[mm][vv] in ('UAI','FD','SU','ID','DD','TR','pet-hargreaves','PRm','Rx1day','Rx5day','SSRDm','Tm','TNm','TXm','WSm','GDD_S','GDD_W','CGDD_S','CGDD_W','FWIm','PVPOTm'): #raw model variables
+                    filename_forecast = path_gcm_base_derived+'/'+domain+'/'+product+'/'+variable_fc[mm][vv]+'/'+models[mm]+'/'+version[mm]+'/'+str(year_init)+str(month_init).zfill(2)+'/'+file_start[mm][vv]+'_'+domain+'_'+product+'_'+variable_fc[mm][vv]+'_'+models[mm]+'_'+version[mm]+'_'+str(year_init)+str(month_init).zfill(2)+'.nc'
                 elif domain in ('Iberia','Canarias') and medcof2hr == 'no' and variable_fc[mm][vv] in ('GDD_S','GDD_W','CGDD_S','CGDD_W','fwi','pvpot','CGDDS-C4','FWI-C4','Rx1day-C4', 'Rx5day-C4','TNm-C4','PRtot-C4','PRm-C4','TXm-C4','TXm-C6','FD-C4','SU-C4','TR-C4','CGDDS-C4_up010','FWI-C4_up010','Rx1day-C4_up010','Rx5day-C4_up010','TNm-C4_up010','PRtot-C4_up010','PRm-C4_up010','TXm-C4_up010','FD-C4_up010', 'SU-C4_up010','TR-C4_up010'): # derived model variables
                     filename_forecast = path_gcm_base_derived+'/'+domain+'/'+product+'/'+variable_fc[mm][vv]+'/'+models[mm]+'/'+version[mm]+'/'+str(year_init)+str(month_init).zfill(2)+'/'+file_start[mm][vv]+'_'+domain+'_'+product+'_'+variable_fc[mm][vv]+'_'+models[mm]+'_'+version[mm]+'_'+str(year_init)+str(month_init).zfill(2)+'.nc'
                 elif domain in ('Iberia','Canarias') and medcof2hr == 'no' and variable_fc[mm][vv] in ('SPEI-3','SPEI-3-M','SPEI-3-R','SPEI-3-M-C4_up010','SPEI-3-M-C4'): #derived variables, special case of SPEI
@@ -192,10 +194,10 @@ def swen_pred2tercile_operational(config: dict, year_init: str, month_init: str)
                     filename_forecast = path_gcm_base_derived+'/'+domain+'/'+product+'/'+variable_fc[mm][vv]+'/'+models[mm]+'/'+version[mm]+'/'+str(year_init)+str(month_init).zfill(2)+'/'+file_start[mm][vv]+'_'+domain+'_'+product+'_'+variable_fc[mm][vv]+'_'+models[mm]+'_'+version[mm]+'_'+str(year_init)+str(month_init).zfill(2)+'.nc'
                 elif domain in ('medcof') and medcof2hr in ('Iberia','Canarias') and variable_fc[mm][vv] in ('UAI','FD','SU','ID','DD','TR','pet-hargreaves','PRm','Rx1day','Rx5day','SSRDm','Tm','TNm','TXm','WSm','GDD_S','GDD_W','CGDD_S','CGDD_W','FWIm','PVPOTm','fwi','pvpot','t2m','tp','ssrd','si10'): # derived model variables
                     filename_forecast = path_gcm_base_derived+'/'+domain+'/'+product+'/'+variable_fc[mm][vv]+'/'+models[mm]+'/'+version[mm]+'/'+str(year_init)+str(month_init).zfill(2)+'/'+file_start[mm][vv]+'_'+domain+'_'+product+'_'+variable_fc[mm][vv]+'_'+models[mm]+'_'+version[mm]+'_'+str(year_init)+str(month_init).zfill(2)+'.nc'
-                elif domain in ('medcof') and medcof2hr in ('Iberia','Canarias') and variable_fc[mm][vv] in ('SPEI-3-M'): # derived model variables
+                elif domain in ('medcof') and medcof2hr in ('Iberia','Canarias','no') and variable_fc[mm][vv] in ('SPEI-3-M'): # derived model variables
                     filename_forecast = path_gcm_base_derived+'/'+domain+'/'+product+'/'+variable_fc[mm][vv]+'/'+models[mm]+'/'+version[mm]+'/coefs_pool_members/'+str(year_init)+str(month_init).zfill(2)+'/'+file_start[mm][vv]+'_'+domain+'_'+product+'_'+variable_fc[mm][vv]+'_'+models[mm]+'_'+version[mm]+'_'+str(year_init)+str(month_init).zfill(2)+'.nc'
                 else:
-                    raise Exception('ERROR: Combination of input parameters domain='+domain+', medcof2hr'+medcof2hr+', and variables_fc[mm][vv]='+variables[vv]+' is not valid !')
+                    raise Exception('ERROR: Combination of input parameters domain='+domain+', medcof2hr='+medcof2hr+', and variables_fc[mm][vv]='+variable_fc[mm][vv]+' is not valid !')
 
                 #load forecast file and harmonize latitude name
                 nc_fc = xr.open_dataset(filename_forecast,decode_timedelta=False).rename({lat_name[mm][vv] : lat_name_out, lon_name[mm][vv] : lon_name_out})
@@ -464,7 +466,8 @@ def swen_pred2tercile_operational(config: dict, year_init: str, month_init: str)
                     out_arr_singlevar.attrs['variable'] = variable_std[mm][vvv] #define new attribute "variable" containing the standard variable names defined in variable_std
                     # out_arr_singlevar.attrs['info'] = 'global attributes are from the input file containing '+variable_std[mm][vvv]
 
-                    encoding = dict(probability=dict(chunksizes=(1, 1, 1, 1, 1, len(out_arr[lat_name_out]), len(out_arr[lon_name_out])))) #https://docs.xarray.dev/en/stable/user-guide/io.html#writing-encoded-data
+                    #set chunks and save
+                    encoding = dict(probability=dict(chunksizes=(len(out_arr_singlevar.aggregation), len(out_arr_singlevar.model), len(out_arr_singlevar.rtime), len(out_arr_singlevar.tercile), len(out_arr_singlevar.season), round(len(out_arr[lat_name_out])/2), round(len(out_arr[lon_name_out])/2)))) #https://docs.xarray.dev/en/stable/user-guide/io.html#writing-encoded-data
                     savename_out_arr_singlevar = dir_forecast+'/'+domain+'/probability_'+agg_label[ag]+'_'+models[mm]+version[mm]+'_'+variable_std[mm][vvv]+'_'+domain+'_init_'+str(year_init)+str(month_init).zfill(2)+'_dtr_'+detrended+'_refyears_'+str(years_quantile[mm][0])+'_'+str(years_quantile[mm][1])+'_'+quantile_version+'.nc'
                     out_arr_singlevar.to_netcdf(savename_out_arr_singlevar,encoding=encoding)
                     out_arr_singlevar.close()
@@ -477,10 +480,10 @@ def swen_pred2tercile_operational(config: dict, year_init: str, month_init: str)
                     out_arr_singlevar_hr.attrs = attrs_from_infile[vvv] # pass all attributes from input file containing the forecast
                     out_arr_singlevar_hr.attrs['variable'] = variable_std[mm][vvv]+'-'+variable_out_label #define new attribute "variable" containing the standard variable names defined in variable_std
                     out_arr_singlevar_hr.attrs['method'] = 'interpolated from medcof grid with xarray.interp(method='+interp_method+')'
-
                     # out_arr_singlevar.attrs['info'] = 'global attributes are from the input file containing '+variable_std[mm][vvv]
 
-                    encoding = dict(probability=dict(chunksizes=(1, 1, 1, 1, 1, len(out_arr_hr[lat_name_out]), len(out_arr_hr[lon_name_out])))) #https://docs.xarray.dev/en/stable/user-guide/io.html#writing-encoded-data
+                    #set chunks and save
+                    encoding = dict(probability=dict(chunksizes=(len(out_arr_singlevar_hr.aggregation), len(out_arr_singlevar_hr.model), len(out_arr_singlevar_hr.rtime), len(out_arr_singlevar_hr.tercile), len(out_arr_singlevar_hr.season), round(len(out_arr_hr[lat_name_out])/2), round(len(out_arr_hr[lon_name_out])/2)))) #https://docs.xarray.dev/en/stable/user-guide/io.html#writing-encoded-data
                     # savename_out_arr_singlevar_hr = dir_forecast+'/'+domain+'2'+medcof2hr+'/probability_'+agg_label[ag]+'_'+models[mm]+version[mm]+'_'+variable_std[mm][vvv]+'_'+domain+'2'+medcof2hr+'_init_'+str(year_init)+str(month_init).zfill(2)+'_dtr_'+detrended+'_refyears_'+str(years_quantile[mm][0])+'_'+str(years_quantile[mm][1])+'_'+quantile_version+'.nc'
                     # savename_out_arr_singlevar_hr = dir_forecast+'/'+medcof2hr+'/probability_ex_medcof_'+agg_label[ag]+'_'+models[mm]+version[mm]+'_'+variable_std[mm][vvv]+'_'+medcof2hr+'_init_'+str(year_init)+str(month_init).zfill(2)+'_dtr_'+detrended+'_refyears_'+str(years_quantile[mm][0])+'_'+str(years_quantile[mm][1])+'_'+quantile_version+'.nc'
                     savename_out_arr_singlevar_hr = dir_forecast+'/'+medcof2hr+'/probability_'+agg_label[ag]+'_'+models[mm]+version[mm]+'_'+variable_std[mm][vvv]+'-'+variable_out_label+'_'+medcof2hr+'_init_'+str(year_init)+str(month_init).zfill(2)+'_dtr_'+detrended+'_refyears_'+str(years_quantile[mm][0])+'_'+str(years_quantile[mm][1])+'_'+quantile_version+'.nc'
