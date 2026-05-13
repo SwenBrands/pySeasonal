@@ -190,8 +190,8 @@ def get_forecast_prob(seas_mean_f,lower_xr_f,upper_xr_f):
 
     valid_ind_f = ~np.isnan(upper_np_f) * ~np.isnan(lower_np_f)
     upper_ind_f = (seas_mean_f > upper_np_f) * valid_ind_f
-    center_ind_f = (seas_mean_f > lower_np_f) * (seas_mean_f <= upper_np_f) * valid_ind_f
-    lower_ind_f = (seas_mean_f <= lower_np_f) * valid_ind_f
+    center_ind_f = (seas_mean_f >= lower_np_f) * (seas_mean_f <= upper_np_f) * valid_ind_f
+    lower_ind_f = (seas_mean_f < lower_np_f) * valid_ind_f
 
     #sum members in each category and devide by the number of members, thus obtaining the probability
     nr_mem_f = len(seas_mean_f.member)
@@ -546,11 +546,11 @@ def get_reliability_or_roc(obs_f,gcm_f,obs_quantile_f,gcm_quantile_f,dist_part_f
         obs_bin = xr.where(obs_f > obs_upper_tercile_f, 1, 0).astype('int8') #here the nan values over the sea are lost. They will be brought back below.
         gcm_bin = xr.where(gcm_f > gcm_upper_tercile_f, 1, 0).astype('int8')
     elif dist_part_f == 'lower_tercile':
-        obs_bin = xr.where(obs_f <= obs_lower_tercile_f, 1, 0).astype('int8') #here the nan values over the sea are lost. They will be brought back below.
-        gcm_bin = xr.where(gcm_f <= gcm_lower_tercile_f, 1, 0).astype('int8')
+        obs_bin = xr.where(obs_f < obs_lower_tercile_f, 1, 0).astype('int8') #here the nan values over the sea are lost. They will be brought back below.
+        gcm_bin = xr.where(gcm_f < gcm_lower_tercile_f, 1, 0).astype('int8')
     elif dist_part_f in ('center_tercile','centre_tercile'):
-        obs_bin = xr.where((obs_f > obs_lower_tercile_f) * (obs_f <= obs_upper_tercile_f), 1, 0).astype('int8') #here the nan values over the sea are lost. They will be brought back below.
-        gcm_bin = xr.where((gcm_f > gcm_lower_tercile_f) * (gcm_f <= gcm_upper_tercile_f), 1, 0).astype('int8')
+        obs_bin = xr.where((obs_f >= obs_lower_tercile_f) * (obs_f <= obs_upper_tercile_f), 1, 0).astype('int8') #here the nan values over the sea are lost. They will be brought back below.
+        gcm_bin = xr.where((gcm_f >= gcm_lower_tercile_f) * (gcm_f <= gcm_upper_tercile_f), 1, 0).astype('int8')
     else:
         raise Exception("ERROR: check entry for dist_part_f !")
 

@@ -534,8 +534,8 @@ for mo in np.arange(len(modulators)):
                         t2_obs = np.expand_dims(obs_quantile_vals_step.sel(quantile=0.66,method='nearest').values,axis=0).astype(precision).repeat(obs_seas_mn_5d.shape[0],axis=0)
 
                         #get binary arrays
-                        lower_tercile_obs_step = (obs_seas_mn_5d <= t1_obs).astype(precision)
-                        center_tercile_obs_step = ((obs_seas_mn_5d > t1_obs) * (obs_seas_mn_5d <= t2_obs)).astype(precision)
+                        lower_tercile_obs_step = (obs_seas_mn_5d < t1_obs).astype(precision)
+                        center_tercile_obs_step = ((obs_seas_mn_5d >= t1_obs) * (obs_seas_mn_5d <= t2_obs)).astype(precision)
                         upper_tercile_obs_step = (obs_seas_mn_5d > t2_obs).astype(precision)
 
                         #recover nans lost in the former 3 lines
@@ -598,8 +598,8 @@ for mo in np.arange(len(modulators)):
 
                             valid_ind = ~np.isnan(lower_np) * ~np.isnan(upper_np)
                             upper_ind = (gcm_seas_mn_6d > upper_np) * valid_ind
-                            center_ind = (gcm_seas_mn_6d > lower_np) * (gcm_seas_mn_6d <= upper_np) * valid_ind
-                            lower_ind = (gcm_seas_mn_6d <= lower_np) * valid_ind
+                            center_ind = (gcm_seas_mn_6d >= lower_np) * (gcm_seas_mn_6d <= upper_np) * valid_ind
+                            lower_ind = (gcm_seas_mn_6d < lower_np) * valid_ind
 
                             #sum members in each category and devide by the number of members, thus obtaining the probability
                             nr_mem_step = len(gcm_seas_mn_6d.member)
