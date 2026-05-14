@@ -11,7 +11,7 @@ model_version: ['51']  # list containing the versions of these models
 years_quantile: [[1993, 2022]]  # list containing the years used to calculate quantiles, one sub-list per model
 subperiod: 'none'  # climate oscillation: "enso" or "none"
 scores: ['roc_auc_lower_tercile_skillscore_binary','roc_auc_center_tercile_skillscore_binary','roc_auc_upper_tercile_skillscore_binary']  # list containing the binary skill masks for the ROC AUC Skill Score fore each tercile
-agg_labels: ['3mon']  # considered aggregation windows
+agg_labels: ['1mon','3mon']  # considered aggregation windows
 nan_placeholder: 0
 
 # Variable mapping to PTI format
