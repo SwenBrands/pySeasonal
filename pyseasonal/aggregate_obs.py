@@ -13,7 +13,7 @@ from pyseasonal.utils.config import load_config
 
 # INDICATE CONFIGURATION FILE ######################################
 
-# configuration_file = 'config/config_for_aggregate_obs_Canarias.yaml'
+# configuration_file = 'config/config_for_aggregate_obs_Iberia.yaml'
 # configuration_file = 'config/config_for_aggregate_obs_Canarias.yaml'
 configuration_file = 'config/config_for_aggregate_obs_medcof.yaml'
 
@@ -27,6 +27,7 @@ obs = config['obs'] #name of the observational / reanalysis dataset that will be
 agg_src = config['agg_src'] #'day' or 'mon': temporal aggregation of the observational input files, pertains to the <obs> loop indicated with <oo> below
 variables = config['variables'] #variables to be regridded
 variables_nc = config['variables_nc'] #variable names with the netCDF file
+variables_out = config['variables_out'] #name of the output variables stored by this script
 startyears_file = config['startyears_file'] # list of start years of the obs file as indicated in filename
 endyears_file = config['endyears_file'] #list of corresponding end years
 startyears_aggregation = config['startyears_aggregation'] #list of start years per variable to be regridded
@@ -35,7 +36,6 @@ domain = config['domain'] #spatial domain the model data is available on. So far
 domain_label = config['domain_label'] #domain label used in file name
 resolution = config['resolution'] #resolution shortcut used in the input variable names
 grid_name = config['grid_name'] #here used as label to save the output netcdf file: ecmwf51 for 1 degree datasets, PTI-grid-v2 for downscaled datasets
-int_method = config['int_method'] #here used as label to save the output netcdf file, ask Adri if this method was used, 'conservative_normed' or 'upscaled'
 
 # Extract paths from configuration
 paths = config['paths']
@@ -53,7 +53,7 @@ if os.path.isdir(savepath_base+'/'+obs) != True:
 for vv in np.arange(len(variables)):
     print('Processing '+variables[vv]+' from '+obs+' from '+str(startyears_aggregation[vv])+' to '+str(endyears_aggregation[vv]))
     if variables[vv] in ('t2m','tp','sst','z500','si10','ssrd','msl'):
-        raise ValueError(variables[vv]+' are already available on monthly timescale in '+path_obs_base+' because they have been already donwloaded from CDS!')
+        raise ValueError(variables[vv]+' are already available on monthly timescale in '+path_obs_base+' because they have been already donwloaded from CDS and were regridded with regrid_obs.py!')
 
     #define path to the file and loading function as a function of the variable (variables may come from different providers using distinct rules)
     if domain == 'medcof':
@@ -76,7 +76,7 @@ for vv in np.arange(len(variables)):
         #     print('The following input files will be loaded and concatenated:')
         #     print(inputfiles_list)
         #     nc = xr.open_mfdataset(inputfiles_list, combine="by_coords")
-        elif variables[vv] in ('SPEI-3','GDD_S','GDD_W','CGDD_S','CGDD_W','PVPOTm','FWIm','DD','SU','FD','ID','TR','pet-hargreaves','PRm','Rx1day','Rx5day','SSRDm','Tm','TNm','TXm','UAI','WSm'):
+        elif variables[vv] in ('SPEI-3','GDD-S','GDD-W','CGDD-S','CGDD-W','PVPOTm','FWIm','DD','SU','FD','ID','TR','pet-hargreaves','PRm','Rx1day','Rx5day','SSRDm','Tm','TNm','TXm','UAI','WSm'):
             path_obs_data = path_obs_base+'/'+obs.upper()+'/data_derived/'+domain+'_'+resolution+'/'+agg_src+'/'+variables[vv]+'/'+variables[vv]+'_'+obs.upper()+'_'+domain_label+'_'+resolution+'_'+agg_src+'_'+str(startyears_file[vv])+'-'+str(endyears_file[vv])+'.nc'
             nc = xr.open_dataset(path_obs_data, decode_timedelta=False)
         else:
@@ -90,26 +90,8 @@ for vv in np.arange(len(variables)):
         nc = xr.open_dataset(path_obs_data, decode_timedelta=False)
     else:
         raise ValueError('Unexpected value for <domain> !')
-
-    # pdb.set_trace()
-    nc = nc.rename({variables_nc[vv]:variables[vv]})
-
-    #cut out target period
-    dates = pd.DatetimeIndex(nc.time.values)
-    years_ind = np.where((dates.year >= startyears_aggregation[vv]) * (dates.year <= endyears_aggregation[vv]))[0]
-    nc = nc.isel(time=years_ind)
-    dates = pd.DatetimeIndex(nc.time.values) #retrieve dates form the time-reduced xr dataset
-    #calculate monthly mean values
-    print('INFO: calculating monthly mean values for the period '+str(dates[0])+' to '+str(dates[-1])+'. This may take a while...')
-    #nc[variables[vv]] = nc[variables[vv]].resample(time="1MS").mean(dim='time') #retains an xr data array
-    nc = nc.resample(time="1MS").mean(dim='time') #retains an xr dataset
-
-    ##bring format to CDS standard for monthly mean values and save to netcdf format
-    nc = nc.reindex(lat=list(reversed(nc.lat))) #brings latitudes to descending order
-    nc = nc.rename_dims(lon='x',lat='y') #note that this does not rename the indices !
-    nc = nc.rename_vars(lon='x',lat='y')
-
-    # add units
+    
+    # get variable units from the input file
     # add exception for pvpot, which currently comes without units
     try:
         var_units = nc[variables[vv]].units
@@ -118,7 +100,7 @@ for vv in np.arange(len(variables)):
         if variables[vv] in ('SU', 'FD', 'ID', 'TR', 'DD'):
             pdb.set_trace()
             var_units = 'day'
-        elif variables[vv] in ('TXm', 'TNm', 'CGDD_W', 'CGDD_s'):
+        elif variables[vv] in ('TXm', 'TNm', 'GDD-W', 'GDD-S', 'CGDD-W', 'CGDD-S'):
             pdb.set_trace()
             var_units = 'degC'
         elif variables[vv] in ('PRm','Rx1day','Rx5day'):
@@ -143,10 +125,25 @@ for vv in np.arange(len(variables)):
             var_units = 1
         else:
             pdb.set_trace()
-
         print('WARNING: Setting unit for '+variables[vv]+' to '+str(var_units))
 
-    nc[variables[vv]].attrs['units'] = var_units
+    # set variable name used within the output file that will be written by this script
+    nc = nc.rename({variables_nc[vv]:variables_out[vv]})
+    nc[variables_out[vv]].attrs['units'] = var_units
+
+    #cut out target period
+    dates = pd.DatetimeIndex(nc.time.values)
+    years_ind = np.where((dates.year >= startyears_aggregation[vv]) * (dates.year <= endyears_aggregation[vv]))[0]
+    nc = nc.isel(time=years_ind)
+    dates = pd.DatetimeIndex(nc.time.values) #retrieve dates form the time-reduced xr dataset
+    #calculate monthly mean values
+    print('INFO: calculating monthly mean values for the period '+str(dates[0])+' to '+str(dates[-1])+'. This may take a while...')
+    nc = nc.resample(time="1MS").mean(dim='time') #retains an xr dataset
+
+    ##bring format to CDS standard for monthly mean values and save to netcdf format
+    nc = nc.reindex(lat=list(reversed(nc.lat))) #brings latitudes to descending order
+    nc = nc.rename_dims(lon='x',lat='y') #note that this does not rename the indices !
+    nc = nc.rename_vars(lon='x',lat='y')
 
     # nc.x.attrs('standard_name') = 'longitude'
     # nc.x.attrs('long_name') = 'longitude'
@@ -154,7 +151,7 @@ for vv in np.arange(len(variables)):
     # nc.y.attrs('standard_name') = 'latitude'
     # nc.y.attrs('long_name') = 'latitude'
     # nc.y.attrs('units') = 'degrees_north'
-    savepath = savepath_base+'/'+obs+'/'+variables[vv]+'_mon_'+obs+'_on_'+grid_name+'_grid_'+int_method+'_'+domain+'_'+str(startyears_aggregation[vv])+'_'+str(endyears_aggregation[vv])+'.nc'
+    savepath = savepath_base+'/'+obs+'/'+variables_out[vv]+'_mon_'+obs+'_on_'+grid_name+'_grid_'+domain+'_'+str(dates.year[0])+'_'+str(dates.year[-1])+'.nc'
     nc.astype('float32').to_netcdf(savepath)
     nc.close()
     del(nc)

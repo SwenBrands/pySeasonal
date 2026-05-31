@@ -28,7 +28,6 @@ input_parameters:
   aggreg: 'mon' # temporal aggregation of the input files
   domain: 'Canarias' # spatial domain
   grid_name: 'PTI-grid-v2'
-  int_method: 'upscaled' # 'conservative_normed', interpolation method used before in <regrid_obs.py>
   quantiles: [0.3333333333333333, 0.6666666666666666] # quantiles of the year-to-year time series to be calculated and stored
   skillscore_reference: 'rand' # 'clim' or 'rand'; use either the climatological mean or randomly reshuffled observed time series as reference forcast for calculating the CPRSS
   nr_pseudo_mem: 25 # number of times the climatological mean or randomly reshuffled observarions are replicated along the "member" dimension to mimic a model ensemble representing the naiv climatological forecasts used as reference for calculating the CRPS Skill Score. Results are insensitive to variations in this value; the script has been tested for value=2 and 4.

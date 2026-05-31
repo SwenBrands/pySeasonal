@@ -65,6 +65,7 @@ modulator_ref = in_params['modulator_ref']
 min_nr_events = in_params['min_nr_events']
 interp_method = in_params['interp_method']
 nr_prob_thesholds = in_params['nr_prob_thresholds']
+critval_rocss = in_params['critval_rocss']
 
 prob_thresholds = np.linspace(0, 1, nr_prob_thesholds) #threshold probability values used to calculated ROC AUC
 
@@ -87,7 +88,6 @@ years_obs = []
 variables_mod = []
 variables_obs = []
 lead = [] #init list containing the lead-time configuration for each model and aggregation window
-critval_rocss = []
 for mm in np.arange(len(models)):
     years_mod_step = config['model_settings'][models[mm]]['years_mod']
     years_obs_step = config['model_settings'][models[mm]]['years_obs']
@@ -97,7 +97,6 @@ for mm in np.arange(len(models)):
     years_obs.append(years_obs_step)
     variables_mod.append(variables_mod_step)
     variables_obs.append(variables_obs_step)
-    critval_rocss.append(config['model_settings'][models[mm]]['critval_rocss']) #contains the critical value of the ROC AUC skill score, which depends on the sample size
 
     leads_per_model = [] #init lead-times per model
     for ag in np.arange(len(agg_labels)):
@@ -300,7 +299,7 @@ for ag in np.arange(len(agg_labels)):
             roc_ss = roc_ss.rename({'roc_auc_lower_tercile' : 'roc_auc_lower_tercile_skillscore_continuous', 'roc_auc_center_tercile' : 'roc_auc_center_tercile_skillscore_continuous', 'roc_auc_upper_tercile' : 'roc_auc_upper_tercile_skillscore_continuous'})
             
             #transform to binary mask based on ROC-AUC skill score
-            roc_ss_bin = (roc_ss > critval_rocss[mm]).astype(int)
+            roc_ss_bin = (roc_ss > critval_rocss).astype(int)
             roc_ss_bin = roc_ss_bin.rename({'roc_auc_lower_tercile_skillscore_continuous' : 'roc_auc_lower_tercile_skillscore_binary', 'roc_auc_center_tercile_skillscore_continuous' : 'roc_auc_center_tercile_skillscore_binary', 'roc_auc_upper_tercile_skillscore_continuous' : 'roc_auc_upper_tercile_skillscore_binary'})
             
             #merge continuous and binary skill scores. Then add the "variable" dimension requested by Dani García as well as the corresponding metadata

@@ -7,21 +7,18 @@ The GCM data was obtained from https://cds.climate.copernicus.eu/cdsapp#!/datase
 import numpy as np
 import xarray as xr
 import os
-import xesmf
 import pandas as pd
-
+import pdb
+import warnings
 from pyseasonal.utils.functions_seasonal import roll_and_cut
 
 #set input parameters for observational datasets to be regridded
 obs = ['era5'] #name of the observational / reanalysis dataset that will be regridded
 agg_src = ['mon'] #temporal aggregation of the observational input files, pertains to the <obs> loop indicated with <oo> below
-startyear_file = [1940] #start year of the obs file as indicated in filename
-endyear_file = [2022] #corresponding end year
-variables = ['msl','si10','ssrd','t2m','tp'] #variables to be regridded
-#variables = ['t2m'] #variables to be regridded
-years = [1981,2022] #years to be regridded
-int_method = 'conservative_normed' #'conservative_normed', interpolation method used by xesmf
-file_system = 'lustre' #lustre or myLaptop; used to create the path structure to the input and output files
+startyears_out = [1981,1981,1981,1981,1981] #years to be regridded
+endyears_out = [2023,2023,2023,2023,2023] #years to be regridded
+variables = ['ssrd','si10','msl','t2m','tp'] #variables to be regridded
+int_method = 'linear' #'conservative_normed', interpolation method used by xesmf
 
 #set input parameters for model datasets, only used to get the land-sea mask of the models listed in <model>
 model = ['ecmwf'] #seasonal forecast model
@@ -36,19 +33,10 @@ lonlim_o = [-20.5,51.5] #the datasets come on 0 to 360 degrees longitude and are
 latlim_m = [14,53]
 lonlim_m = [-20,51]
 
-#set basic path structure for observations and land-sea masks from the models
-if file_system == 'myLaptop':
-    home = os.getenv('HOME')
-    path_obs_base = home+'/datos/OBSData' #base path upon which the final path to the obs data is constructed
-    path_gcm_base = home+'/datos/GCMData/seasonal-original-single-levels' #here, the land sea masks of all models and versions thereof are located
-    savepath_base = home+'/datos/tareas/proyectos/pticlima/seasonal/results/obs/regridded' #The nc files generated here, containing observations regridded to the model grid, are stored in this directory
-elif file_system == 'lustre':
-    home = '/lustre/gmeteo/PTICLIMA'
-    path_obs_base = home+'/DATA/REANALYSIS' #base path upon which the final path to the obs data is constructed
-    path_gcm_base = home+'/DATA/SEASONAL/seasonal-original-single-levels' #here, the land sea masks of all models and versions thereof are located
-    savepath_base = home+'/Results/seasonal/obs/regridded' #The nc files generated here, containing observations regridded to the model grid, are stored in this directory
-else:
-    raise Exception('ERROR: unknown entry for <file_system> input parameter !')
+home = '/lustre/gmeteo/PTICLIMA'
+path_obs_base = home+'/DATA/REANALYSIS' #base path upon which the final path to the obs data is constructed
+path_gcm_base = home+'/DATA/SEASONAL/seasonal-original-single-levels' #here, the land sea masks of all models and versions thereof are located
+savepath_base = home+'/Results/seasonal/obs/regridded' #The nc files generated here, containing observations regridded to the model grid, are stored in this directory
 
 ## EXECUTE #############################################################
 for oo in np.arange(len(obs)):
@@ -56,7 +44,7 @@ for oo in np.arange(len(obs)):
     if os.path.isdir(savepath_base+'/'+obs[oo]) != True:
         os.makedirs(savepath_base+'/'+obs[oo])
     #get land-sea mask from observational dataset
-    path_obs_lsm = path_obs_base+'/'+obs[oo].upper()+'/lsm/lsm_'+obs[oo]+'.nc'
+    path_obs_lsm = path_obs_base+'/'+obs[oo].upper()+'_deprecated/lsm/lsm_'+obs[oo]+'.nc'
     nc_obs_lsm = roll_and_cut(xr.open_dataset(path_obs_lsm),lonlim_o,latlim_o)
     land_obs = nc_obs_lsm.lsm.values == 1 #value is binary in era5
     sea_obs = nc_obs_lsm.lsm.values == 0
@@ -73,14 +61,35 @@ for oo in np.arange(len(obs)):
 
         #alternatively load GCM grid from any of the netCDF files containing meteorological varialbes stored on lustre, the land-sea mask is not loaded if this option is followed
         path_gcm_lsm = path_gcm_base+'/'+domain+'/hindcast/tas/'+model[mm]+'/'+version[mm]+'/198101/seasonal-original-single-levels_'+domain+'_hindcast_tas_'+model[mm]+'_'+str(version[mm])+'_198101.nc'
-        nc_gcm_lsm = xr.open_dataset(path_gcm_lsm)
+        nc_gcm_lsm = xr.open_dataset(path_gcm_lsm,decode_timedelta=True).drop_vars(['region','forecast_reference_time','time','member','forecast_time'])
 
         #Then load observations, cut out years indicated in <years>, interpolate obs variable to the gcm grid and save as netCDF file
         for vv in np.arange(len(variables)):
-            path_obs_data = path_obs_base+'/'+obs[oo].upper()+'/'+agg_src[oo]+'/'+obs[oo]+'_mon_'+variables[vv]+'_'+str(startyear_file[oo])+'_'+str(endyear_file[oo])+'.nc'
-            nc_obs_data = roll_and_cut(xr.open_dataset(path_obs_data),lonlim_o,latlim_o)
+
+            #define input file directory, go to this directory, get a sorted list of all containing files and load them           
+            path_obs_data = path_obs_base+'/'+obs[oo].upper()+'/data/global/'+agg_src[oo]+'/'+variables[vv]            
+            os.chdir(path_obs_data)
+            input_files = sorted(os.listdir(path_obs_data))
+            print('Loading the following file list:')
+            print(input_files)
+            nc_obs_data = xr.open_mfdataset(input_files)
+
+            #check whether the time dimension has to be renamed
+            if np.isin('valid_time',list(nc_obs_data.dims)):
+                warnings.warn('setting <valid_time> to <time> and dropping <expver> and <number> coordinates in xr dataset created from '+path_obs_data)
+                nc_obs_data = nc_obs_data.rename({'valid_time':'time'}).drop_vars(['expver','number'])
+
+            nc_obs_data = roll_and_cut(nc_obs_data,lonlim_o,latlim_o)
             obs_dates = pd.DatetimeIndex(nc_obs_data.time.values)
-            yearbool = (obs_dates.year >= years[0]) * (obs_dates.year <= years[1])
+            if obs_dates.hour[0] == 6:
+                print('Hours are 6 UTC and are set to 0 UTC !')
+                nc_obs_data = nc_obs_data.assign_coords(time=nc_obs_data.time - pd.Timedelta(hours=6))
+            elif obs_dates.hour[0] == 0:
+                print('Hours are expected and the date format is not modified !')
+            else:
+                raise ValueError('unknown hour format in <obs_dates.hour> !')
+
+            yearbool = (obs_dates.year >= startyears_out[vv]) * (obs_dates.year <= endyears_out[vv])
             nc_obs_data = nc_obs_data.isel(time=yearbool)
             obs_dates = obs_dates[yearbool]
             #transform the data, depending on the input dataset and variable
@@ -103,11 +112,13 @@ for oo in np.arange(len(obs)):
                 nc_obs_data[variables[vv]].attrs['units'] = nc_obs_data[variables[vv]].units
 
             #regrid without mask
-            print('INFO: Regridding '+variables[vv]+' from '+obs[oo]+' on '+model[mm]+' '+version[mm]+' grid using '+int_method+' method from xesmf...')
-            #regridder = xesmf.Regridder(nc_obs_data,nc_gcm_lsm.drop_dims('number'), method=int_method)
-            regridder = xesmf.Regridder(nc_obs_data,nc_gcm_lsm.drop_dims('member'), method=int_method)
-            nc_obs_int = regridder(nc_obs_data, keep_attrs=True)
-            savepath = savepath_base+'/'+obs[oo]+'/'+variables[vv]+'_'+agg_src[oo]+'_'+obs[oo]+'_on_'+model[mm]+version[mm]+'_grid_'+int_method+'_'+domain+'_'+str(years[0])+'_'+str(years[1])+'.nc'
+            print('INFO: Regridding '+variables[vv]+' from '+obs[oo]+' on '+model[mm]+' '+version[mm]+' grid using '+int_method+' method from xarray.interp() function...')
+            nc_obs_data = nc_obs_data.rename({'latitude':'y','longitude':'x'}) #rename lats and lons in reanalysis xr dataset
+            nc_obs_int = nc_obs_data.interp(y=nc_gcm_lsm.y, x=nc_gcm_lsm.x, method=int_method)
+            nc_obs_int.attrs['regrid_method'] = int_method
+
+            #save regridded file to netcdf format
+            savepath = savepath_base+'/'+obs[oo]+'/'+variables[vv]+'_'+agg_src[oo]+'_'+obs[oo]+'_on_'+model[mm]+version[mm]+'_grid_'+domain+'_'+str(obs_dates.year[0])+'_'+str(obs_dates.year[-1])+'.nc'
             print('INFO: Writing '+obs[oo]+' '+variables[vv]+' data regridded to '+model[mm]+version[mm]+' grid on '+domain+' domain with '+int_method+' method to: '+savepath)
             nc_obs_int.astype('float32').to_netcdf(savepath)
             nc_obs_int.close()

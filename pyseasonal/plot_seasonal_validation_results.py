@@ -54,13 +54,11 @@ variables = []
 variables_out = []
 file_years = []
 ref_dataset = []
-critval_rocss = []
 for mm in np.arange(len(models)):
     variables.append(config['model_settings'][models[mm]]['variables'])
     variables_out.append(config['model_settings'][models[mm]]['variables_out'])
     file_years.append(config['model_settings'][models[mm]]['file_years'])
     ref_dataset.append(config['model_settings'][models[mm]]['ref_dataset'])
-    critval_rocss.append(config['model_settings'][models[mm]]['critval_rocss']) #contains the critical value of the ROC AUC skill score, which depends on the sample size
 
 subperiods = config['subperiods']
 domain = config['domain']
@@ -73,6 +71,7 @@ critval_skillscore = config['critval_skillscore'] #used for crpss and rpc; is cu
 critval_relbias = config['critval_relbias']
 critval_bias = config['critval_bias']
 critval_reliability = config['critval_reliability']
+critval_rocss = config['critval_rocss']
 critval_rpc = config['critval_rpc']
 scores = config['scores']
 cont_scores = config['cont_scores']
@@ -240,7 +239,7 @@ for ag in np.arange(len(agg_label)):
                             if scores[sc] in ('crps_ensemble_skillscore_clim','crps_ensemble_skillscore_rand'):
                                 fractions_spatial = get_spatial_aggregation(nc_results[scores[sc]].values,critval_skillscore,pval_f=nc_results[scores[sc]].values,mode_f='fraction_larger',lat_f=yy)
                             elif scores[sc] in ('roc_auc_lower_tercile_skillscore','roc_auc_center_tercile_skillscore','roc_auc_upper_tercile_skillscore'):
-                                fractions_spatial = get_spatial_aggregation(nc_results[scores[sc]].values,critval_rocss[mm],pval_f=nc_results[scores[sc]].values,mode_f='fraction_larger',lat_f=yy)
+                                fractions_spatial = get_spatial_aggregation(nc_results[scores[sc]].values,critval_rocss,pval_f=nc_results[scores[sc]].values,mode_f='fraction_larger',lat_f=yy)
                             elif scores[sc] in ('rpc'):
                                 fractions_spatial = get_spatial_aggregation(nc_results[scores[sc]].values,critval_rpc,pval_f=nc_results[scores[sc]].values,mode_f='fraction_larger',lat_f=yy)
                             else:
@@ -395,8 +394,8 @@ for ag in np.arange(len(agg_label)):
                                     pcolorme_fraction = get_spatial_aggregation(nc_results[scores[sc]].values,critval_rpc,pval_f=nc_results[scores[sc]].values,mode_f='fraction_larger',lat_f=yy) #calculate areal fraction with skill score > 0
                                     label_pcolor_fraction = 'areal fraction > '+str(round(critval_rpc,2))+' '+scores[sc]
                                 elif scores[sc] in ('roc_auc_lower_tercile_skillscore','roc_auc_center_tercile_skillscore','roc_auc_upper_tercile_skillscore'):
-                                    pcolorme_fraction = get_spatial_aggregation(nc_results[scores[sc]].values,critval_rocss[mm],pval_f=nc_results[scores[sc]].values,mode_f='fraction_larger',lat_f=yy) #calculate areal fraction with skill score > 0
-                                    label_pcolor_fraction = 'areal fraction > '+str(round(critval_rocss[mm],2))+' '+scores[sc]
+                                    pcolorme_fraction = get_spatial_aggregation(nc_results[scores[sc]].values,critval_rocss,pval_f=nc_results[scores[sc]].values,mode_f='fraction_larger',lat_f=yy) #calculate areal fraction with skill score > 0
+                                    label_pcolor_fraction = 'areal fraction > '+str(round(critval_rocss,2))+' '+scores[sc]
                                 else:
                                     raise ValueError('Check entry for scores[sc] !')
                                 
@@ -573,7 +572,7 @@ for ag in np.arange(len(agg_label)):
                                                 critval_label = str(round(critval_skillscore,2))
                                                 agreeind = binmask[sea,ll,:,:] == 1
                                             elif scores[sc] in ('roc_auc_lower_tercile_skillscore','roc_auc_center_tercile_skillscore','roc_auc_upper_tercile_skillscore'):
-                                                critval_label = str(round(critval_rocss[mm],2))
+                                                critval_label = str(round(critval_rocss,2))
                                                 agreeind = binmask[sea,ll,:,:] == 1
                                             elif scores[sc] in ('rpc'):
                                                 critval_label = str(critval_rpc)

@@ -11,8 +11,8 @@ obs: 'era5'  # string containing the observational reference
 # Quantile and validation configuration
 years_quantile: [[1993, 2022]]  # list containing the years used to calculate quantiles, one sub-list per model
 subperiod: 'none'  # climate oscillation: "enso" or "none"
-score: 'pearson_r_binary'  # score of the binary skill mask
-agg_labels: ['3mon']  # considered aggregation windows
+scores: ['roc_auc_lower_tercile_skillscore_binary','roc_auc_center_tercile_skillscore_binary','roc_auc_upper_tercile_skillscore_binary']
+agg_labels: ['1mon','3mon']  # considered aggregation windows
 nan_placeholder: 0
 
 # Variable mapping

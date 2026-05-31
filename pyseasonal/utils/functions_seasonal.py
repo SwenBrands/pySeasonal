@@ -242,7 +242,7 @@ def roll_and_cut(xr_dataset, lonlim_f, latlim_f):
     """
     #first, roll the dataset so that -180 < lon <= 180
     whemis = np.where(xr_dataset.longitude > 180)[0]
-    newlons = xr_dataset.longitude.values
+    newlons = xr_dataset.longitude.values.copy()
     newlons[whemis] = newlons[whemis]-360
     xr_dataset['longitude'] = newlons
     shiftat = int(np.argmax(np.abs(np.diff(xr_dataset.longitude.values)))-1)

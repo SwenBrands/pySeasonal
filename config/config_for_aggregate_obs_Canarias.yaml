@@ -4,8 +4,11 @@ obs: 'PTI-grid-v2' #name of the observational / reanalysis dataset that will be 
 agg_src: 'mon' #'day' or 'mon': temporal aggregation of the observational input files, pertains to the <obs> loop indicated with <oo> below
 # variables: ['CGDDS', 'FWI', 'SPEI-3', 'Rx1day', 'Rx5day', 'TNm', 'PRtot', 'PRm', 'TXm', 'FD', 'SU', 'TR'] #variables to be regridded
 # variables_nc: ['CGDDS', 'FWI', 'SPEI-3', 'Rx1day', 'Rx5day', 'TNm', 'PRtot', 'PRm', 'TXm', 'FD', 'SU', 'TR'] #variable names with the netCDF file
+
 variables: ['SU', 'TR', 'Rx1day', 'Rx5day', 'PRm', 'TNm', 'FD'] #variables to be regridded
 variables_nc: ['SU', 'TR', 'Rx1day', 'Rx5day', 'PRm', 'TNm', 'FD'] #variable names with the netCDF file
+variables_out: ['SU', 'TR', 'Rx1day', 'Rx5day', 'PRm', 'TNm', 'FD'] #variable names with the netCDF file
+
 startyears_file: [1981, 1981, 1981, 1981, 1981, 1981, 1981] #start year of the obs file as indicated in filename
 endyears_file: [2022, 2022, 2022, 2022, 2022, 2022, 2022] #corresponding end year as indicated in filename
 startyears_aggregation: [1981, 1981, 1981, 1981, 1981, 1981, 1981] #start years to be aggregated
@@ -16,7 +19,6 @@ domain_label: 'can' #domain label used in file name
 resolution: '5km' #resolution shortcut used in the input variable names
 
 grid_name: 'PTI-grid-v2' #here used as label to save the output netcdf file: ecmwf51 for 1 degree datasets, PTI-grid-v2 for downscaled datasets
-int_method: 'upscaled' #here used as label to save the output netcdf file, ask Adri if this method was used, 'conservative_normed' or 'upscaled'
 
 paths:
   home: '/lustre/gmeteo/PTICLIMA'
