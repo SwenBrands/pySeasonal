@@ -1,0 +1,380 @@
+[
+  {
+    "id": "GTG",
+    "id_ifca": "Tm",
+    "id_era5": "t2m",
+    "units": "°C",
+    "data": {
+      "en_name": "Mean Temperature",
+      "en_units": "°C",
+      "en_description": "Mean air temperature",
+      "en_importance_of_index": "Important application in agriculture, tourism, human health",
+      "en_reference": "Klein Tank AMG, Zwiers FW, Zhang X. 2009. Guidelines on analysis of extremes in a changing climate in support of informed decisions for adaptation, climate data and monitoring WCDMP-No 72, WMO-TD No 1500, p 5.",
+      "es_name": "Temperatura media",
+      "es_units": "°C",
+      "es_description": "Valor medio de la temperatura del aire",
+      "es_importance_of_index": "Importante aplicación en agricultura, turismo, salud humana",
+      "es_reference": "Klein Tank AMG, Zwiers FW, Zhang X. 2009. Guidelines on analysis of extremes in a changing climate in support of informed decisions for adaptation, climate data and monitoring WCDMP-No 72, WMO-TD No 1500, p 5."
+    }
+  },
+  {
+    "id": "GTX",
+    "id_ifca": "TXm",
+    "id_era5": "Txm",
+    "units": "°C",
+    "data": {
+      "en_name": "Maximum temperature",
+      "en_units": "°C",
+      "en_description": "Average of daily maximum air temperature",
+      "en_importance_of_index": "Important application in agriculture, tourism, human health",
+      "en_reference": "Klein Tank AMG, Zwiers FW, Zhang X. 2009. Guidelines on analysis of extremes in a changing climate in support of informed decisions for adaptation, climate data and monitoring WCDMP-No 72, WMO-TD No 1500, p 5.",
+      "es_name": "Temperatura máxima",
+      "es_units": "°C",
+      "es_description": "Valor medio de la temperatura máxima diaria del aire",
+      "es_importance_of_index": "Importancia del Í­ndice: Importante aplicación en agricultura, turismo y salud humana",
+      "es_reference": "Klein Tank AMG, Zwiers FW, Zhang X. 2009. Guidelines on analysis of extremes in a changing climate in support of informed decisions for adaptation, climate data and monitoring WCDMP-No 72, WMO-TD No 1500, p 5."
+    }
+  },
+  {
+    "id": "GTN",
+    "id_ifca": "TNm",
+    "id_era5": "TNm",
+    "data": {
+      "en_name": "Minimum temperature",
+      "en_units": "°C",
+      "en_description": "Average of daily minimum air temperature",
+      "en_importance_of_index": "Important application in agriculture, tourism, human health",
+      "en_reference": "Klein Tank AMG, Zwiers FW, Zhang X. 2009. Guidelines on analysis of extremes in a changing climate in support of informed decisions for adaptation, climate data and monitoring WCDMP-No 72, WMO-TD No 1500, p 5.",
+      "es_name": "Temperatura mínima",
+      "es_units": "°C",
+      "es_description": "Valor medio de la temperatura mínima diaria del aire",
+      "es_importance_of_index": "Importante aplicación en agricultura, turismo, salud humana",
+      "es_reference": "Klein Tank AMG, Zwiers FW, Zhang X. 2009. Guidelines on analysis of extremes in a changing climate in support of informed decisions for adaptation, climate data and monitoring WCDMP-No 72, WMO-TD No 1500, p 5."
+    }
+  },
+  {
+    "id": "FD",
+    "id_ifca": "FD",
+    "id_era5": "FD",
+    "units": "days",
+    "data": {
+      "en_name": "Frost days",
+      "en_units": "days",
+      "en_description": "Total number of days with minimum temperature below 0°C",
+      "en_importance_of_index": "Important application in agriculture.",
+      "en_reference": "Klein Tank AMG, Zwiers FW, Zhang X. 2009. Guidelines on analysis of extremes in a changing climate in support of informed decisions for adaptation, climate data and monitoring WCDMP-No 72, WMO-TD No 1500, p 5.",
+      "es_name": "Días de helada",
+      "es_units": "días",
+      "es_description": "Número total de días con temperatura mínima inferior a 0°C",
+      "es_importance_of_index": "Importante aplicación en agricultura.",
+      "es_reference": "Klein Tank AMG, Zwiers FW, Zhang X. 2009. Guidelines on analysis of extremes in a changing climate in support of informed decisions for adaptation, climate data and monitoring WCDMP-No 72, WMO-TD No 1500, p 5."
+    }
+  },
+  {
+    "id": "ID",
+    "id_ifca": "ID",
+    "id_era5": "ID",
+    "data": {
+      "en_name": "Ice days",
+      "en_units": "days",
+      "en_description": "Number of days with maximum temperature below 0°C",
+      "en_importance_of_index": "Important application in agriculture, tourism, human health",
+      "en_reference": "Klein Tank AMG, Zwiers FW, Zhang X. 2009. Guidelines on analysis of extremes in a changing climate in support of informed decisions for adaptation, climate data and monitoring WCDMP-No 72, WMO-TD No 1500, p 5.",
+      "es_name": "Días de hielo",
+      "es_units": "días",
+      "es_description": "Número de días con temperatura máxima inferior a 0°C",
+      "es_importance_of_index": "Importante aplicación en agricultura, turismo, salud humana",
+      "es_reference": "Klein Tank AMG, Zwiers FW, Zhang X. 2009. Guidelines on analysis of extremes in a changing climate in support of informed decisions for adaptation, climate data and monitoring WCDMP-No 72, WMO-TD No 1500, p 5."
+    }
+  },
+  {
+    "id": "SU",
+    "id_ifca": "SU",
+    "id_era5": "SU",
+    "data": {
+      "en_name": "Summer days",
+      "en_units": "days",
+      "en_description": "Number of days with maximum temperature above 25°C.",
+      "en_importance_of_index": "Important application in agriculture, tourism, human health",
+      "en_reference": "Klein Tank AMG, Zwiers FW, Zhang X. 2009. Guidelines on analysis of extremes in a changing climate in support of informed decisions for adaptation, climate data and monitoring WCDMP-No 72, WMO-TD No 1500, p 5.",
+      "es_name": "Días de verano",
+      "es_units": "días",
+      "es_description": "Número de días con temperatura máxima superior a 25°C.",
+      "es_importance_of_index": "Importante aplicación en agricultura, turismo, salud humana",
+      "es_reference": "Klein Tank AMG, Zwiers FW, Zhang X. 2009. Guidelines on analysis of extremes in a changing climate in support of informed decisions for adaptation, climate data and monitoring WCDMP-No 72, WMO-TD No 1500, p 5."
+    }
+  },
+  {
+    "id": "TR",
+    "id_ifca": "TR",
+    "id_era5": "TR",
+    "data": {
+      "en_name": "Tropical nights",
+      "en_units": "days",
+      "en_description": "Number of days with minimum temperature above 20°C.",
+      "en_importance_of_index": "Important application in agriculture, tourism, human health",
+      "en_reference": "Klein Tank AMG, Zwiers FW, Zhang X. 2009. Guidelines on analysis of extremes in a changing climate in support of informed decisions for adaptation, climate data and monitoring WCDMP-No 72, WMO-TD No 1500, p 5.",
+      "es_name": "Noches tropicales",
+      "es_units": "días",
+      "es_description": "Número de días con temperatura mínima superior a 20°C",
+      "es_importance_of_index": "Importante aplicación en agricultura, turismo, salud humana",
+      "es_reference": "Klein Tank AMG, Zwiers FW, Zhang X. 2009. Guidelines on analysis of extremes in a changing climate in support of informed decisions for adaptation, climate data and monitoring WCDMP-No 72, WMO-TD No 1500, p 5."
+    }
+  },
+  {
+    "id": "RTI",
+    "id_ifca": "PRm",
+    "id_era5": "tp",
+    "data": {
+      "en_name": "Total precipitation",
+      "en_units": "mm/day",
+      "en_description": "Mean daily large-scale and convective precipitation amount",
+      "en_importance_of_index": "Important application in agriculture and water",
+      "en_reference": "Klein Tank AMG, Zwiers FW, Zhang X. 2009. Guidelines on analysis of extremes in a changing climate in support of informed decisions for adaptation, climate data and monitoring WCDMP-No 72, WMO-TD No 1500, p 5.",
+      "es_name": "Precipitación total",
+      "es_units": "mm/day",
+      "es_description": "Media de la precipitación de larga escala y convectiva diaria",
+      "es_importance_of_index": "Importante aplicación en agricultura y agua",
+      "es_reference": "Klein Tank AMG, Zwiers FW, Zhang X. 2009. Guidelines on analysis of extremes in a changing climate in support of informed decisions for adaptation, climate data and monitoring WCDMP-No 72, WMO-TD No 1500, p 5."
+    }
+  },
+   {
+    "id": "RX1day",
+    "id_ifca": "RX1day",
+     "id_era5": "RX1day",
+    "data": {
+      "en_name": "Maximum precipitation",
+      "en_units": "mm/day",
+      "en_description": "Maximum daily total precipitation amount",
+      "en_importance_of_index": "Important application in agriculture and hydrology",
+      "en_reference": "Klein Tank AMG, Zwiers FW, Zhang X. 2009. Guidelines on analysis of extremes in a changing climate in support of informed decisions for adaptation, climate data and monitoring WCDMP-No 72, WMO-TD No 1500, p 5.",
+      "es_name": "Precipitación máxima",
+      "es_units": "mm/day",
+      "es_description": "Máximo de la precipitación total diaria",
+      "es_importance_of_index": "Importante aplicación en agricultura y hidrología",
+      "es_reference": "Klein Tank AMG, Zwiers FW, Zhang X. 2009. Guidelines on analysis of extremes in a changing climate in support of informed decisions for adaptation, climate data and monitoring WCDMP-No 72, WMO-TD No 1500, p 5."
+    }
+  },
+  {
+    "id": "DD",
+    "id_ifca": "DD",
+    "id_era5": "DD",
+    "data": {
+      "en_name": "Dry days",
+      "en_units": "days",
+      "en_description": "Number of days with total precipitation below 1 mm/day",
+      "en_importance_of_index": "Important application in agriculture and water",
+      "en_reference": "Klein Tank AMG, Zwiers FW, Zhang X. 2009. Guidelines on analysis of extremes in a changing climate in support of informed decisions for adaptation, climate data and monitoring WCDMP-No 72, WMO-TD No 1500, p 5.",
+      "es_name": "Días secos",
+      "es_units": "días",
+      "es_description": "Número de días con precipitatión total inferior a 1 mm/día",
+      "es_importance_of_index": "Importante aplicación en agricultura y agua",
+      "es_reference": "Klein Tank AMG, Zwiers FW, Zhang X. 2009. Guidelines on analysis of extremes in a changing climate in support of informed decisions for adaptation, climate data and monitoring WCDMP-No 72, WMO-TD No 1500, p 5."
+    }
+  },
+  {
+    "id": "Eto",
+    "id_ifca": "pet-hargreaves",
+    "id_era5": "pet-hargreaves",
+    "data": {
+      "en_name": "Evapotranspiration",
+      "en_units": "mm/day",
+      "en_description": "Reference evapotranspiration using the Hargreaves & Samani method.",
+      "en_importance_of_index": "Important application in agriculture",
+      "en_reference": "Chiew, F.H.S., Kamaladasa, N.N., Malano, H.M., McMahon, T.A., 1995. Penman–Monteith FAO-24 reference crop evapotranspiration and class-A pan data in Australia. Agric. Water Manage. 28, 9–21",
+      "es_name": "Evapotranspiración",
+      "es_units": "mm/day",
+      "es_description": "Evapotranspiración de referencia mediante el método Hargreaves & Samani.",
+      "es_importance_of_index": "Importante aplicación en agricultura",
+      "es_reference": "Chiew, F.H.S., Kamaladasa, N.N., Malano, H.M., McMahon, T.A., 1995. Penmanâ€“Monteith FAO-24 reference crop evapotranspiration and class-A pan data in Australia. Agric. Water Manage. 28, 9â€“21"
+    }
+  },
+  {
+    "id": "UAI",
+    "id_ifca": "UAI",
+    "id_era5": "UAI",
+    "data": {
+      "en_name": "UNEP Aridity Index",
+      "en_units": "dimensionless (0-1)",
+      "en_description": "Precipitation/Reference Evapotranspiration",
+      "en_importance_of_index": "Important application in agriculture",
+      "en_reference": "Huiping Huang, Yuping Han, Mingming Cao, Jinxi Song, and Heng Xiao, “Spatial-Temporal Variation of Aridity Index of China during 1960–2013,” Advances in Meteorology, vol. 2016, Article ID 1536135, 10 pages, 2016. https://doi.org/10.1155/2016/1536135",
+      "es_name": "Índice de aridez UNEP",
+      "es_units": "adimensional (0-1)",
+      "es_description": "Preciptación/Evapotranspiración de Referencia",
+      "es_importance_of_index": "Importante aplicación en agricultura",
+      "es_reference": "Huiping Huang, Yuping Han, Mingming Cao, Jinxi Song, and Heng Xiao, â€œSpatial-Temporal Variation of Aridity Index of China during 1960â€“2013,â€ Advances in Meteorology, vol. 2016, Article ID 1536135, 10 pages, 2016. https://doi.org/10.1155/2016/1536135"
+    }
+  },
+  {
+    "id": "FG",
+    "id_ifca": "WSm",
+    "id_era5": "si10",
+    "data": {
+      "en_name": "Mean wind speed",
+      "en_units": "m/s",
+      "en_description": "Mean of daily mean wind speed (m/s); standard index computed by ECA&D",
+      "en_importance_of_index": "Important application in energy, agriculture and tourism",
+      "en_reference": "https://www.ecad.eu//indicesextremes/indicesdictionary.php",
+      "es_name": "Velocidad media del viento",
+      "es_units": "m/s",
+      "es_description": "Media de la intensidad media diaria del viento (m/s); índice normalizado calculado por ECA&D",
+      "es_importance_of_index": "Importante aplicación en energía, agricultura y turismo",
+      "es_reference": "https://www.ecad.eu//indicesextremes/indicesdictionary.php"
+    }
+  },
+  {
+    "id": "PVPOT",
+    "id_ifca": "PVPOTm",
+    "id_era5": "pvpot",
+    "data": {
+      "en_name": "Photovoltaic potential index",
+      "en_units": "dimensionless (0-1)",
+      "en_description": "T Photovoltaic potential index describing cell potential production with respect to the optimal potential of a global downward shortwave radiation of 1000 W/m2.",
+      "en_importance_of_index": "Importance of the index:Important application in energy and tourism",
+      "en_reference": "Jerez et al. 2015, https://doi.org/10.1038/ncomms10014",
+      "es_name": "Índice de potencia fotovoltaica ",
+      "es_units": "adimensional (0-1)",
+      "es_description": "Índice de potencial fotovoltaico que describe la producción de potencial de la célula con respecto al potencial óptimo de una radiación de onda corta descendente global de 1000 W/m2.",
+      "es_importance_of_index": "Importante aplicación en energía y turismo",
+      "es_reference": "Jerez et al. 2015, https://doi.org/10.1038/ncomms10014"
+    }
+  },
+  {
+    "id": "SPEI3",
+    "id_ifca": "SPEI-3-M",
+    "id_era5": "SPEI-3-M",
+    "data": {
+      "en_name": "Standardised Precipitation-Evapotranspiration Index 3",
+      "en_units": "dimensionless",
+      "en_description": "Standardized precipitation-evapotranspiration index calculated at 3-month time scale",
+      "en_importance_of_index": "Important application in agriculture and water",
+      "en_reference": "Vicente-Serrano, S. M., Beguería, S. and López-Moreno, J. I.: A multiscalar drought index sensitive to global warming: The standardized precipitation evapotranspiration index, J. Clim., 23(7), doi:10.1175/2009JCLI2909.1, 2010.",
+      "es_name": "Índice de precipitación-evapotranspiración estandarizado 3",
+      "es_units": "adimensional",
+      "es_description": "Índice de precipitación-evapotranspiración estandarizado calculado a escala de tiempo de 3 meses",
+      "es_importance_of_index": "Importante aplicación en agricultura y agua",
+      "es_reference": "Vicente-Serrano, S. M., Beguería, S. and López-Moreno, J. I.: A multiscalar drought index sensitive to global warming: The standardized precipitation evapotranspiration index, J. Clim., 23(7), doi:10.1175/2009JCLI2909.1, 2010."
+    }
+  },
+  {
+    "id": "FWI",
+    "id_ifca": "FWIm",
+    "id_era5": "fwi",
+    "data": {
+      "en_name": "Canadian Fire Weather Index",
+      "en_units": "dimensionless",
+      "en_description": "The Canadian Forest Fire Weather Index (FWI) is an indicator of fire weather intensity and is used to represent potential fire danger. It is computed from daily values of precipitation, temperature, near-surface wind and relative humidity",
+      "en_importance_of_index": "Important application for fire prevention",
+      "en_reference": "Van Wagner CE. 1987. Development and structure of the Canadian forest fire weather index system. Technical Report 35, Canadian Forestry Service: Ottawa, Ontario.",
+      "es_name": "Índice de peligro de incendio (FWI)",
+      "es_units": "adimensional",
+      "es_description": "El Índice de Clima de Incendios Forestales de Canadá (FWI) es un indicador de la intensidad del clima de incendios y se utiliza para representar el potencial de peligro de incendios. Se calcula a partir de los valores diarios de precipitación, temperatura, viento cerca de la superficie y humedad relativa",
+      "es_importance_of_index": "Importante aplicación para la prevención de incendios",
+      "es_reference": "Van Wagner CE. 1987. Development and structure of the Canadian forest fire weather index system. Technical Report 35, Canadian Forestry Service: Ottawa, Ontario."
+    }
+  },
+  {
+    "id": "GDD_W",
+    "id_ifca": "GDD_W",
+    "id_era5": "GDD_W",
+    "data": {
+      "en_name": "Monthly cumulative growing degree days for winter crops",
+      "en_units": "°C",
+      "en_description": "Monthly sum of daily mean temperatures above 5°C",
+      "en_importance_of_index": "Useful for assessing thermal energy available for crop development and phenology during the winter season",
+      "en_reference": "Winkler, A., Cook, J., Kliwer, W., Lider, L., 1974. General Viticulture. University of California Press, Berkeley, CA.",
+      "es_name": "Grados día acumulados al mes en cultivos de invierno",
+      "es_units": "°C",
+      "es_description": "Suma mensual de las temperaturas promedias diarias superiores a 5°C",
+      "es_importance_of_index": "Útil para evaluar la energía térmica disponible para el desarrollo y la fenología de los cultivos durante la estación de invierno",
+      "es_reference": "Winkler, A., Cook, J., Kliwer, W., Lider, L., 1974. General Viticulture. University of California Press, Berkeley, CA."
+    }
+  },
+  {
+    "id": "GDD_S",
+    "id_ifca": "GDD_S",
+    "id_era5": "GDD_S",
+    "data": {
+      "en_name": "Monthly cumulative growing degree days for summer crops",
+      "en_units": "°C",
+      "en_description": "Monthly sum of daily mean temperatures above 10°C",
+      "en_importance_of_index": "Important for evaluating summer crop development, growth dynamics, and heat energy availability",
+      "en_reference": "Winkler, A., Cook, J., Kliwer, W., Lider, L., 1974. General Viticulture. University of California Press, Berkeley, CA.",
+      "es_name": "Grados día acumulados al mes en cultivos de verano",
+      "es_units": "°C",
+      "es_description": "Suma mensual de las temperaturas promedias diarias superiores a 10°C",
+      "es_importance_of_index": "Importante para evaluar el desarrollo de cultivos estivales, la dinámica de crecimiento y la energía térmica disponible",
+      "es_reference": "Winkler, A., Cook, J., Kliwer, W., Lider, L., 1974. General Viticulture. University of California Press, Berkeley, CA.",
+      "cell_methods": "time: sum"
+    }
+  },
+  {
+    "id": "CGDD_W",
+    "id_ifca": "CGDD_W",
+    "id_era5": "CGDD_W",
+    "data": {
+      "en_name": "Cumulative growing degree days for winter crops",
+      "en_units": "°C",
+      "en_description": "Accumulated growing degree days since January 1 to December 31 using a base temperature > 5°C",
+      "en_importance_of_index": "Useful for assessing thermal energy available for crop development and phenology during the winter season",
+      "en_reference": "Winkler, A., Cook, J., Kliwer, W., Lider, L., 1974. General Viticulture. University of California Press, Berkeley, CA.",
+      "es_name": "Grados día acumulados en cultivos de invierno",
+      "es_units": "°C",
+      "es_description": "Grados día acumulados desde el 1 de enero hasta el 31 de diciembre usando una temperatura base > 5°C",
+      "es_importance_of_index": "Útil para evaluar la energía térmica disponible para el desarrollo y la fenología de los cultivos durante la estación de invierno",
+      "es_reference": "Winkler, A., Cook, J., Kliwer, W., Lider, L., 1974. General Viticulture. University of California Press, Berkeley, CA."
+    }
+  },
+  {
+    "id": "CGDD_S",
+    "id_ifca": "CGDD_S",
+    "id_era5": "CGDD_S",
+    "data": {
+      "en_name": "Cumulative growing degree days for summer crops",
+      "en_units": "°C",
+      "en_description": "Accumulated growing degree days since June 1 to May 31 (of next year) using a base temperature > 10°C",
+      "en_importance_of_index": "Important for evaluating summer crop development, growth dynamics, and heat energy availability",
+      "en_reference": "Winkler, A., Cook, J., Kliwer, W., Lider, L., 1974. General Viticulture. University of California Press, Berkeley, CA.",
+      "es_name": "Grados día acumulados en cultivos de verano",
+      "es_units": "°C",
+      "es_description": "Grados día acumulados desde el 1 de junio hasta el 31 de mayo (del año siguiente) usando una temperatura base > 10°C",
+      "es_importance_of_index": "Importante para evaluar el desarrollo de cultivos estivales, la dinámica de crecimiento y la energía térmica disponible",
+      "es_reference": "Winkler, A., Cook, J., Kliwer, W., Lider, L., 1974. General Viticulture. University of California Press, Berkeley, CA."
+    }
+  },
+  {
+    "id": "ssrd",
+    "id_ifca": "SSRDm",
+    "id_era5": "ssrd",
+    "data": {
+      "en_name": "Solar radiation",
+      "en_units": "W/m2",
+      "en_description": "Intensity of the downward global solar radiation (direct and diffuse) at surface, daily mean value",
+      "en_importance_of_index": "Basic climatolical driving the general circulation and mircoclimatic dynamics, of paramount importance for the biosphere and human activities",
+      "en_reference": "Masson-Delmotte et al. 2021, https://doi.org/10.1017/9781009157896.009",
+      "es_name": "Radiación solar",
+      "es_units": "W/m2",
+      "es_description": "Intensidad de radiación solar global (direta y difusa) incidente en superficie, valor promedio diario",
+      "es_importance_of_index": "Motor del la circulación atmosférica general y del microclima; clave para la biosfera y las actividades humanas",
+      "es_reference": "Masson-Delmotte et al. 2021, https://doi.org/10.1017/9781009157896.009"
+    }
+  },
+  {
+    "id": "SLP",
+    "id_ifca": "msl",
+    "id_era5": "msl",
+    "data": {
+      "en_name": "Sea level pressure",
+      "en_units": "P",
+      "en_description": "Atmopsheric column pressure reduced to sea level",
+      "en_importance_of_index": "Basic climatological variable describing the pressure excerted by the atmospheric column at sea-level. Also describes the stability of the lower atmosphere. The relative position of the low and high pressure system described by the SLP pattern define the direction of the near-surface flow and, indirectly, the nature of the advected air masses.",
+      "en_reference": "Shepherd et al. 2014, https://doi.org/10.1038/ngeo2253",
+      "es_name": "Presión reducida",
+      "es_units": "Pa",
+      "es_description": "Presión de la columna atmosférica reducida al nivel del mar",
+      "es_importance_of_index": "Variable climatológica báscia que describe la presión ejercida por la columna atmosférica al nivel del mar. También describe la estabilidad de la troposfera baja. La posición relativa de los sistemas de alta y baja presión determina la dirección del flujo e, indirectamente, también la naturaleza de las masas de aire transportadas",
+      "es_reference": "Shepherd et al. 2014, https://doi.org/10.1038/ngeo2253"
+    }
+  }
+]
