@@ -3,7 +3,7 @@
 # Configuration file for seas2ipe.py script
 
 # Version and model configuration
-version: 'v1s'  # version number of the validation results
+version: 'v1t'  # version number of the validation results
 model: ['ecmwf']  # list containing the acronyms of the models to be assessed
 model_version: ['51']  # list containing the versions of these models
 
@@ -15,7 +15,7 @@ agg_labels: ['1mon','3mon']  # considered aggregation windows
 nan_placeholder: 0
 
 # Variable mapping to PTI format
-variables_std: ['SPEI-3-M-i1','UAI-i1','FD-i1','SU-i1','ID-i1','DD-i1','TR-i1','pet-hargreaves-i1','PRm-i1','Rx1day-i1','SSRDm-i1','Tm-i1','TNm-i1','TXm-i1','WSm-i1','GDD_S-i1','GDD_W-i1','CGDD_S-i1','CGDD_W-i1','FWIm-i1','PVPOTm-i1']  # standardized variable names
+variables_std: ['SPEI-3-M-i1','UAI-i1','FD-i1','SU-i1','ID-i1','DD-i1','TR-i1','pet-hargreaves-i1','PRm-i1','Rx1day-i1','SSRDm-i1','Tm-i1','TNm-i1','TXm-i1','WSm-i1','GDD-S-i1','GDD-W-i1','CGDD-S-i1','CGDD-W-i1','FWIm-i1','PVPOTm-i1']  # standardized variable names
 variables_out: ['spei3', 'uai', 'fd', 'su', 'id', 'dd', 'tr', 'eto', 'rti', 'rx1day', 'ssrd', 'gtg', 'gtn', 'gtx', 'fg', 'gdd_s', 'gdd_w', 'cgdd_s', 'cgdd_w', 'fwi', 'pvpot']  # output variable names, as defined in PTI-Clima variable table: https://docs.google.com/spreadsheets/d/1K5n3aM0vGgnJEwlghjK1BtqJr0Ug0mQYlzZKQxB2wJU/edit?gid=0#gid=0
 
 # Data type and domain configuration

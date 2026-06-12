@@ -7,10 +7,10 @@
 # n_lead: [8, 7, 8, 7, 7]  # considered lead-time in months, pertains to <model> loop indicated with <mm> below, CMCC 3.5 hindcasts provide 183 forecast days, SEAS5.1 provide 215, ECCC provide 214
 
 ## setup for one model
-model: ['cmcc']  # seasonal forecast model
-version: ['4']  # and version thereof; pertains to <model> loop indicated with <mm> below
-n_mem: [30]  # number of considered hindcast members, pertains to <model> loop. For instance, ECMWF51 has 25 hindcast and 51 forecast members so <n_mem = 25> should be set if hindcasts and forecasts are combined in the skill evaluation. The first n_mem members are selected.
-n_lead: [7]  # considered lead-time in months, pertains to <model> loop indicated with <mm> below, CMCC 3.5 hindcasts provide 183 forecast days, SEAS5.1 provide 215, ECCC provide 214
+model: ['cmcc', 'dwd']  # seasonal forecast model
+version: ['4', '22']  # and version thereof; pertains to <model> loop indicated with <mm> below
+n_mem: [30, 30]  # number of considered hindcast members, pertains to <model> loop. For instance, ECMWF51 has 25 hindcast and 51 forecast members so <n_mem = 25> should be set if hindcasts and forecasts are combined in the skill evaluation. The first n_mem members are selected.
+n_lead: [7, 7]  # considered lead-time in months, pertains to <model> loop indicated with <mm> below, CMCC 3.5 hindcasts provide 183 forecast days, SEAS5.1 provide 215, ECCC provide 214
 
 # details example file per model that is available on your file system; the example file must be for the base variables as provided by Jaime, i.e. no climate indices are permitted
 template_init: ['199910', '199910', '199910', '199910', '199910']  # single init from the hindcast period, expressed as YYYYMM known to be availble, this is to extract the dimensions of the netCDF file for the specific model; it is necessary to set <base_init> because entire hindcast months will be missing for newly introduced models

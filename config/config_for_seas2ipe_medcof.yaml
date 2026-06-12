@@ -3,7 +3,7 @@
 # Configuration file for seas2ipe.py script
 
 # Version and model configuration
-version: 'v1r'  # version number of the validation results
+version: 'v1t'  # version number of the validation results
 model: ['ecmwf']  # list containing the acronyms of the models to be assessed
 model_version: ['51']  # list containing the versions of these models
 obs: 'era5'  # string containing the observational reference
@@ -16,8 +16,8 @@ agg_labels: ['1mon','3mon']  # considered aggregation windows
 nan_placeholder: 0
 
 # Variable mapping
-variables_std: ['SPEI-3-M', 'pvpot', 'fwi', 't2m', 'tp', 'si10', 'ssrd']  # standardized variable names
-variables_out: ['spei3', 'pvpot', 'fwi', 'gtg', 'rti', 'fg', 'ssrd']  # output variable names, as defined in PTI-Clima variable table: https://docs.google.com/spreadsheets/d/1K5n3aM0vGgnJEwlghjK1BtqJr0Ug0mQYlzZKQxB2wJU/edit?gid=0#gid=0https://docs.google.com/spreadsheets/d/1K5n3aM0vGgnJEwlghjK1BtqJr0Ug0mQYlzZKQxB2wJU/edit?gid=0#gid=0
+variables_std: ['SPEI-3-M', 'UAI', 'FD', 'SU', 'ID', 'DD', 'TR', 'pet-hargreaves', 'PRm', 'Rx1day', 'SSRDm', 'Tm', 'TNm', 'TXm', 'WSm', 'GDD-S', 'GDD-W', 'CGDD-S', 'CGDD-W', 'FWIm', 'PVPOTm']  # standardized variable names
+variables_out: ['spei3', 'uai', 'fd', 'su', 'id', 'dd', 'tr', 'eto', 'rti', 'rx1day', 'ssrd', 'gtg', 'gtn', 'gtx', 'fg', 'gdd_s', 'gdd_w', 'cgdd_s', 'cgdd_w', 'fwi', 'pvpot']  # output variable names, as defined in PTI-Clima variable table: https://docs.google.com/spreadsheets/d/1K5n3aM0vGgnJEwlghjK1BtqJr0Ug0mQYlzZKQxB2wJU/edit?gid=0#gid=0https://docs.google.com/spreadsheets/d/1K5n3aM0vGgnJEwlghjK1BtqJr0Ug0mQYlzZKQxB2wJU/edit?gid=0#gid=0
 masked_variables_std: ['none']  # list of variables on which land-sea mask will be applied
 
 # Data type and domain configuration
@@ -37,6 +37,7 @@ paths:
   dir_validation: 'PTICLIMA/Results/seasonal/validation'
   dir_forecast: 'PTICLIMA/Results/seasonal/forecast'
   dir_output: 'WORK/WWW/PTICLIMA/PRODUCTS/seas2ipe'
+  mask_dir: 'PTICLIMA/Auxiliary-material/Masks'
 
 # Quantile thresholds
 quantile_threshold: [0.33, 0.67]
