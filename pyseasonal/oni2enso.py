@@ -14,7 +14,8 @@ import pandas as pd
 file_system = 'lustre' #lustre or myLaptop; used to create the path structure to the input and output files
 url_index = 'https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/ensostuff/detrend.nino34.ascii.txt' #URL of the online txt file
 enso_threshold = 0.5 #magnitude of the ONI index above which Niño or Niña conditions are declared. Is used symmetrically around 0
-window = 1 #number of consecutive months during which the 3-month mean SST anomaly values provided by NOAA must surpass the magnitude of the <enso_threshold> in order to issue a Niño or Niña event
+season_length = 3 #length of the season used for calculating the temporal mean values of the SSTs
+window = 1 #number of consecutive months during which the seasonal mean SST anomaly values provided by NOAA must surpass the magnitude of the <enso_threshold> in order to issue a Niño or Niña event
 
 #set basic path structure for observations and gcms
 if file_system == 'myLaptop':
@@ -31,11 +32,11 @@ else:
 if os.path.isdir(dir_netcdf) != True:
     os.makedirs(dir_netcdf)
 
-df = pd.read_csv(url_index,delim_whitespace=True) #read the online index from CPC
+df = pd.read_csv(url_index, sep=r"\s+") #read the online index from CPC
 time = [df['YR'].values[ii].astype('str').zfill(2)+'-'+df['MON'].values[ii].astype('str').zfill(2)+'-01' for ii in np.arange(df.shape[0])]
 time =  pd.DatetimeIndex(time)
 nc = xr.DataArray(df['ANOM'].values, coords=[time], dims='time', name = 'oni')
-nc = nc.rolling(time=3,min_periods=3,center=False).mean() #calculate 3-months running mean values
+nc = nc.rolling(time=season_length,min_periods=season_length,center=False).mean() #calculate 3-months running mean values
 
 warm = (nc > enso_threshold).astype(int)
 cold = (nc < enso_threshold*-1).astype(int)
@@ -60,13 +61,16 @@ index[nanind] = np.nan
 #set index attributes
 index.attrs['name'] = 'oni2enso'
 index.attrs['standard_name'] = 'oni2enso'
-index.attrs['long_name'] = 'ENSO index based on Oceanic Niño Index, defined as 3-month mean value of the detrended monthly SST anomalies in the Niño 3.4 region.'
+index.attrs['long_name'] = 'ENSO index based on Oceanic Niño Index, defined as '+str(season_length)+'-month mean value of the detrended monthly SST anomalies in the Niño 3.4 region.'
 index.attrs['source'] = url_index
 index.attrs['Description'] = 'ONI based ENSO index as used by NOAA; Niño and Niña conditions are issued if the ONI index is above or below +-0.5 during '+str(window)+' consecutive months.'
 index.attrs['units'] = 'categorical, 0 = neutral, 1 = Niño, 2 = Niña conditions'
 index.attrs["cell_methods"] = 'time: sum ('+str(window)+' months)'
 index.attrs['creator'] = 'Swen Brands, brandssf@ifca.unican.es'
+index.attrs['season_length'] = str(season_length)
+index.attrs['window'] = str(window)
 
+#save the output file
 savename = dir_netcdf+'/oni2enso_'+nc.time.values[0].astype(str)[0:7].replace('-','')+'_'+nc.time.values[-1].astype(str)[0:7].replace('-','')+'.nc'
 index.to_netcdf(savename)
 index.close()
