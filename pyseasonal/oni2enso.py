@@ -9,7 +9,6 @@ import numpy as np
 import xarray as xr
 import os
 import pandas as pd
-import pdb
 
 #set input parameters
 file_system = 'lustre' #lustre or myLaptop; used to create the path structure to the input and output files
