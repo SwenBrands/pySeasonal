@@ -9,10 +9,11 @@ import numpy as np
 import xarray as xr
 import os
 import pandas as pd
+import pdb
 
 #set input parameters
 file_system = 'lustre' #lustre or myLaptop; used to create the path structure to the input and output files
-url_index = 'https://www.cpc.ncep.noaa.gov/products/analysis_monitoring/ensostuff/detrend.nino34.ascii.txt' #URL of the online txt file
+url_index = 'https://www.cpc.ncep.noaa.gov/data/indices/sstoi.indices' #URL of the online txt file
 enso_threshold = 0.5 #magnitude of the ONI index above which Niño or Niña conditions are declared. Is used symmetrically around 0
 season_length = 3 #length of the season used for calculating the temporal mean values of the SSTs
 window = 1 #number of consecutive months during which the seasonal mean SST anomaly values provided by NOAA must surpass the magnitude of the <enso_threshold> in order to issue a Niño or Niña event
@@ -35,7 +36,7 @@ if os.path.isdir(dir_netcdf) != True:
 df = pd.read_csv(url_index, sep=r"\s+") #read the online index from CPC
 time = [df['YR'].values[ii].astype('str').zfill(2)+'-'+df['MON'].values[ii].astype('str').zfill(2)+'-01' for ii in np.arange(df.shape[0])]
 time =  pd.DatetimeIndex(time)
-nc = xr.DataArray(df['ANOM'].values, coords=[time], dims='time', name = 'oni')
+nc = xr.DataArray(df['ANOM.3'].values, coords=[time], dims='time', name = 'oni')
 nc = nc.rolling(time=season_length,min_periods=season_length,center=False).mean() #calculate 3-months running mean values
 
 warm = (nc > enso_threshold).astype(int)
