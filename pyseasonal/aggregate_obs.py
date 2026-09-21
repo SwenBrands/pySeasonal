@@ -13,9 +13,9 @@ from pyseasonal.utils.config import load_config
 
 # INDICATE CONFIGURATION FILE ######################################
 
-# configuration_file = 'config/config_for_aggregate_obs_Iberia.yaml'
+configuration_file = 'config/config_for_aggregate_obs_Iberia.yaml'
 # configuration_file = 'config/config_for_aggregate_obs_Canarias.yaml'
-configuration_file = 'config/config_for_aggregate_obs_medcof.yaml'
+# configuration_file = 'config/config_for_aggregate_obs_medcof.yaml'
 
 ####################################################################
 
@@ -28,14 +28,18 @@ agg_src = config['agg_src'] #'day' or 'mon': temporal aggregation of the observa
 variables = config['variables'] #variables to be regridded
 variables_nc = config['variables_nc'] #variable names with the netCDF file
 variables_out = config['variables_out'] #name of the output variables stored by this script
-startyears_file = config['startyears_file'] # list of start years of the obs file as indicated in filename
-endyears_file = config['endyears_file'] #list of corresponding end years
-startyears_aggregation = config['startyears_aggregation'] #list of start years per variable to be regridded
-endyears_aggregation = config['endyears_aggregation'] #list of start years per variable to be regridded
 domain = config['domain'] #spatial domain the model data is available on. So far, this is just a label used in the output filename.
 domain_label = config['domain_label'] #domain label used in file name
 resolution = config['resolution'] #resolution shortcut used in the input variable names
 grid_name = config['grid_name'] #here used as label to save the output netcdf file: ecmwf51 for 1 degree datasets, PTI-grid-v2 for downscaled datasets
+startyears_aggregation = config['startyears_aggregation'] #list of start years per variable to be regridded
+endyears_aggregation = config['endyears_aggregation'] #list of end years per variable to be regridded
+if domain == 'medcof':
+    startyears_file = config['startyears_file'] # list of start years of the obs file as indicated in filename; only used for medcof domain
+    endyears_file = config['endyears_file'] #list of corresponding end years; only used for medcof domain
+elif domain in ('Canarias','Iberia'):
+    print('INFO: startyears_file and endyears_file are not used for the '+domain+' domain and will not be loaded...')
+
 
 # Extract paths from configuration
 paths = config['paths']
@@ -94,38 +98,37 @@ for vv in np.arange(len(variables)):
     # get variable units from the input file
     # add exception for pvpot, which currently comes without units
     try:
-        var_units = nc[variables[vv]].units
+        var_units = nc[variables_nc[vv]].units
     except:
         print('WARNING: Units for '+variables[vv]+' are missing and will be added now !')
-        if variables[vv] in ('SU', 'FD', 'ID', 'TR', 'DD'):
+        if variables_nc[vv] in ('SU', 'FD', 'ID', 'TR', 'DD'):
             pdb.set_trace()
             var_units = 'day'
-        elif variables[vv] in ('TXm', 'TNm', 'GDD-W', 'GDD-S', 'CGDD-W', 'CGDD-S'):
+        elif variables_nc[vv] in ('TXm', 'TNm', 'GDD-W', 'GDD-S', 'CGDD-W', 'CGDD-S'):
             pdb.set_trace()
             var_units = 'degC'
-        elif variables[vv] in ('PRm','Rx1day','Rx5day'):
+        elif variables_nc[vv] in ('PRm','Rx1day','Rx5day'):
             pdb.set_trace()
             var_units = 'kg m-2'
-        elif variables[vv] in ('SSRDm'):
+        elif variables_nc[vv] in ('SSRDm'):
             pdb.set_trace()
             var_units = 'W m-2'
-        elif variables[vv] in ('pet_hargreaves'):
+        elif variables_nc[vv] in ('pet_hargreaves','PET_hargreaves'):
             pdb.set_trace()
             var_units = 'kg m-2 s-1'
-        elif variables[vv] in ('UAI','FWIm','fwi'):
+        elif variables_nc[vv] in ('uai','UAI','FWIm','fwi'):
             var_units = 1
-        elif variables[vv] in ('WSm'):
+        elif variables_nc[vv] in ('WSm'):
             pdb.set_trace()
             var_units = 'm s-1'
-        elif variables[vv] in ('SPEI-3'):
+        elif variables_nc[vv] in ('SPEI-3'):
             pdb.set_trace()
             var_units = 1
-        elif variables[vv] in ('PVPOTm','pvpot'):
-            # pdb.set_trace()
+        elif variables_nc[vv] in ('PVPOTm','pvpot'):
+            pdb.set_trace()
             var_units = 1
         else:
-            pdb.set_trace()
-        print('WARNING: Setting unit for '+variables[vv]+' to '+str(var_units))
+            raise ValueError('Unexpected value for <variables_nc[vv]> !')
 
     # set variable name used within the output file that will be written by this script
     nc = nc.rename({variables_nc[vv]:variables_out[vv]})

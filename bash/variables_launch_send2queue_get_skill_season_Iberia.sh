@@ -20,11 +20,12 @@ LOGDIR=/lustre/gmeteo/PTICLIMA/Scripts/SBrands/pyPTIclima/pySeasonal/LOG/get_ski
 FLAGDIR=/lustre/gmeteo/PTICLIMA/Scripts/SBrands/pyPTIclima/pySeasonal/FLAG/get_skill/${domain}
 
 # input variables that will be passed to the python script get_skill_season.py
-vers='v1r' #string format
+vers='v1t' #string format
 model_list=('ecmwf51') #bash array containing the model names and versions thereof
 agg_label_list=('1mon' '2mon' '3mon' '4mon' '5mon') #bash array containing the temporal aggregation windows to be considered
 # agg_label_list=('5mon') #bash array containing the temporal aggregation windows to be considered
 modulator_plus_phase_list=('none' 'enso0' 'enso1' 'enso2') #bash array containing all modulators and phases thereof
-# modulator_plus_phase_list=('none') #bash array containing all modulators and phases thereof
-variable_list=('TXm-C6') #bash array of variables to be processed; must coincide with <variables_gcm> in aggregate_hindcast.py
-# variable_list=('CGDDS-C4_up010' 'SPEI-3-M-C4_up010' 'Rx1ay-C4_up010' 'Rx5day-C4_up010' 'TNm-C4_up010' 'PRtot-C4_up010' 'PRm-C4_up010' 'TXm-C4_up010' 'FD-C4_up010' 'SU-C4_up010' 'TR-C4_up010') #bash array of variables to be processed; must coincide with <variables_gcm> in aggregate_hindcast.py
+# modulator_plus_phase_list=('enso1') #bash array containing all modulators and phases thereof
+# variable_list=('pet-hargreaves-C5' 'UAI-C5' 'Tm-C5' 'TXm-C5' 'TNm-C5' 'SU-C5' 'ID-C5' 'WSm-C5' 'PRm-C5' 'DD-C5' 'Rx1day-C5' 'TR-C5' 'FD-C5') #bash array of variables to be processed; must coincide with <variables_gcm> in aggregate_hindcast.py
+variable_list=('pet-hargreaves-C5' 'UAI-C5' 'Tm-C5') #bash array of variables to be processed; must coincide with <variables_gcm> in aggregate_hindcast.py
+

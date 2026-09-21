@@ -19,6 +19,14 @@
 source ${HOME}/.bashrc
 sleep 3
 
+#load pySeasonal environment
+echo "Loading the pySeasonal environment..."
+mamba activate pySeasonal
+
+#check python version
+echo "Your Python version is:"
+python --version
+
 #input variables that will be passed to the python script get_skill_season.py
 vers=${1}
 model=${2}
@@ -34,9 +42,6 @@ FLAGDIR=${11}
 jobname=${12}
 
 ## EXECUTE #########################################################################
-#check python version
-echo "Your Python version is:"
-python --version
 
 #go to the run directory and launch get_skill_season.py
 cd ${RUNDIR}

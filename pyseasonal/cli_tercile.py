@@ -23,7 +23,11 @@ def main_pred2tercile(
     year : int, optional
         Forecast year (default: current year)
     month : int, optional
-        Forecast month (default: current month)
+        Forecast month (default: current month, 1 to 12)
+
+    Calling example (note that month format is 1 to 12, i.e. not 01):
+    run pyseasonal/cli_tercile.py config/config_for_pred2tercile_operational_Iberia.yaml 2026 2
+
     """
     config = load_config(config_file)
 
