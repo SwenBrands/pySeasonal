@@ -170,7 +170,8 @@ for ag in np.arange(len(agg_label)):
                         elif domain == 'Iberia' and sub_domain == 'Iberia':
                             mask_file_indir = 'PTI-grid_Iberia_010_descending_lat_reformatted.nc'
                         elif domain == 'Canarias' and sub_domain == 'Canarias':
-                            mask_file_indir = 'PTI-grid_Canarias_descending_lat_reformatted.nc'
+                            # mask_file_indir = 'PTI-grid_Canarias_descending_lat_reformatted.nc' # 0.05 degrees resolution
+                            mask_file_indir = 'PTI-grid_Canarias_0025_descending_lat_reformatted.nc' # 0.025 degrees resolution
                         else:
                             raise ValueError('Check entry for <domain> and/or <sub_domain> input parameters !')
 
@@ -337,8 +338,8 @@ for ag in np.arange(len(agg_label)):
                             elif domain == 'Iberia' and sub_domain == 'Iberia':
                                 mask_file_indir = 'PTI-grid_Iberia_010_descending_lat_reformatted.nc'
                             elif domain == 'Canarias' and sub_domain == 'Canarias':
-                                # mask_file_indir = 'PTI-grid_Canarias_descending_lat_reformatted.nc'
-                                mask_file_inddir = 'PTI-grid_Canarias_0025_descending_lat_reformatted.nc'
+                                # mask_file_indir = 'PTI-grid_Canarias_descending_lat_reformatted.nc' # 0.05 degrees resolution
+                                mask_file_indir = 'PTI-grid_Canarias_0025_descending_lat_reformatted.nc' # 0.025 degrees resolution
                             else:
                                 raise ValueError('Check entry for <domain> and/or <sub_domain> input parameters !')
 

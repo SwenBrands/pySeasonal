@@ -8,14 +8,14 @@ agg_src: 'mon' #'day' or 'mon': temporal aggregation of the observational input 
 # variables: ['TXm', 'FWI', 'SU', 'TR', 'Rx1day', 'Rx5day', 'PRm', 'TNm', 'FD', 'CDDX', 'DD', 'ID'] #variables to be regridded
 # variables_nc: ['TXm', 'FWI', 'SU', 'TR', 'Rx1day', 'Rx5day', 'PRm', 'TNm', 'FD', 'CDDX', 'DD', 'ID'] #variable names with the netCDF file
 
-variables: ['Tm', 'TXm', 'TNm', 'SU', 'TR', 'ID', 'FD', 'WSm', 'PRm', 'DD', 'Rx1day', 'UAI', 'pet-hargreaves'] #list containing the variables to be regridded
-variables_nc: ['Tm', 'TXm', 'TNm', 'SU', 'TR', 'ID', 'FD', 'WSm', 'PRm', 'DD', 'Rx1day', 'UAI', 'pet-hargreaves'] #list containing the variable names with the netCDF file
-variables_out: ['Tm', 'TXm', 'TNm', 'SU', 'TR', 'ID', 'FD', 'WSm', 'PRm', 'DD', 'Rx1day', 'UAI', 'pet-hargreaves'] #list containing the variable names with the netCDF file
+variables: ['SPEI-3', 'Tm', 'TXm', 'TNm', 'SU', 'TR', 'ID', 'FD', 'WSm', 'PRm', 'DD', 'Rx1day', 'UAI', 'pet-hargreaves', 'FWIm'] #list containing the variables to be regridded
+variables_nc: ['SPEI-3', 'Tm', 'TXm', 'TNm', 'SU', 'TR', 'ID', 'FD', 'WSm', 'PRm', 'DD', 'Rx1day', 'UAI', 'pet-hargreaves', 'FWIm'] #list containing the variable names with the netCDF file
+variables_out: ['SPEI-3', 'Tm', 'TXm', 'TNm', 'SU', 'TR', 'ID', 'FD', 'WSm', 'PRm', 'DD', 'Rx1day', 'UAI', 'pet-hargreaves', 'FWIm'] #list containing the variable names with the netCDF file
 
-startyears_file: [1981, 1981, 1981, 1981, 1981, 1981, 1981, 1981, 1981, 1981, 1981, 1981, 1981] #list containing the start year of the obs file as indicated in filename
-endyears_file: [2023, 2023, 2023, 2023, 2023, 2023, 2023, 2023, 2023, 2023, 2023, 2023, 2023] #list containing the corresponding end year as indicated in filename
-startyears_aggregation: [1981, 1981, 1981, 1981, 1981, 1981, 1981, 1981, 1981, 1981, 1981, 1981, 1981] #deprecated because no longer used in aggregate_obs.py; list containing the start years to be aggregated
-endyears_aggregation: [2023, 2023, 2023, 2023, 2023, 2023, 2023, 2023, 2023, 2023, 2023, 2023, 2023] #deprecated because no longer used in aggregate_obs.py; list containing the end years to be aggregated
+startyears_file: [1981, 1981, 1981, 1981, 1981, 1981, 1981, 1981, 1981, 1981, 1981, 1981, 1981, 1981, 1981] #list containing the start year of the obs file as indicated in filename
+endyears_file: [2023, 2023, 2023, 2023, 2023, 2023, 2023, 2023, 2023, 2023, 2023, 2023, 2023, 2023, 2023] #list containing the corresponding end year as indicated in filename
+startyears_aggregation: [1981, 1981, 1981, 1981, 1981, 1981, 1981, 1981, 1981, 1981, 1981, 1981, 1981, 1981, 1981] #deprecated because no longer used in aggregate_obs.py; list containing the start years to be aggregated
+endyears_aggregation: [2023, 2023, 2023, 2023, 2023, 2023, 2023, 2023, 2023, 2023, 2023, 2023, 2023, 2023, 2023] #deprecated because no longer used in aggregate_obs.py; list containing the end years to be aggregated
 
 domain: 'Canarias' #spatial domain the model data is available on. So far, this is just a label used in the output filename.
 domain_label: 'can' #domain label used in file name

@@ -56,6 +56,7 @@ QSUB="sbatch \
     --ntasks=1 \
     --cpus-per-task=1 \
     --mem=${memory} \
+    --exclude=${exclude_node} \
     --mail-user=swen.brands@gmail.com \
     --mail-type=FAIL,TIME_LIMIT \
     ./get_skill_season.sh ${vers} ${model} ${domain} ${variable} ${agg_label} ${modulator} ${phase} ${RUNDIR} ${PYDIR} ${LOGDIR} ${FLAGDIR} ${jobname}" #get_skill_season.sh contains the Python script to be run on the working node

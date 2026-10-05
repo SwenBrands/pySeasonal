@@ -10,7 +10,7 @@ domain='Iberia' #character string specifying the spatial domain for which the ve
 
 #environmental and job variables
 partition=meteo_long
-exclude_node=wn055 #currently not active
+exclude_node=wn055 # nodes to be excluded
 exectime=01:55:00 #05:00:00 for agg_label_list=('1mon') and modulator_plus_phase_list=('none'); #04:00:00 for agg_label_list=('2mon') and modulator_plus_phase_list=('none')
 memory=48gb #agg_label_list=('2mon') and modulator_plus_phase_list=('none') successfully tested with 128gb; 64gb for agg_label_list=('1mon') and modulator_plus_phase_list=('enso0'), for agg_label_list=('1mon') and modulator_plus_phase_list=('none') tested sucessfully with 144 or 156gb
 RUNDIR=/lustre/gmeteo/PTICLIMA/Scripts/SBrands/pyPTIclima/pySeasonal
@@ -27,5 +27,5 @@ agg_label_list=('1mon' '2mon' '3mon' '4mon' '5mon') #bash array containing the t
 modulator_plus_phase_list=('none' 'enso0' 'enso1' 'enso2') #bash array containing all modulators and phases thereof
 # modulator_plus_phase_list=('enso1') #bash array containing all modulators and phases thereof
 # variable_list=('pet-hargreaves-C5' 'UAI-C5' 'Tm-C5' 'TXm-C5' 'TNm-C5' 'SU-C5' 'ID-C5' 'WSm-C5' 'PRm-C5' 'DD-C5' 'Rx1day-C5' 'TR-C5' 'FD-C5') #bash array of variables to be processed; must coincide with <variables_gcm> in aggregate_hindcast.py
-variable_list=('pet-hargreaves-C5' 'UAI-C5' 'Tm-C5') #bash array of variables to be processed; must coincide with <variables_gcm> in aggregate_hindcast.py
+variable_list=('SPEI-3-M-C5' 'FWIm-C5' 'Rx1day-C5') #bash array of variables to be processed; must coincide with <variables_gcm> in aggregate_hindcast.py
 

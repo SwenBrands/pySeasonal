@@ -30,10 +30,10 @@ input_parameters:
   grid_name: 'PTI-grid-v4'
   quantiles: [0.3333333333333333, 0.6666666666666666] # quantiles of the year-to-year time series to be calculated and stored
   skillscore_reference: 'rand' # 'clim' or 'rand'; use either the climatological mean or randomly reshuffled observed time series as reference forcast for calculating the CPRSS
-  nr_pseudo_mem: 25 # number of times the climatological mean or randomly reshuffled observarions are replicated along the "member" dimension to mimic a model ensemble representing the naiv climatological forecasts used as reference for calculating the CRPS Skill Score. Results are insensitive to variations in this value; the script has been tested for value=2 and 4.
+  nr_pseudo_mem: 3 # number of times the climatological mean or randomly reshuffled observarions are replicated along the "member" dimension to mimic a model ensemble representing the naiv climatological forecasts used as reference for calculating the CRPS Skill Score. Results are insensitive to variations in this value; the script has been tested for value=2 and 4.
   testlevel: 0.05 # options for methods estimating hindcast skill
   detrending: ['yes', 'no'] # yes or no, linear detrending of the gcm and obs time series prior to validation
-  masked_variables_std: ['CGDDS-C4', 'FWI-C4', 'SPEI-3-C4', 'TXm-C4', 'FD-C4', 'SU-C4', 'TR-C4', 'Rx1day-C4', 'Rx5day-C4', 'Tm-C5', 'TXm-C5', 'TNm-C5', 'SU-C5', 'ID-C5', 'WSm-C5', 'PRm-C5', 'DD-C5', 'Rx1day-C5', 'TR-C5', 'FD-C5', 'pet-hargreaves-C5', 'UAI-C5'] # list of variables on which a land-sea mask will be applied, setting values over sea to nan
+  masked_variables_std: ['CGDDS-C4', 'FWI-C4', 'SPEI-3-C4', 'TXm-C4', 'FD-C4', 'SU-C4', 'TR-C4', 'Rx1day-C4', 'Rx5day-C4', 'Tm-C5', 'TXm-C5', 'TNm-C5', 'SU-C5', 'ID-C5', 'WSm-C5', 'PRm-C5', 'DD-C5', 'Rx1day-C5', 'TR-C5', 'FD-C5', 'pet-hargreaves-C5', 'UAI-C5', 'FWIm-C5', 'SPEI-3-M-C5'] # list of variables on which a land-sea mask will be applied, setting values over sea to nan
   mask_probabilities: 'no' #mask tercile probability time-series if they are indicated in <masked_variables_std>; yes or no
   filename_telcon: 'oni2enso_195001_202505.nc' #name of the file located in <dir_telcon>
   nr_prob_thresholds: 25 # set to 'continuous' to use continuous probability thresholds to calcluate the ROC-AUC skill socre or an integer defining the number of probability thresholds to be used for this purpose

@@ -47,11 +47,11 @@ model_settings:
     # lat_name: ['lat', 'lat', 'lat', 'lat', 'lat', 'lat', 'lat']
     # file_start: ['seasonal-original-single-levels_derived', 'seasonal-original-single-levels_derived', 'seasonal-original-single-levels_derived', 'seasonal-original-single-levels_derived', 'seasonal-original-single-levels_derived', 'seasonal-original-single-levels_derived', 'seasonal-original-single-levels_derived']
 
-    variables: ['Tm-C5', 'TXm-C5', 'TNm-C5', 'SU-C5', 'ID-C5', 'WSm-C5', 'PRm-C5', 'DD-C5', 'TR-C5', 'FD-C5', 'UAI-C5', 'pet-hargreaves-C5']
-    variables_nc: ['Tm-C5', 'TXm-C5', 'TNm-C5', 'SU-C5', 'ID-C5', 'WSm-C5', 'PRm-C5', 'DD-C5', 'TR-C5', 'FD-C5', 'UAI-C5', 'pet-hargreaves-C5']
-    variables_new: ['Tm-C5', 'TXm-C5', 'TNm-C5', 'SU-C5', 'ID-C5', 'WSm-C5', 'PRm-C5', 'DD-C5', 'TR-C5', 'FD-C5', 'UAI-C5', 'pet-hargreaves-C5']
-    time_name: ['time', 'time', 'time', 'time', 'time', 'time', 'time', 'time', 'time', 'time', 'time', 'time']
-    lon_name: ['lon', 'lon', 'lon', 'lon', 'lon', 'lon', 'lon', 'lon', 'lon', 'lon', 'lon', 'lon']
-    lat_name: ['lat', 'lat', 'lat', 'lat', 'lat', 'lat', 'lat', 'lat', 'lat', 'lat', 'lat', 'lat']
-    file_start: ['seasonal-original-single-levels_derived', 'seasonal-original-single-levels_derived', 'seasonal-original-single-levels_derived', 'seasonal-original-single-levels_derived', 'seasonal-original-single-levels_derived', 'seasonal-original-single-levels_derived', 'seasonal-original-single-levels_derived', 'seasonal-original-single-levels_derived', 'seasonal-original-single-levels_derived', 'seasonal-original-single-levels_derived', 'seasonal-original-single-levels_derived', 'seasonal-original-single-levels_derived']
+    variables: ['UAI-C5', 'pet-hargreaves-C5', 'FWIm-C5', 'SPEI-3-M-C5', 'Rx1day-C5', 'Tm-C5', 'TXm-C5', 'TNm-C5', 'SU-C5', 'ID-C5', 'WSm-C5', 'PRm-C5', 'DD-C5', 'TR-C5', 'FD-C5']
+    variables_nc: ['UAI-C5', 'pet-hargreaves-C5', 'FWIm-C5', 'SPEI-3-M-C5', 'Rx1day-C5', 'Tm-C5', 'TXm-C5', 'TNm-C5', 'SU-C5', 'ID-C5', 'WSm-C5', 'PRm-C5', 'DD-C5', 'TR-C5', 'FD-C5']
+    variables_new: ['UAI-C5', 'pet-hargreaves-C5', 'FWIm-C5', 'SPEI-3-M-C5', 'Rx1day-C5', 'Tm-C5', 'TXm-C5', 'TNm-C5', 'SU-C5', 'ID-C5', 'WSm-C5', 'PRm-C5', 'DD-C5', 'TR-C5', 'FD-C5']
+    time_name: ['time', 'time', 'time', 'time', 'time', 'time', 'time', 'time', 'time', 'time', 'time', 'time', 'time', 'time', 'time']
+    lon_name: ['lon', 'lon', 'lon', 'lon', 'lon', 'lon', 'lon', 'lon', 'lon', 'lon', 'lon', 'lon', 'lon', 'lon', 'lon']
+    lat_name: ['lat', 'lat', 'lat', 'lat', 'lat', 'lat', 'lat', 'lat', 'lat', 'lat', 'lat', 'lat', 'lat', 'lat', 'lat']
+    file_start: ['seasonal-original-single-levels_derived', 'seasonal-original-single-levels_derived', 'seasonal-original-single-levels_derived', 'seasonal-original-single-levels_derived', 'seasonal-original-single-levels_derived', 'seasonal-original-single-levels_derived', 'seasonal-original-single-levels_derived', 'seasonal-original-single-levels_derived', 'seasonal-original-single-levels_derived', 'seasonal-original-single-levels_derived', 'seasonal-original-single-levels_derived', 'seasonal-original-single-levels_derived', 'seasonal-original-single-levels_derived', 'seasonal-original-single-levels_derived', 'seasonal-original-single-levels_derived']
     years: [1981, 2023] #one start year and one end year; no specific start and end year per variable

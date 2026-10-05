@@ -415,7 +415,7 @@ def plot_pcolormesh_seasonal(xr_ar_f,minval_f,maxval_f,savename_f,colormap_f,dpi
     #plt.xticks(fontsize=5)
     #plt.xlabel(xr_ar_f.season.name)
     #plt.ylabel(xr_ar_f.lead.name)
-    plt.xlabel('Month the forecast valid for')
+    plt.xlabel('Month the forecast is valid for')
     plt.ylabel('Lead time (months)')
     cbar = plt.colorbar(ax,shrink=0.5,label=xr_ar_f.name + ' ('+str(xr_ar_f.units)+')', orientation = 'horizontal')
     cbar.ax.tick_params(labelsize=8,size=8)

@@ -127,9 +127,9 @@ for mm in np.arange(len(model)):
         #     pdb.set_trace()
             
         #construct path to input GCM files as a function of the variable set in variables[mm][vv]
-        if variables[mm][vv] in ('UAI','WSm','fwi','FWIm','pvpot','PVPOTm','DD','SU','FD','ID','TR','pet-hargreaves','PRm','Rx1day','Rx5day','SSRDm','Tm','TXm','TNm','UAI','WSm','GDD-S','GDD-W','CGDD-S','CGDD-W','CGDDS-C4','FWI-C4','Rx1day-C4','Rx5day-C4','TNm-C4','PRtot-C4','PRm-C4','TXm-C4','TXm-C6','tasmax-C6','FD-C4','SU-C4','TR-C4','CGDDS-C4_up010','FWI-C4_up010','PRtot-C4_up010','PRm-C4_up010','TNm-C4_up010','TXm-C4_up010','FD-C4_up010','SU-C4_up010','TR-C4_up010','Rx1day-C4_up010','Rx5day-C4_up010','Tm-C5','TXm-C5','TNm-C5','SU-C5','ID-C5','WSm-C5','PRm-C5','DD-C5','Rx1day-C5','TR-C5','FD-C5','pet-hargreaves-C5','UAI-C5'):
+        if variables[mm][vv] in ('UAI','WSm','fwi','FWIm','pvpot','PVPOTm','DD','SU','FD','ID','TR','pet-hargreaves','PRm','Rx1day','Rx5day','SSRDm','Tm','TXm','TNm','UAI','WSm','GDD-S','GDD-W','CGDD-S','CGDD-W','CGDDS-C4','FWI-C4','Rx1day-C4','Rx5day-C4','TNm-C4','PRtot-C4','PRm-C4','TXm-C4','TXm-C6','tasmax-C6','FD-C4','SU-C4','TR-C4','CGDDS-C4_up010','FWI-C4_up010','PRtot-C4_up010','PRm-C4_up010','TNm-C4_up010','TXm-C4_up010','FD-C4_up010','SU-C4_up010','TR-C4_up010','Rx1day-C4_up010','Rx5day-C4_up010','Tm-C5','TXm-C5','TNm-C5','SU-C5','ID-C5','WSm-C5','PRm-C5','DD-C5','Rx1day-C5','TR-C5','FD-C5','pet-hargreaves-C5','UAI-C5','FWIm-C5'):
             path_gcm_base_var = path_gcm_base_derived
-        elif variables[mm][vv] in ('SPEI-3-M-C4_up010','SPEI-3-M-C4','SPEI-3','SPEI-3-M','SPEI-3-R','SPEI-3-R_eqm_pullLMs-TRUE'):
+        elif variables[mm][vv] in ('SPEI-3-M-C4_up010','SPEI-3-M-C4','SPEI-3','SPEI-3-M','SPEI-3-R','SPEI-3-R_eqm_pullLMs-TRUE','SPEI-3-M-C5'):
             path_gcm_base_var = path_gcm_base_derived
         elif variables[mm][vv] in ('psl','sfcWind','tas','pr','rsds'):
             path_gcm_base_var = path_gcm_base
@@ -153,12 +153,12 @@ for mm in np.arange(len(model)):
                 print('INFO: Loading '+variables[mm][vv]+' from '+model[mm]+version[mm]+' on '+domain+' domain for '+str(imonth[im]).zfill(2)+' '+str(years_vec[yy]))
 
                 #print complete path to the GCM input file
-                if variables[mm][vv] in ('SPEI-3-M-C4_up010','SPEI-3-M-C4','SPEI-3','SPEI-3-M','SPEI-3-R'):
+                if variables[mm][vv] in ('SPEI-3-M-C4_up010','SPEI-3-M-C4','SPEI-3','SPEI-3-M','SPEI-3-R','SPEI-3-M-C5'):
                     #path_gcm_data = path_gcm_base_var+'/'+domain+'/'+product+'/'+variables[mm][vv]+'/'+model[mm]+'/'+version[mm]+'/coefs_all_members/'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'/'+file_start[mm][vv]+'_'+domain+'_'+product+'_'+variables[mm][vv]+'_'+model[mm]+'_'+version[mm]+'_'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'.nc'
                     path_gcm_data = path_gcm_base_var+'/'+domain+'/'+product+'/'+variables[mm][vv]+'/'+model[mm]+'/'+version[mm]+'/coefs_pool_members/'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'/'+file_start[mm][vv]+'_'+domain+'_'+product+'_'+variables[mm][vv]+'_'+model[mm]+'_'+version[mm]+'_'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'.nc'
                 # elif variables[mm][vv] in ('SPEI-3-R_eqm_pullLMs-TRUE'):
                 #     path_gcm_data = path_gcm_base_var+'/'+domain+'/'+product+'/'+variables[mm][vv]+'/'+model[mm]+'/'+version[mm]+'/coefs_of_reanalysis/'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'/'+file_start[mm][vv]+'_'+domain+'_'+product+'_SPEI-3-R_'+model[mm]+'_'+version[mm]+'_'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'.nc'
-                elif variables[mm][vv] in ('UAI','WSm','fwi','FWIm','pvpot','PVPOTm','DD','SU','FD','ID','TR','pet-hargreaves','PRm','Rx1day','Rx5day','SSRDm','Tm','TXm','TNm','UAI','WSm','GDD-S','GDD-W','CGDD-S','CGDD-W','CGDDS-C4','FWI-C4','Rx1day-C4','Rx5day-C4','TNm-C4','PRtot-C4','PRm-C4','TXm-C4','TXm-C6','tasmax-C6','FD-C4','SU-C4','TR-C4','CGDDS-C4_up010','FWI-C4_up010','PRtot-C4_up010','PRm-C4_up010','TNm-C4_up010','TXm-C4_up010','FD-C4_up010','SU-C4_up010','TR-C4_up010','Rx1day-C4_up010','Rx5day-C4_up010','Tm-C5','TXm-C5','TNm-C5','SU-C5','ID-C5','WSm-C5','PRm-C5','DD-C5','Rx1day-C5','TR-C5', 'FD-C5','pet-hargreaves-C5','UAI-C5'):
+                elif variables[mm][vv] in ('UAI','WSm','fwi','FWIm','pvpot','PVPOTm','DD','SU','FD','ID','TR','pet-hargreaves','PRm','Rx1day','Rx5day','SSRDm','Tm','TXm','TNm','UAI','WSm','GDD-S','GDD-W','CGDD-S','CGDD-W','CGDDS-C4','FWI-C4','Rx1day-C4','Rx5day-C4','TNm-C4','PRtot-C4','PRm-C4','TXm-C4','TXm-C6','tasmax-C6','FD-C4','SU-C4','TR-C4','CGDDS-C4_up010','FWI-C4_up010','PRtot-C4_up010','PRm-C4_up010','TNm-C4_up010','TXm-C4_up010','FD-C4_up010','SU-C4_up010','TR-C4_up010','Rx1day-C4_up010','Rx5day-C4_up010','Tm-C5','TXm-C5','TNm-C5','SU-C5','ID-C5','WSm-C5','PRm-C5','DD-C5','Rx1day-C5','TR-C5','FD-C5','pet-hargreaves-C5','UAI-C5','FWIm-C5'):
                     path_gcm_data = path_gcm_base_var+'/'+domain+'/'+product+'/'+variables[mm][vv]+'/'+model[mm]+'/'+version[mm]+'/'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'/'+file_start[mm][vv]+'_'+domain+'_'+product+'_'+variables[mm][vv]+'_'+model[mm]+'_'+version[mm]+'_'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'.nc'
                 elif variables[mm][vv] in ('psl','sfcWind','tas','pr','rsds'):
                     path_gcm_data = path_gcm_base_var+'/'+domain+'/'+product+'/'+variables[mm][vv]+'/'+model[mm]+'/'+version[mm]+'/'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'/'+file_start[mm][vv]+'_'+domain+'_'+product+'_'+variables[mm][vv]+'_'+model[mm]+'_'+version[mm]+'_'+str(years_vec[yy])+str(imonth[im]).zfill(2)+'.nc'
@@ -201,30 +201,30 @@ for mm in np.arange(len(model)):
                     var_units = nc[variables_nc[mm][vv]].units
                 except:
                     print('WARNING: Units for '+variables_nc[mm][vv]+' are missing and will be added now !')
-                    if variables_nc[mm][vv] in ('SU', 'FD', 'ID', 'TR', 'DD'):
+                    if variables_nc[mm][vv] in ('SU', 'SU-C5', 'FD', 'FD-C5', 'ID', 'TR', 'TR-C5', 'DD', 'DD-C5'):
                         pdb.set_trace()
                         var_units = 'day'
-                    elif variables_nc[mm][vv] in ('TXm', 'TNm', 'GDD-W', 'GDD-S', 'CGDD-W', 'CGDD-S'):
+                    elif variables_nc[mm][vv] in ('Tm', 'Tm-C5', 'TXm', 'TXm-C5', 'TNm', 'GDD-W', 'GDD-S', 'CGDD-W', 'CGDD-S'):
                         pdb.set_trace()
                         var_units = 'degC'
-                    elif variables_nc[mm][vv] in ('PRm','Rx1day','Rx5day'):
+                    elif variables_nc[mm][vv] in ('PRm', 'Rx1day', 'Rx5day', 'PRm-C5', 'Rx1day-C5', 'Rx5day-C5'):
                         pdb.set_trace()
                         var_units = 'kg m-2'
                     elif variables_nc[mm][vv] in ('SSRDm'):
                         pdb.set_trace()
                         var_units = 'W m-2'
-                    elif variables_nc[mm][vv] in ('pet-hargreaves'):
+                    elif variables_nc[mm][vv] in ('pet-hargreaves', 'pet-hargreaves-C1'):
                         pdb.set_trace()
                         var_units = 'kg m-2 s-1'
-                    elif variables_nc[mm][vv] in ('UAI-C5','FWIm','fwi'):
+                    elif variables_nc[mm][vv] in ('UAI', 'UAI-C5', 'FWIm', 'FWIm-C5', 'fwi'):
                         var_units = 1
-                    elif variables_nc[mm][vv] in ('WSm'):
+                    elif variables_nc[mm][vv] in ('WSm', 'WSm-C5'):
                         pdb.set_trace()
                         var_units = 'm s-1'
-                    elif variables_nc[mm][vv] in ('SPEI-3-M','SPEI-3-R'):
+                    elif variables_nc[mm][vv] in ('SPEI-3-M', 'SPEI-3-R', 'FWIm-C5', 'SPEI-3-M-C5'):
                         pdb.set_trace()
                         var_units = 1
-                    elif variables_nc[mm][vv] in ('PVPOTm','pvpot'):
+                    elif variables_nc[mm][vv] in ('PVPOTm', 'pvpot'):
                         pdb.set_trace()
                         var_units = 1
                     else:
@@ -326,7 +326,7 @@ for mm in np.arange(len(model)):
         if np.all(np.isnan(data_mon)):
             pdb.set_trace()
 
-        outnc = xr.DataArray(data_mon, coords=[daterange, leads, members, lats, lons], dims=['time', 'lead', 'member', 'y', 'x'], name=variables_new[mm][vv])
+        outnc = xr.DataArray(data_mon, coords=[daterange, leads, members, lats, lons], dims=['time', 'lead', 'member', 'y', 'x'], name=variables_new[mm][vv]).astype('float32')
         del(data_mon) #delete the loop-wise numpy array <data_mon>
 
         ##cut out the last n_lead[mm]-1 months to harmonize the time dimension with observations, currently not used because this is done afterwards in <get_skill.py>
