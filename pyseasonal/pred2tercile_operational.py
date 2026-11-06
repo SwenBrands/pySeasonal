@@ -305,9 +305,9 @@ def swen_pred2tercile_operational(config: dict, year_init: str, month_init: str)
                     if domain == 'medcof' and medcof2hr in ('Iberia','Canarias'):
                         if lat_name_out == 'y' and lon_name_out == 'x':
                             #Assure that the lat and lon names in the mask files must be "lat" and "lon" for the following 3 lines to work !
-                            upper_prob_hr = upper_prob.interp(y=nc_hr.lat, x=nc_hr.lon, method=interp_method).drop_vars(['lat','lon']).rename({'lat':lat_name_out,'lon':lon_name_out})
-                            center_prob_hr = center_prob.interp(y=nc_hr.lat, x=nc_hr.lon, method=interp_method).drop_vars(['lat','lon']).rename({'lat':lat_name_out,'lon':lon_name_out})
-                            lower_prob_hr = lower_prob.interp(y=nc_hr.lat, x=nc_hr.lon, method=interp_method).drop_vars(['lat','lon']).rename({'lat':lat_name_out,'lon':lon_name_out})
+                            upper_prob_hr = upper_prob.interp(y=nc_hr.lat, x=nc_hr.lon, method=interp_method).swap_dims({'lat':lat_name_out, 'lon':lon_name_out}).drop_vars(['lat','lon'])
+                            center_prob_hr = center_prob.interp(y=nc_hr.lat, x=nc_hr.lon, method=interp_method).swap_dims({'lat':lat_name_out, 'lon':lon_name_out}).drop_vars(['lat','lon'])
+                            lower_prob_hr = lower_prob.interp(y=nc_hr.lat, x=nc_hr.lon, method=interp_method).swap_dims({'lat':lat_name_out, 'lon':lon_name_out}).drop_vars(['lat','lon'])
                         else:
                             ValueError('Unexpected value(s) for <lat_name_out> and/or <lon_name_out> ! Must be set to y and x !')
                         

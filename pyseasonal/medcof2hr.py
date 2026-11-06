@@ -283,9 +283,9 @@ for ag in np.arange(len(agg_labels)):
             roc_upper_np = np.expand_dims(roc_upper_np, axis=0)
             
             #transform numpy arrays with singleton dimension to xarray Data Array
-            roc_lower = xr.DataArray(roc_lower_np, coords=[[variables_mod[mm][vv]], subperiods, nc_mod_hr.detrended, nc_mod_hr.season, nc_mod_hr.lead, nc_mod_hr.y, nc_mod_hr.x], dims=['variable', 'subperiod','detrended','season','lead','y','x'], name='roc_auc_lower_tercile').astype(precision)
-            roc_center = xr.DataArray(roc_center_np, coords=[[variables_mod[mm][vv]], subperiods, nc_mod_hr.detrended, nc_mod_hr.season, nc_mod_hr.lead, nc_mod_hr.y, nc_mod_hr.x], dims=['variable', 'subperiod','detrended','season','lead','y','x'], name='roc_auc_center_tercile').astype(precision)
-            roc_upper = xr.DataArray(roc_upper_np, coords=[[variables_mod[mm][vv]], subperiods, nc_mod_hr.detrended, nc_mod_hr.season, nc_mod_hr.lead, nc_mod_hr.y, nc_mod_hr.x], dims=['variable', 'subperiod','detrended','season','lead','y','x'], name='roc_auc_upper_tercile').astype(precision)
+            roc_lower = xr.DataArray(roc_lower_np, coords=[[variables_mod[mm][vv]+'-'+variable_out_label], subperiods, nc_mod_hr.detrended, nc_mod_hr.season, nc_mod_hr.lead, nc_mod_hr.y, nc_mod_hr.x], dims=['variable', 'subperiod','detrended','season','lead','y','x'], name='roc_auc_lower_tercile').astype(precision)
+            roc_center = xr.DataArray(roc_center_np, coords=[[variables_mod[mm][vv]+'-'+variable_out_label], subperiods, nc_mod_hr.detrended, nc_mod_hr.season, nc_mod_hr.lead, nc_mod_hr.y, nc_mod_hr.x], dims=['variable', 'subperiod','detrended','season','lead','y','x'], name='roc_auc_center_tercile').astype(precision)
+            roc_upper = xr.DataArray(roc_upper_np, coords=[[variables_mod[mm][vv]+'-'+variable_out_label], subperiods, nc_mod_hr.detrended, nc_mod_hr.season, nc_mod_hr.lead, nc_mod_hr.y, nc_mod_hr.x], dims=['variable', 'subperiod','detrended','season','lead','y','x'], name='roc_auc_upper_tercile').astype(precision)
             
             #merge the roc of the 3 tericles into a single file
             roc = xr.merge((roc_lower,roc_center,roc_upper)).astype(precision)
@@ -347,6 +347,7 @@ for ag in np.arange(len(agg_labels)):
             ds_mask_plus_cont.chunk(chunks)
             #compress with zlib and shuffle=True
             encoding = {var: {"zlib": True,"complevel": 5,"shuffle": True,"dtype": "float32"} for var in ds_mask_plus_cont.data_vars}
+            
             ds_mask_plus_cont.to_netcdf(savename_netcdf, engine = 'netcdf4', encoding = encoding)
 
             #clean

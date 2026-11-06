@@ -12,8 +12,8 @@ paths:
   dir_netcdf: 'Results/seasonal/validation/' #path to outupt netcdf files produced with this script, containing an xarray dataset with all verification results
   mask_dir: 'Auxiliary-material/Masks' #path to the land-sea masks
 
-models: ['ecmwf51', 'dwd22', 'cmcc4', 'eccc5'] # list of models to be evaluated
-# models: ['ecmwf51'] # list of models to be evaluated
+# models: ['ecmwf51', 'dwd22', 'cmcc4', 'eccc5'] # list of models to be evaluated
+models: ['ecmwf51'] # list of models to be evaluated
 
 model_settings: # Settings for all available models
   ecmwf51: # ECMWF SEAS5.1

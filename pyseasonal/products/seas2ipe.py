@@ -170,10 +170,13 @@ def swen_seas2ipe(config: dict, year_init: str, month_init: str):
                 # skill_mask = skill_mask.isel(scores = mlt_index.fillna(1).astype(int)-1) # set nan values to 1 and subtract 1 to get index values (0, 1, or 2); take this index values to select the binary skill value for the most likely tercile in the forecast
                 # skill_mask[nan_locs[0]] = np.nan #place the original nan values again
 
-                # or (simpler but not exact since nan values can existe over land that would be set to 1):
-                skill_mask = skill_mask.isel(scores=nc_forecast.squeeze()['mlt_'+variables_out[vv]].fillna(1).astype(int)-1).drop_vars('scores') # note that the <rtime> coordinate is passed from <nc_forecast> to <skill_mask> in this line 
-                
-                # search the binary skill value for the specific forecasted tercile on each grid-box
+                # or (simpler but not exact since nan values can existe over land that would be set to 1)
+                # new option that works in any case
+                mlt_index = nc_forecast.squeeze()['mlt_'+variables_out[vv]].fillna(1).astype(int)-1
+                indexer = xr.DataArray(mlt_index.values,dims=('season', 'y', 'x'),coords={'season': skill_mask.season, 'y': skill_mask.y, 'x': skill_mask.x})
+                skill_mask = skill_mask.isel(scores=indexer).drop_vars('scores') # note that the <rtime> coordinate is passed from <nc_forecast> to <skill_mask> in this line 
+                mlt_index.close; indexer.close()
+                del(mlt_index, indexer)
 
                 # apply land-sea mask to skill mask
                 skill_mask = apply_sea_mask(skill_mask, mask_file, 'y', 'x')

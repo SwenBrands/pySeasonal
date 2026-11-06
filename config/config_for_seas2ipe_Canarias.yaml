@@ -15,7 +15,7 @@ agg_labels: ['1mon','3mon']  # considered aggregation windows
 nan_placeholder: 0
 
 # Variable mapping to PTI format
-variables_std: ['SPEI-3-M-i1','UAI-i1','FD-i1','SU-i1','ID-i1','DD-i1','TR-i1','pet-hargreaves-i1','PRm-i1','Rx1day-i1','SSRDm-i1','Tm-i1','TNm-i1','TXm-i1','WSm-i1','GDD-S-i1','GDD-W-i1','CGDD-S-i1','CGDD-W-i1','FWIm-i1','PVPOTm-i1']  # standardized variable names
+variables_std: ['SPEI-3-M-C5','UAI-C5','FD-C5','SU-C5','ID-C5','DD-C5','TR-C5','pet-hargreaves-C5','PRm-C5','Rx1day-C5','SSRDm-i1','Tm-C5','TNm-C5','TXm-C5','WSm-C5','GDD-S-i1','GDD-W-i1','CGDD-S-i1','CGDD-W-i1','FWIm-C5','PVPOTm-i1']  # standardized variable names
 variables_out: ['spei3', 'uai', 'fd', 'su', 'id', 'dd', 'tr', 'eto', 'rti', 'rx1day', 'ssrd', 'gtg', 'gtn', 'gtx', 'fg', 'gdd_s', 'gdd_w', 'cgdd_s', 'cgdd_w', 'fwi', 'pvpot']  # output variable names, as defined in PTI-Clima variable table: https://docs.google.com/spreadsheets/d/1K5n3aM0vGgnJEwlghjK1BtqJr0Ug0mQYlzZKQxB2wJU/edit?gid=0#gid=0
 
 # Data type and domain configuration

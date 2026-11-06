@@ -24,7 +24,7 @@ PYDIR=/lustre/gmeteo/PTICLIMA/Scripts/SBrands/pyPTIclima/pySeasonal/pyseasonal
 agg_label_list=('1mon' '2mon' '3mon' '4mon' '5mon') #bash array containing the temporal aggregation windows to be considered
 # agg_label_list=('1mon') #bash array containing the temporal aggregation windows to be considered
 vers='v1t'
-domain='Canarias' #character string: 'medcof', 'Iberia' or 'Canarias'
+domain='medcof' #character string: 'medcof', 'Iberia' or 'Canarias'
 
 # input variables constructed from those defined above
 LOGDIR=/lustre/gmeteo/PTICLIMA/Scripts/SBrands/pyPTIclima/pySeasonal/LOG/plot/${domain}
