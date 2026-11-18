@@ -113,9 +113,24 @@ def swen_seas2ipe(config: dict, year_init: str, month_init: str):
                 #clean
                 nc_forecast_in_prob.close()
                 del(nc_forecast_in_prob)
-
-                nc_forecast['mlt_'+variables_out[vv]] = nc_forecast_in_argmax
-                nc_forecast['prob_'+variables_out[vv]] = nc_forecast_in_maxprob
+                
+                # fill nc_forecast and reasssing if necessary
+                if vv == 0:
+                    nc_forecast['mlt_'+variables_out[vv]] = nc_forecast_in_argmax
+                    nc_forecast['prob_'+variables_out[vv]] = nc_forecast_in_maxprob
+                elif vv > 0:
+                    #reassign the coordinates with those used in nc_forecast and fill nc_forecast
+                    nc_forecast_in_argmax_reindexed = xr.DataArray(nc_forecast_in_argmax.values,dims=('rtime', 'season', 'y', 'x'),coords={'rtime': nc_forecast.rtime, 'season': nc_forecast.season, 'y': nc_forecast.y, 'x': nc_forecast.x},name=nc_forecast_in_argmax.name)
+                    nc_forecast_in_argmax_reindexed.attrs = nc_forecast_in_argmax.attrs
+                    nc_forecast_in_maxprob_reindexed = xr.DataArray(nc_forecast_in_maxprob.values,dims=('rtime', 'season', 'y', 'x'),coords={'rtime': nc_forecast.rtime, 'season': nc_forecast.season, 'y': nc_forecast.y, 'x': nc_forecast.x},name=nc_forecast_in_maxprob.name)
+                    nc_forecast_in_maxprob_reindexed.attrs = nc_forecast_in_maxprob.attrs              
+                    nc_forecast['mlt_'+variables_out[vv]] = nc_forecast_in_argmax_reindexed
+                    nc_forecast['prob_'+variables_out[vv]] = nc_forecast_in_maxprob_reindexed
+                    nc_forecast_in_argmax_reindexed.close(); nc_forecast_in_maxprob_reindexed.close()
+                    del(nc_forecast_in_argmax_reindexed, nc_forecast_in_maxprob_reindexed)
+                else:
+                    raise ValueError("Invalid value for vv")
+                    
                 #add variable attributes
                 nc_forecast['mlt_'+variables_out[vv]].attrs['long_name'] = 'Most likely tercile category (1=lower, 2=middle, 3=upper) for '+variables_out[vv]
                 nc_forecast['mlt_'+variables_out[vv]].attrs['standard_name'] = 'tercile_category'
@@ -160,22 +175,11 @@ def swen_seas2ipe(config: dict, year_init: str, month_init: str):
                 else:
                     raise ValueError('The x and y values in <nc_forecast> and <nc_val> are NOT identical !')
                 
-                ## cut down the forecast domain to the skill domain indicated in the <domain> input variable
-                # nc_forecast = nc_forecast.sel(y=skill_mask.y,x=skill_mask.x)
-
-                #select the binary skill mask value of the most likely tercile; since the most likely tercile starts with 1, a 1 is subtracted to the index array prior to filtering out the binary skill values, nan are set to 0 and must be placed again to mark values over the sea
-                # # either (exact):
-                # mlt_index = nc_forecast.squeeze()['mlt_'+variables_out[vv]] #get like tercile in the forecasat (nan, 1, 2 or 3)
-                # nan_locs = np.where(np.isnan(mlt_index.values)) # get indices of the nan values
-                # skill_mask = skill_mask.isel(scores = mlt_index.fillna(1).astype(int)-1) # set nan values to 1 and subtract 1 to get index values (0, 1, or 2); take this index values to select the binary skill value for the most likely tercile in the forecast
-                # skill_mask[nan_locs[0]] = np.nan #place the original nan values again
-
-                # or (simpler but not exact since nan values can existe over land that would be set to 1)
-                # new option that works in any case
+                #get the index of the most likely tercile for each season and assign the corresponding skill mask to it             
                 mlt_index = nc_forecast.squeeze()['mlt_'+variables_out[vv]].fillna(1).astype(int)-1
                 indexer = xr.DataArray(mlt_index.values,dims=('season', 'y', 'x'),coords={'season': skill_mask.season, 'y': skill_mask.y, 'x': skill_mask.x})
                 skill_mask = skill_mask.isel(scores=indexer).drop_vars('scores') # note that the <rtime> coordinate is passed from <nc_forecast> to <skill_mask> in this line 
-                mlt_index.close; indexer.close()
+                mlt_index.close(); indexer.close()
                 del(mlt_index, indexer)
 
                 # apply land-sea mask to skill mask
@@ -192,11 +196,14 @@ def swen_seas2ipe(config: dict, year_init: str, month_init: str):
                     warnings.warn('No variable or index description available for '+variables_out[vv])
 
                 # merge skill mask into the existing xarray dataset containing the most like tercile and its probability
-                nc_forecast['skill_'+variables_out[vv]] = skill_mask #assign variable-specific skill mask to the newly generated xarray dataset produced by this script
-                
+                #der Fehler liegt hier !
+                skill_mask_reindexed = xr.DataArray(skill_mask.values,dims=('season', 'y', 'x'),coords={'season': nc_forecast.season, 'y': nc_forecast.y, 'x': nc_forecast.x},name=skill_mask.name)
+                skill_mask_reindexed.attrs = skill_mask.attrs
+                nc_forecast['skill_'+variables_out[vv]] = skill_mask_reindexed #assign variable-specific skill mask to the newly generated xarray dataset produced by this script
+
                 #clean
-                nc_val.close(), nc_val_sub.close(); nc_forecast_in_argmax.close(); nc_forecast_in_maxprob.close(); nc_forecast_in.close(); skill_mask.close()
-                del(nc_val, nc_val_sub, nc_forecast_in_argmax,nc_forecast_in_maxprob,nc_forecast_in,skill_mask)
+                nc_val.close(), nc_val_sub.close(); nc_forecast_in_argmax.close(); nc_forecast_in_maxprob.close(); nc_forecast_in.close(); skill_mask.close();  skill_mask_reindexed.close()
+                del(nc_val, nc_val_sub, nc_forecast_in_argmax,nc_forecast_in_maxprob,nc_forecast_in,skill_mask,skill_mask_reindexed)
 
             #add global attributes
             nc_forecast.season.attrs['standard_name'] = 'season'
